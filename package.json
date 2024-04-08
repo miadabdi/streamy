@@ -9,7 +9,7 @@
 		"minio:down:dev": "sudo docker compose rm minio -f -s -v",
 		"minio:up:dev": "sudo docker compose up minio -d",
 		"build": "nest build",
-		"format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+		"format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
 		"start": "nest start",
 		"start:dev": "nest start --watch",
 		"start:debug": "nest start --debug --watch",
