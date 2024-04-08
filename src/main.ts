@@ -1,4 +1,6 @@
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import * as hpp from 'hpp';
@@ -10,12 +12,20 @@ async function bootstrap() {
 		logger,
 	});
 
+	const configService = app.get(ConfigService);
+
+	app.use(
+		compression({
+			threshold: configService.get<number>('COMPRESSION_THRESHOLD'), // number in bytes
+		}),
+	);
 	app.use(helmet());
 	app.use(cookieParser());
 	app.use(hpp());
 
 	app.enableCors();
 
-	await app.listen(3000);
+	const port = configService.get<number>('PORT');
+	await app.listen(port);
 }
 bootstrap();
