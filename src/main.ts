@@ -1,6 +1,7 @@
 import { VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
 import helmet from 'helmet';
@@ -36,5 +37,14 @@ async function bootstrap() {
 
 	const port = configService.get<number>('PORT');
 	await app.listen(port);
+
+	const config = new DocumentBuilder()
+		.setTitle('Blog Apis')
+		.setDescription('Introducing all APIs of blog')
+		.setVersion('1.0')
+		.addTag('blog')
+		.build();
+	const document = SwaggerModule.createDocument(app, config);
+	SwaggerModule.setup('api', app, document);
 }
 bootstrap();
