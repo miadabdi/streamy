@@ -4,7 +4,7 @@
 	"description": "",
 	"author": "",
 	"private": true,
-	"license": "UNLICENSED",
+	"license": "GPL-3.0-only",
 	"scripts": {
 		"minio:down:dev": "sudo docker compose rm minio -f -s -v",
 		"minio:up:dev": "sudo docker compose up minio -d",
@@ -55,7 +55,7 @@
 		"ts-loader": "^9.4.3",
 		"ts-node": "^10.9.1",
 		"tsconfig-paths": "^4.2.0",
-		"typescript": "^5.1.3"
+		"typescript": "~5.1.3"
 	},
 	"jest": {
 		"moduleFileExtensions": [
