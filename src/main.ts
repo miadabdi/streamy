@@ -1,6 +1,6 @@
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as compression from 'compression';
 import * as cookieParser from 'cookie-parser';
@@ -9,6 +9,7 @@ import * as hpp from 'hpp';
 import { AppModule } from './app.module';
 import { API_PREFIX } from './common/constants';
 import { logger } from './winston';
+import { AllExceptionsFilter } from './common/exceptions';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule, {
@@ -41,6 +42,9 @@ async function bootstrap() {
 			whitelist: true,
 		}),
 	);
+
+	const { httpAdapter } = app.get(HttpAdapterHost);
+	app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
 	const port = configService.get<number>('PORT');
 	await app.listen(port);
