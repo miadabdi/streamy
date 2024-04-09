@@ -4,6 +4,7 @@ import { DrizzleModule } from './drizzle/drizzle.module';
 import { ConfigModuleSetup, ThrottlerModuleSetup } from './externalModules';
 import { FileModule } from './file/file.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
+import { UserModule } from './user/user.module';
 
 @Module({
 	imports: [
@@ -13,6 +14,7 @@ import { MinioClientModule } from './minio-client/minio-client.module';
 		AuthModule,
 		MinioClientModule,
 		FileModule,
+		UserModule,
 	],
 	controllers: [],
 	providers: [],
