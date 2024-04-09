@@ -15,6 +15,7 @@ import IDrizzleError from '../drizzle/drizzle-error.interface';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { usersTableColumns } from '../drizzle/table-columns';
+import { MailService } from '../mail/mail.service';
 import { AuthDto } from './dto';
 
 @Injectable()
@@ -25,6 +26,7 @@ export class AuthService {
 		private jwtService: JwtService,
 		private configService: ConfigService,
 		private drizzleService: DrizzleService,
+		private mailService: MailService,
 	) {}
 
 	async signUp(authDto: AuthDto) {
@@ -84,6 +86,8 @@ export class AuthService {
 			sameSite: 'strict',
 			httpOnly: true,
 		});
+
+		// this.mailService.sendHtml(user.email, 'Welcome to Blog', 'Welcome to Blog');
 	}
 
 	async signToken(userId: number, email: string) {
