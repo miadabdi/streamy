@@ -10,6 +10,7 @@ import { AppModule } from './app.module';
 import { API_PREFIX } from './common/constants';
 import { logger } from './winston';
 import { AllExceptionsFilter } from './common/exceptions';
+import { LoggingInterceptor, TimeoutInterceptor } from './common/interceptors';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule, {
@@ -42,6 +43,8 @@ async function bootstrap() {
 			whitelist: true,
 		}),
 	);
+
+	app.useGlobalInterceptors(new LoggingInterceptor(), new TimeoutInterceptor());
 
 	const { httpAdapter } = app.get(HttpAdapterHost);
 	app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
