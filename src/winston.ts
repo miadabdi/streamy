@@ -27,9 +27,10 @@ const transports = {
 		extension: '.log',
 		level: 'info',
 		format: winston.format.combine(
-			winston.format.timestamp({
-				format: 'YYYY-MM-DD hh:mm:ss.SSS A',
-			}),
+			// winston.format.timestamp({
+			// 	format: 'YYYY-MM-DD hh:mm:ss.SSS A',
+			// }),
+			winston.format.timestamp(),
 			winston.format.errors({ stack: true }),
 			winston.format.splat(),
 			winston.format.json(),
@@ -41,9 +42,10 @@ const transports = {
 		extension: '.log',
 		level: 'error',
 		format: winston.format.combine(
-			winston.format.timestamp({
-				format: 'YYYY-MM-DD hh:mm:ss.SSS A',
-			}),
+			// winston.format.timestamp({
+			// 	format: 'YYYY-MM-DD hh:mm:ss.SSS A',
+			// }),
+			winston.format.timestamp(),
 			winston.format.errors({ stack: true }),
 			winston.format.splat(),
 			winston.format.json(),

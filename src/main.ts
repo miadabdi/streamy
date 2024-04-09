@@ -1,4 +1,4 @@
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -53,5 +53,16 @@ async function bootstrap() {
 		.build();
 	const document = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('api', app, document);
+
+	const bootstrapLogger = new Logger('bootstrap');
+	process.on('uncaughtException', (err) => {
+		bootstrapLogger.fatal(err);
+		process.exit(1);
+	});
+
+	process.on('unhandledRejection', (err) => {
+		bootstrapLogger.fatal(err);
+		process.exit(1);
+	});
 }
 bootstrap();
