@@ -1,3 +1,4 @@
+import { relations } from 'drizzle-orm';
 import {
 	boolean,
 	integer,
@@ -43,4 +44,37 @@ export const users = pgTable(
 	},
 );
 
+export const usersRelations = relations(users, ({ many }) => ({
+	files: many(files),
+}));
+
+export const files = pgTable(
+	'files',
+	{
+		id: serial('id').primaryKey(),
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+		bucketName: varchar('bucket_name', { length: 100 }).notNull(),
+		path: text('path').notNull(),
+		mimetype: varchar('mimetype', { length: 50 }).notNull(),
+		sizeInByte: integer('size_in_byte').notNull(),
+		userId: integer('user_id')
+			.notNull()
+			.references(() => users.id),
+	},
+	(files) => {
+		return {};
+	},
+);
+
+export const filesRelations = relations(files, ({ many, one }) => ({
+	user: one(users, {
+		fields: [files.userId],
+		references: [users.id],
+	}),
+}));
+
 export type User = typeof users.$inferSelect;
+export type File = typeof files.$inferSelect;
