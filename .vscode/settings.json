@@ -3,5 +3,7 @@
 		"source.fixAll": "explicit"
 	},
 	"editor.formatOnSave": true,
-	"editor.tabSize": 2
+	"editor.tabSize": 2,
+	"eslint.format.enable": false,
+	"editor.defaultFormatter": "esbenp.prettier-vscode"
 }
