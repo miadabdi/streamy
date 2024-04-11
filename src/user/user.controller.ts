@@ -1,9 +1,18 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Patch, UseGuards } from '@nestjs/common';
+import {
+	Body,
+	Controller,
+	Get,
+	HttpCode,
+	HttpStatus,
+	Patch,
+	Query,
+	UseGuards,
+} from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { GetUser } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
 import { User } from '../drizzle/schema';
-import { UpdateUserDto } from './dto';
+import { SetCurrentChannelDto, UpdateUserDto } from './dto';
 import { UserService } from './user.service';
 
 @UseGuards(ThrottlerGuard)
@@ -14,18 +23,23 @@ export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@HttpCode(HttpStatus.OK)
-	@Get('me')
+	@Get('/me')
 	getMe(@GetUser() user: User) {
-		delete user.passwordChangedAt;
-		delete user.passwordResetToken;
-		delete user.passwordResetExpiresAt;
-		delete user.password;
-		return user;
+		return this.userService.getMe(user);
 	}
 
 	@HttpCode(HttpStatus.OK)
-	@Patch('update-me')
+	@Patch('/update-me')
 	updateUser(@Body() updateUserDto: UpdateUserDto, @GetUser() user: User) {
 		return this.userService.updateUser(updateUserDto, user);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Patch('/set-current-channel')
+	async setCurrentChannel(
+		@Query() setCurrentChannelDto: SetCurrentChannelDto,
+		@GetUser() user: User,
+	) {
+		return this.userService.setCurrentChannel(setCurrentChannelDto, user);
 	}
 }
