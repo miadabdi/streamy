@@ -8,10 +8,14 @@ import {
 	Patch,
 	Post,
 	Query,
+	UploadedFile,
 	UseGuards,
+	UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
+import { SharpPipe } from '../common/pipes/sharp-pipe.pipe';
 import { User } from '../drizzle/schema';
 import { ChannelService } from './channel.service';
 import {
@@ -35,8 +39,13 @@ export class ChannelController {
 
 	@HttpCode(HttpStatus.OK)
 	@Patch()
-	updateChannel(@Body() updateChannelDto: UpdateChannelDto, @GetUser() user: User) {
-		return this.channelService.updateChannel(updateChannelDto, user);
+	@UseInterceptors(FileInterceptor('avatar'))
+	updateChannel(
+		@Body() updateChannelDto: UpdateChannelDto,
+		@GetUser() user: User,
+		@UploadedFile(SharpPipe) avatar: Express.Multer.File,
+	) {
+		return this.channelService.updateChannel(updateChannelDto, user, avatar);
 	}
 
 	@HttpCode(HttpStatus.OK)

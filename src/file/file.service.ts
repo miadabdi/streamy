@@ -23,7 +23,7 @@ export class FileService {
 		return this.minioClientService.presignedUrl('images', `${random}.png`, 3600);
 	}
 
-	async upload(
+	async uploadAndCreateFileRecord(
 		file: Express.Multer.File,
 		directory: string,
 		bucketName: BUCKET_NAMES_TYPE,
@@ -46,6 +46,6 @@ export class FileService {
 	}
 
 	async uploadImage(image: Express.Multer.File, user: schema.User) {
-		return this.upload(image, '', 'images', user);
+		return this.uploadAndCreateFileRecord(image, '', 'images', user);
 	}
 }

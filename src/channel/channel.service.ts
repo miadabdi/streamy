@@ -11,13 +11,17 @@ import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { channelsTableColumns } from '../drizzle/table-columns';
+import { FileService } from '../file/file.service';
 import { CreateChannelDto, DeleteChannelDto, UpdateChannelDto } from './dto';
 
 @Injectable()
 export class ChannelService {
 	private logger = new Logger(ChannelService.name);
 
-	constructor(private drizzleService: DrizzleService) {}
+	constructor(
+		private drizzleService: DrizzleService,
+		private fileService: FileService,
+	) {}
 
 	async createChannel(createChannelDto: CreateChannelDto, @GetUser() user: User) {
 		const dupChannel = await this.drizzleService.db.query.channels.findFirst({
@@ -41,7 +45,11 @@ export class ChannelService {
 		return channel[0];
 	}
 
-	async updateChannel(updateChannelDto: UpdateChannelDto, @GetUser() user: User) {
+	async updateChannel(
+		updateChannelDto: UpdateChannelDto,
+		user: User,
+		avatar?: Express.Multer.File,
+	) {
 		const channel = await this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.id, updateChannelDto.id),
 		});
@@ -65,6 +73,17 @@ export class ChannelService {
 			if (dupChannel) {
 				throw new ConflictException('Channel with this username already exists');
 			}
+		}
+
+		if (avatar) {
+			const file = await this.fileService.uploadAndCreateFileRecord(
+				avatar,
+				'',
+				'channelavatars',
+				user,
+			);
+
+			updateChannelDto.avatarFileId = file.id;
 		}
 
 		const { ...returningKeys } = channelsTableColumns;

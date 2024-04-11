@@ -97,7 +97,7 @@ export const channels = pgTable(
 		ownerId: integer('owner_id')
 			.notNull()
 			.references(() => users.id),
-		avatar: varchar('avatar', { length: 2048 }).default('avatar-default.png'),
+		avatarFileId: integer('avatar_file_id').references(() => files.id),
 	},
 	(channels) => {
 		return {
@@ -110,6 +110,10 @@ export const channelsRelations = relations(channels, ({ many, one }) => ({
 	owner: one(users, {
 		fields: [channels.ownerId],
 		references: [users.id],
+	}),
+	avatar: one(files, {
+		fields: [channels.avatarFileId],
+		references: [files.id],
 	}),
 }));
 

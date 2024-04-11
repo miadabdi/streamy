@@ -7,5 +7,6 @@ import { FileService } from './file.service';
 	imports: [MinioClientModule],
 	providers: [FileService],
 	controllers: [FileController],
+	exports: [FileService],
 })
 export class FileModule {}

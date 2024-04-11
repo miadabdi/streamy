@@ -7,4 +7,6 @@ export class UpdateChannelDto extends PartialType(CreateChannelDto) {
 	@IsInt()
 	@Type(() => Number)
 	id: number;
+
+	avatarFileId: number;
 }
