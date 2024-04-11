@@ -35,6 +35,10 @@ export const users = pgTable(
 			precision: 6,
 			withTimezone: true,
 		}),
+		lastLoginAt: timestamp('last_login_at', {
+			precision: 6,
+			withTimezone: true,
+		}),
 		currentChannelId: integer('current_channel_id'),
 	},
 	(users) => {
@@ -46,6 +50,7 @@ export const users = pgTable(
 
 export const usersRelations = relations(users, ({ many }) => ({
 	files: many(files),
+	channels: many(channels),
 }));
 
 export const files = pgTable(
@@ -76,5 +81,38 @@ export const filesRelations = relations(files, ({ many, one }) => ({
 	}),
 }));
 
+export const channels = pgTable(
+	'channels',
+	{
+		id: serial('id').primaryKey(),
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+		username: varchar('username', { length: 100 }).notNull().unique(),
+		name: varchar('name', { length: 50 }).notNull(),
+		description: varchar('description', { length: 1024 }).notNull(),
+		numberOfsubscribers: integer('number_of_subscribers').default(0),
+		isActive: boolean('is_active').default(true),
+		ownerId: integer('owner_id')
+			.notNull()
+			.references(() => users.id),
+		avatar: varchar('description', { length: 2048 }).default('avatar-default.png'),
+	},
+	(channels) => {
+		return {
+			usernameIdx: uniqueIndex('channels_username_idx').on(channels.username),
+		};
+	},
+);
+
+export const channelsRelations = relations(channels, ({ many, one }) => ({
+	owner: one(users, {
+		fields: [channels.ownerId],
+		references: [users.id],
+	}),
+}));
+
 export type User = typeof users.$inferSelect;
 export type File = typeof files.$inferSelect;
+export type Channel = typeof channels.$inferSelect;
