@@ -34,8 +34,16 @@ export class AuthService {
 		private mailService: MailService,
 	) {}
 
+	hash(input: string, iterations: number = 3) {
+		return argon.hash(input, { timeCost: iterations });
+	}
+
+	matchHash(hashed: string, input: string) {
+		return argon.verify(hashed, input);
+	}
+
 	async signUp(authDto: AuthDto) {
-		const hash = await argon.hash(authDto.password, { timeCost: 3 });
+		const hash = await this.hash(authDto.password);
 
 		try {
 			const {
@@ -75,7 +83,7 @@ export class AuthService {
 			throw new ForbiddenException('Credentials is incorrect');
 		}
 
-		const pwMatch = await argon.verify(user.password, authDto.password);
+		const pwMatch = await this.matchHash(user.password, authDto.password);
 
 		if (!pwMatch) {
 			throw new ForbiddenException('Credentials is incorrect');
@@ -127,7 +135,7 @@ export class AuthService {
 		}
 
 		const token = randomBytes(32).toString('hex');
-		const hashedToken = await argon.hash(token, { timeCost: 3 });
+		const hashedToken = await this.hash(token);
 
 		await this.drizzleService.db
 			.update(schema.users)
@@ -153,13 +161,13 @@ export class AuthService {
 			throw new BadRequestException('No Reset password Set for this account');
 		}
 
-		const pwMatch = await argon.verify(user.passwordResetToken, resetPasswordDto.token);
+		const pwMatch = await this.matchHash(user.passwordResetToken, resetPasswordDto.token);
 
 		if (!pwMatch) {
 			throw new ForbiddenException('Token is incorrect');
 		}
 
-		const hash = await argon.hash(resetPasswordDto.password, { timeCost: 3 });
+		const hash = await this.hash(resetPasswordDto.password);
 
 		await this.drizzleService.db
 			.update(schema.users)
