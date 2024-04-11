@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import {
 	boolean,
 	integer,
+	pgEnum,
 	pgTable,
 	serial,
 	text,
@@ -9,9 +10,7 @@ import {
 	uniqueIndex,
 	varchar,
 } from 'drizzle-orm/pg-core';
-
-// // declaring enum in database
-// export const popularityEnum = pgEnum('popularity', ['unknown', 'known', 'popular']);
+import { z } from 'zod';
 
 // Index name convention: [tableName]_[field]_idx
 
@@ -89,11 +88,12 @@ export const channels = pgTable(
 		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
 			.defaultNow()
 			.$onUpdate(() => new Date()),
+		isActive: boolean('is_active').default(true),
+		deletedAt: timestamp('deleted_at', { precision: 6, withTimezone: true }),
 		username: varchar('username', { length: 100 }).notNull().unique(),
 		name: varchar('name', { length: 50 }).notNull(),
 		description: varchar('description', { length: 1024 }).notNull(),
-		numberOfsubscribers: integer('number_of_subscribers').default(0),
-		isActive: boolean('is_active').default(true),
+		numberOfSubscribers: integer('number_of_subscribers').default(0),
 		ownerId: integer('owner_id')
 			.notNull()
 			.references(() => users.id),
@@ -117,6 +117,57 @@ export const channelsRelations = relations(channels, ({ many, one }) => ({
 	}),
 }));
 
+// declaring enum in database
+export const videoProccessingStatus = pgEnum('video_proccessing_status', [
+	'ready_for_upload',
+	'ready_for_processing',
+	'waiting_in_queue',
+	'processing',
+	'failed_in_processing',
+	'done',
+]);
+
+export const videos = pgTable(
+	'videos',
+	{
+		id: serial('id').primaryKey(),
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+		isActive: boolean('is_active').default(true),
+		deletedAt: timestamp('deleted_at', { precision: 6, withTimezone: true }),
+		isReleased: boolean('is_released').default(false),
+		releasedAt: timestamp('released_at', { precision: 6, withTimezone: true }),
+		name: varchar('name', { length: 256 }).notNull(),
+		description: varchar('description', { length: 2048 }).notNull(),
+		numberOfVisits: integer('number_of_visits').default(0),
+		numberOfLikes: integer('number_of_likes').default(0),
+		numberOfDislikes: integer('numberOfDislikes').default(0),
+		channelId: integer('channel_id')
+			.notNull()
+			.references(() => channels.id),
+		duration: integer('duration'),
+		thumbnailFileId: integer('thumbnail_file_id').references(() => files.id),
+		processingStatus: videoProccessingStatus('processing_status'),
+	},
+	(videos) => {
+		return {
+			channelIdx: uniqueIndex('videos_channel_id_idx').on(videos.channelId),
+		};
+	},
+);
+
+export const videosRelations = relations(videos, ({ many, one }) => ({
+	channel: one(channels, {
+		fields: [videos.channelId],
+		references: [channels.id],
+	}),
+}));
+
+export const VideoProccessingStatusEnum = z.enum(videoProccessingStatus.enumValues);
+
 export type User = typeof users.$inferSelect;
 export type File = typeof files.$inferSelect;
 export type Channel = typeof channels.$inferSelect;
+export type Video = typeof videos.$inferSelect;
