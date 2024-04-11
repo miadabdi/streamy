@@ -1,14 +1,17 @@
 import {
+	BadRequestException,
 	ConflictException,
 	ForbiddenException,
 	Injectable,
 	InternalServerErrorException,
 	Logger,
+	NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon from 'argon2';
-import { eq } from 'drizzle-orm';
+import { randomBytes } from 'crypto';
+import { eq, sql } from 'drizzle-orm';
 import { Response } from 'express';
 import { JWT_COOKIE_NAME } from '../common/constants';
 import IDrizzleError from '../drizzle/drizzle-error.interface';
@@ -17,6 +20,8 @@ import * as schema from '../drizzle/schema';
 import { usersTableColumns } from '../drizzle/table-columns';
 import { MailService } from '../mail/mail.service';
 import { AuthDto } from './dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -30,7 +35,7 @@ export class AuthService {
 	) {}
 
 	async signUp(authDto: AuthDto) {
-		const hash = await argon.hash(authDto.password);
+		const hash = await argon.hash(authDto.password, { timeCost: 3 });
 
 		try {
 			const {
@@ -87,7 +92,12 @@ export class AuthService {
 			httpOnly: true,
 		});
 
-		// this.mailService.sendHtml(user.email, 'Welcome to Blog', 'Welcome to Blog');
+		// this.mailService.sendHtml(user.email, 'Welcome to B{log', 'Welcome to Blog');
+		await this.drizzleService.db
+			.update(schema.users)
+			.set({ lastLoginAt: new Date() })
+			.where(eq(schema.users.email, authDto.email))
+			.execute();
 	}
 
 	async signToken(userId: number, email: string) {
@@ -105,5 +115,66 @@ export class AuthService {
 		});
 
 		return token;
+	}
+
+	async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+		const user = await this.drizzleService.db.query.users.findFirst({
+			where: eq(schema.users.email, forgotPasswordDto.email),
+		});
+
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+
+		const token = randomBytes(32).toString('hex');
+		const hashedToken = await argon.hash(token, { timeCost: 3 });
+
+		await this.drizzleService.db
+			.update(schema.users)
+			.set({
+				passwordResetToken: hashedToken,
+				passwordResetExpiresAt: sql`CURRENT_TIMESTAMP + INTERVAL '1 DAY'`,
+			})
+			.where(eq(schema.users.email, user.email));
+
+		this.mailService.sendForgotPassword(user.email, token);
+
+		return {
+			message: 'Reset Email Sent',
+		};
+	}
+
+	async resetPassword(resetPasswordDto: ResetPasswordDto) {
+		const user = await this.drizzleService.db.query.users.findFirst({
+			where: eq(schema.users.email, resetPasswordDto.email),
+		});
+
+		if (!user || !user.passwordResetToken) {
+			throw new BadRequestException('No Reset password Set for this account');
+		}
+
+		const pwMatch = await argon.verify(user.passwordResetToken, resetPasswordDto.token);
+
+		if (!pwMatch) {
+			throw new ForbiddenException('Token is incorrect');
+		}
+
+		const hash = await argon.hash(resetPasswordDto.password, { timeCost: 3 });
+
+		await this.drizzleService.db
+			.update(schema.users)
+			.set({
+				password: hash,
+				passwordChangedAt: new Date(),
+				passwordResetExpiresAt: null,
+				passwordResetToken: null,
+			})
+			.where(eq(schema.users.email, user.email));
+
+		this.mailService.sendPasswordChanged(user.email, user.email);
+
+		return {
+			message: 'Password Changed Successfully',
+		};
 	}
 }

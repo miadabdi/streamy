@@ -1,4 +1,4 @@
 {
-	"*.ts": ["prettier --check --list-different", "eslint"],
+	"*.ts": ["prettier --check", "eslint"],
 	"*": "prettier --ignore-unknown"
 }

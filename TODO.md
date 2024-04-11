@@ -8,6 +8,7 @@ This is a video-sharing platform.
 - [ ] complete tests
 - [ ] setup OpenApi V3
 - [ ] setup pagination
+- [ ] use templates for emails
 - [ ] Setup email delivery by rabbitmq queues
 
 ### Done ✓
