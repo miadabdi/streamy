@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
@@ -15,5 +15,11 @@ export class FileController {
 	@UseInterceptors(FileInterceptor('image'))
 	async uploadImage(@UploadedFile(SharpPipe) image: Express.Multer.File, @GetUser() user: User) {
 		return this.fileService.uploadImage(image, user);
+	}
+
+	@Get('/get-presigned-url')
+	@UseGuards(JwtAuthGuard)
+	async getPresignedURL(@GetUser() user: User) {
+		return this.fileService.getPresignedURL(user);
 	}
 }

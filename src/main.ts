@@ -2,15 +2,15 @@ import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as compression from 'compression';
-import * as cookieParser from 'cookie-parser';
+import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import * as hpp from 'hpp';
+import hpp from 'hpp';
 import { AppModule } from './app.module';
 import { API_PREFIX } from './common/constants';
-import { logger } from './winston';
 import { AllExceptionsFilter } from './common/exceptions';
 import { LoggingInterceptor, TimeoutInterceptor } from './common/interceptors';
+import { logger } from './winston';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule, {

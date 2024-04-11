@@ -1,6 +1,6 @@
 import { Injectable, PipeTransform } from '@nestjs/common';
 import * as path from 'path';
-import * as sharp from 'sharp';
+import sharp from 'sharp';
 
 @Injectable()
 export class SharpPipe implements PipeTransform<Express.Multer.File, Promise<Express.Multer.File>> {

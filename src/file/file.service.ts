@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { randomBytes } from 'crypto';
 import { BUCKET_NAMES_TYPE } from '../common/constants';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
+import { User } from '../drizzle/schema';
 import { filesTableColumns } from '../drizzle/table-columns';
 import { MinioClientService } from '../minio-client/minio-client.service';
 
@@ -14,11 +16,18 @@ export class FileService {
 		private drizzleService: DrizzleService,
 	) {}
 
+	async getPresignedURL(user: User) {
+		const random = randomBytes(8).toString('hex');
+		// return this.minioClientService.presignedPostUrl('images', 'random.png', ['image/png'], 5);
+
+		return this.minioClientService.presignedUrl('images', `${random}.png`, 3600);
+	}
+
 	async upload(
 		file: Express.Multer.File,
 		directory: string,
 		bucketName: BUCKET_NAMES_TYPE,
-		user: schema.User,
+		user: User,
 	) {
 		const result = await this.minioClientService.putObject(file, directory, bucketName);
 

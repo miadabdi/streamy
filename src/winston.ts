@@ -1,6 +1,6 @@
 import { utilities as nestWinstonModuleUtilities, WinstonModule } from 'nest-winston';
-import * as winston from 'winston';
-import * as winstonDailyRotateFile from 'winston-daily-rotate-file';
+import winston from 'winston';
+import winstonDailyRotateFile from 'winston-daily-rotate-file';
 import { APP_NAME } from './common/constants';
 
 const transports = {
