@@ -3,7 +3,6 @@ import {
 	ConflictException,
 	ForbiddenException,
 	Injectable,
-	InternalServerErrorException,
 	Logger,
 	NotFoundException,
 } from '@nestjs/common';
@@ -13,12 +12,14 @@ import * as argon from 'argon2';
 import { randomBytes } from 'crypto';
 import { eq, sql } from 'drizzle-orm';
 import { Response } from 'express';
+import { ChannelService } from '../channel/channel.service';
 import { JWT_COOKIE_NAME } from '../common/constants';
-import IDrizzleError from '../drizzle/drizzle-error.interface';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
+import { User } from '../drizzle/schema';
 import { usersTableColumns } from '../drizzle/table-columns';
 import { MailService } from '../mail/mail.service';
+import { UserService } from '../user/user.service';
 import { AuthDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 
 @Injectable()
@@ -30,6 +31,8 @@ export class AuthService {
 		private configService: ConfigService,
 		private drizzleService: DrizzleService,
 		private mailService: MailService,
+		private channelService: ChannelService,
+		private userService: UserService,
 	) {}
 
 	hash(input: string, iterations: number = 3) {
@@ -41,7 +44,12 @@ export class AuthService {
 	}
 
 	async signUp(authDto: AuthDto) {
-		const hash = await this.hash(authDto.password);
+		const uniqueUser = await this.drizzleService.db.query.users.findFirst({
+			where: eq(schema.users.email, authDto.email),
+		});
+		if (uniqueUser) {
+			throw new ConflictException('Email taken, a new user cannot be created with this email');
+		}
 
 		try {
 			const {
@@ -51,24 +59,30 @@ export class AuthService {
 				passwordResetExpiresAt,
 				...returningKeys
 			} = usersTableColumns;
-			const user = await this.drizzleService.db
-				.insert(schema.users)
-				.values({ ...authDto, password: hash })
-				.returning(returningKeys)
-				.execute();
 
-			return user[0];
+			let user: User;
+
+			const hash = await this.hash(authDto.password);
+
+			await this.drizzleService.db.transaction(async (tx) => {
+				const users = await tx
+					.insert(schema.users)
+					.values({ ...authDto, password: hash })
+					.returning(returningKeys)
+					.execute();
+
+				user = users[0] as User;
+
+				const channel = await this.channelService.createChannel(authDto.channel, user, tx);
+				await this.userService.setCurrentChannel({ currentChannelId: channel.id }, user, tx);
+
+				user = await this.userService.getMe(user, tx);
+			});
+
+			return user;
 		} catch (error: unknown) {
-			const { code, constraint } = error as IDrizzleError;
-			if (code === '23505' && constraint === 'users_email_unique') {
-				// The .code property can be accessed in a type-safe manner
-				throw new ConflictException('Email taken, a new user cannot be created with this email');
-			}
-
-			if (error instanceof Error) {
-				this.logger.error(error.message, error.stack);
-			}
-			throw new InternalServerErrorException('Something went wrong, try again later');
+			this.logger.error(error);
+			throw error;
 		}
 	}
 

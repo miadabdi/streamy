@@ -8,5 +8,6 @@ import { ChannelService } from './channel.service';
 	imports: [DrizzleModule, FileModule],
 	controllers: [ChannelController],
 	providers: [ChannelService],
+	exports: [ChannelService],
 })
 export class ChannelModule {}

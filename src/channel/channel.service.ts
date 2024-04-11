@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { and, eq, not } from 'drizzle-orm';
 import { GetUser } from '../common/decorators';
+import { TransactionType } from '../common/types/transaction.type';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
@@ -23,8 +24,10 @@ export class ChannelService {
 		private fileService: FileService,
 	) {}
 
-	async createChannel(createChannelDto: CreateChannelDto, @GetUser() user: User) {
-		const dupChannel = await this.drizzleService.db.query.channels.findFirst({
+	async createChannel(createChannelDto: CreateChannelDto, user: User, tx?: TransactionType) {
+		const manager = tx ? tx : this.drizzleService.db;
+
+		const dupChannel = await manager.query.channels.findFirst({
 			where: eq(schema.channels.username, createChannelDto.username),
 		});
 
@@ -33,7 +36,7 @@ export class ChannelService {
 		}
 
 		const { ...returningKeys } = channelsTableColumns;
-		const channel = await this.drizzleService.db
+		const channel = await manager
 			.insert(schema.channels)
 			.values({
 				ownerId: user.id,
