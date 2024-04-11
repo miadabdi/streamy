@@ -97,7 +97,7 @@ export const channels = pgTable(
 		ownerId: integer('owner_id')
 			.notNull()
 			.references(() => users.id),
-		avatar: varchar('description', { length: 2048 }).default('avatar-default.png'),
+		avatar: varchar('avatar', { length: 2048 }).default('avatar-default.png'),
 	},
 	(channels) => {
 		return {

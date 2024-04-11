@@ -59,3 +59,4 @@ export const BUCKETS = [
 ] as const;
 export const BUCKET_NAMES = BUCKETS.map((bucket) => bucket.name);
 export type BUCKET_NAMES_TYPE = (typeof BUCKET_NAMES)[0];
+export const CHANNEL_USERNAME_REGEX = '^(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$';

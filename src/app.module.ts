@@ -6,6 +6,7 @@ import { FileModule } from './file/file.module';
 import { MailModule } from './mail/mail.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
 import { UserModule } from './user/user.module';
+import { ChannelModule } from './channel/channel.module';
 
 @Module({
 	imports: [
@@ -17,6 +18,7 @@ import { UserModule } from './user/user.module';
 		FileModule,
 		UserModule,
 		MailModule,
+		ChannelModule,
 	],
 	controllers: [],
 	providers: [],

@@ -19,9 +19,7 @@ import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { usersTableColumns } from '../drizzle/table-columns';
 import { MailService } from '../mail/mail.service';
-import { AuthDto } from './dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AuthDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 
 @Injectable()
 export class AuthService {
