@@ -103,7 +103,8 @@ export class MinioClientService {
 			throw new InternalServerErrorException('Error uploading file');
 		}
 
-		if (!bucket.allowedMimeTypes.includes(file.mimetype as any)) {
+		const allowedMimeTypes = bucket.allowedMimeTypes as unknown as string[];
+		if (!allowedMimeTypes.includes(file.mimetype)) {
 			throw new BadRequestException('File type not supported');
 		}
 

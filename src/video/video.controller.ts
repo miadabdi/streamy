@@ -63,8 +63,8 @@ export class VideoController {
 
 	@HttpCode(HttpStatus.OK)
 	@Get('/by-video-id')
-	getVideoByUsername(@Query() getVideoByUsernameDto: GetVideoByVideoIdDto, @GetUser() user: User) {
-		return this.videoService.getVideoByVideoId(getVideoByUsernameDto.videoId);
+	getVideoByVideoId(@Query() getVideoByVideoIdDto: GetVideoByVideoIdDto, @GetUser() user: User) {
+		return this.videoService.getVideoByVideoId(getVideoByVideoIdDto.videoId);
 	}
 
 	@HttpCode(HttpStatus.OK)

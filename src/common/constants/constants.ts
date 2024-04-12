@@ -74,6 +74,22 @@ export const BUCKETS = [
 		],
 	},
 	{
+		name: 'subtitlefiles',
+		policy: {
+			Version: '2012-10-17',
+			Statement: [
+				{
+					Sid: 'PublicRead',
+					Effect: 'Allow',
+					Principal: '*',
+					Action: ['s3:GetObject', 's3:GetObjectVersion'],
+					Resource: [`arn:aws:s3:::subtitlefiles/*`],
+				},
+			],
+		},
+		allowedMimeTypes: ['text/plain', 'application/x-subrip', 'application/octet-stream'],
+	},
+	{
 		name: 'public',
 		policy: {
 			Version: '2012-10-17',

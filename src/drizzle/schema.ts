@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
 	boolean,
+	index,
 	integer,
 	pgEnum,
 	pgTable,
@@ -115,6 +116,7 @@ export const channelsRelations = relations(channels, ({ many, one }) => ({
 		fields: [channels.avatarFileId],
 		references: [files.id],
 	}),
+	videos: many(videos),
 }));
 
 // declaring enum in database
@@ -154,7 +156,7 @@ export const videos = pgTable(
 	},
 	(videos) => {
 		return {
-			channelIdx: uniqueIndex('videos_channel_id_idx').on(videos.channelId),
+			channelIdx: index('videos_channel_id_idx').on(videos.channelId),
 			videoIdx: uniqueIndex('videos_video_id_idx').on(videos.videoId),
 		};
 	},
@@ -165,6 +167,35 @@ export const videosRelations = relations(videos, ({ many, one }) => ({
 		fields: [videos.channelId],
 		references: [channels.id],
 	}),
+	subtitles: many(subtitles),
+}));
+
+export const subtitles = pgTable(
+	'subtitles',
+	{
+		id: serial('id').primaryKey(),
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+		isActive: boolean('is_active').default(true),
+		deletedAt: timestamp('deleted_at', { precision: 6, withTimezone: true }),
+		langRFC5646: varchar('lang_RFC5646', { length: 256 }).notNull(),
+		videoId: integer('video_id')
+			.notNull()
+			.references(() => videos.id),
+		fileId: integer('file_id').references(() => files.id),
+	},
+	(subtitles) => {
+		return {};
+	},
+);
+
+export const subtitlesRelations = relations(subtitles, ({ many, one }) => ({
+	video: one(videos, {
+		fields: [subtitles.videoId],
+		references: [videos.id],
+	}),
 }));
 
 export const VideoProccessingStatusEnum = z.enum(videoProccessingStatus.enumValues);
@@ -173,3 +204,4 @@ export type User = typeof users.$inferSelect;
 export type File = typeof files.$inferSelect;
 export type Channel = typeof channels.$inferSelect;
 export type Video = typeof videos.$inferSelect;
+export type Subtitle = typeof subtitles.$inferSelect;

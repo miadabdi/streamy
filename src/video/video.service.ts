@@ -123,12 +123,18 @@ export class VideoService {
 	async getVideoByVideoId(videoId: string) {
 		return this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.videoId, videoId),
+			with: {
+				subtitles: true,
+			},
 		});
 	}
 
 	async getVideoById(id: number) {
 		return this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.id, id),
+			with: {
+				subtitles: true,
+			},
 		});
 	}
 
