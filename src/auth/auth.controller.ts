@@ -3,9 +3,7 @@ import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Response } from 'express';
 import { JWT_COOKIE_NAME } from '../common/constants';
 import { AuthService } from './auth.service';
-import { AuthDto } from './dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ForgotPasswordDto, ResetPasswordDto, SignInDto, SignUpDto } from './dto';
 
 @UseGuards(ThrottlerGuard)
 @Throttle({ default: { limit: 10, ttl: 60 * 10 } }) // 10 auth requests for 10 minutes
@@ -15,14 +13,14 @@ export class AuthController {
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post('/signup')
-	signUp(@Body() authDto: AuthDto) {
-		return this.authService.signUp(authDto);
+	signUp(@Body() signUpDto: SignUpDto) {
+		return this.authService.signUp(signUpDto);
 	}
 
 	@HttpCode(HttpStatus.OK)
 	@Post('/signin')
-	signIn(@Res({ passthrough: true }) response: Response, @Body() authDto: AuthDto) {
-		return this.authService.signIn(response, authDto);
+	signIn(@Res({ passthrough: true }) response: Response, @Body() signInDto: SignInDto) {
+		return this.authService.signIn(response, signInDto);
 	}
 
 	@HttpCode(HttpStatus.OK)

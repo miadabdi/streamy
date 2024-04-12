@@ -20,7 +20,7 @@ import { User } from '../drizzle/schema';
 import { usersTableColumns } from '../drizzle/table-columns';
 import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
-import { AuthDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
+import { ForgotPasswordDto, ResetPasswordDto, SignInDto, SignUpDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -43,9 +43,9 @@ export class AuthService {
 		return argon.verify(hashed, input);
 	}
 
-	async signUp(authDto: AuthDto) {
+	async signUp(signUpDto: SignUpDto) {
 		const uniqueUser = await this.drizzleService.db.query.users.findFirst({
-			where: eq(schema.users.email, authDto.email),
+			where: eq(schema.users.email, signUpDto.email),
 		});
 		if (uniqueUser) {
 			throw new ConflictException('Email taken, a new user cannot be created with this email');
@@ -62,18 +62,18 @@ export class AuthService {
 
 			let user: User;
 
-			const hash = await this.hash(authDto.password);
+			const hash = await this.hash(signUpDto.password);
 
 			await this.drizzleService.db.transaction(async (tx) => {
 				const users = await tx
 					.insert(schema.users)
-					.values({ ...authDto, password: hash })
+					.values({ ...signUpDto, password: hash })
 					.returning(returningKeys)
 					.execute();
 
 				user = users[0] as User;
 
-				const channel = await this.channelService.createChannel(authDto.channel, user, tx);
+				const channel = await this.channelService.createChannel(signUpDto.channel, user, tx);
 				await this.userService.setCurrentChannel({ currentChannelId: channel.id }, user, tx);
 
 				user = await this.userService.getMe(user, tx);
@@ -86,16 +86,16 @@ export class AuthService {
 		}
 	}
 
-	async signIn(response: Response, authDto: AuthDto) {
+	async signIn(response: Response, signInDto: SignInDto) {
 		const user = await this.drizzleService.db.query.users.findFirst({
-			where: eq(schema.users.email, authDto.email),
+			where: eq(schema.users.email, signInDto.email),
 		});
 
 		if (!user) {
 			throw new ForbiddenException('Credentials is incorrect');
 		}
 
-		const pwMatch = await this.matchHash(user.password, authDto.password);
+		const pwMatch = await this.matchHash(user.password, signInDto.password);
 
 		if (!pwMatch) {
 			throw new ForbiddenException('Credentials is incorrect');
@@ -116,7 +116,7 @@ export class AuthService {
 		await this.drizzleService.db
 			.update(schema.users)
 			.set({ lastLoginAt: new Date() })
-			.where(eq(schema.users.email, authDto.email))
+			.where(eq(schema.users.email, signInDto.email))
 			.execute();
 	}
 

@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
 import { CreateChannelDto } from '../../channel/dto';
 
-export class AuthDto {
+export class SignUpDto {
 	@IsEmail()
 	@IsNotEmpty()
 	email: string;
