@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import { RFC5646_LANGUAGE_TAGS } from '../common/constants';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
@@ -108,13 +109,21 @@ export class SubtitleService {
 		});
 	}
 
+	getLanguageOfRFC5646(identifier: string, @GetUser() user: User) {
+		return {
+			language: RFC5646_LANGUAGE_TAGS[identifier],
+		};
+	}
+
 	async getSubtitleById(id: number) {
-		return this.drizzleService.db.query.subtitles.findFirst({
+		const subtitle = await this.drizzleService.db.query.subtitles.findFirst({
 			where: eq(schema.subtitles.id, id),
 			with: {
 				video: true,
 			},
 		});
+
+		return subtitle;
 	}
 
 	async deleteSubtitle(deleteSubtitleDto: DeleteSubtitleDto, @GetUser() user: User) {

@@ -5,6 +5,7 @@ import {
 	Get,
 	HttpCode,
 	HttpStatus,
+	Param,
 	Patch,
 	Post,
 	Query,
@@ -51,6 +52,12 @@ export class SubtitleController {
 	@Get('/by-id')
 	getSubtitleById(@Query() getSubtitleByIdDto: GetSubtitleByIdDto, @GetUser() user: User) {
 		return this.subtitleService.getSubtitleById(getSubtitleByIdDto.id);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Get('/by-language-rfc5646/:identifier')
+	getLanguageOfRFC5646(@Param('identifier') identifier: string, @GetUser() user: User) {
+		return this.subtitleService.getLanguageOfRFC5646(identifier, user);
 	}
 
 	@HttpCode(HttpStatus.OK)
