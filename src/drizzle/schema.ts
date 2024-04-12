@@ -131,6 +131,7 @@ export const videos = pgTable(
 	'videos',
 	{
 		id: serial('id').primaryKey(),
+		videoId: varchar('video_id', { length: 20 }),
 		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
 		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
 			.defaultNow()
@@ -154,6 +155,7 @@ export const videos = pgTable(
 	(videos) => {
 		return {
 			channelIdx: uniqueIndex('videos_channel_id_idx').on(videos.channelId),
+			videoIdx: uniqueIndex('videos_video_id_idx').on(videos.videoId),
 		};
 	},
 );

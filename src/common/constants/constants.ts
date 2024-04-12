@@ -51,6 +51,29 @@ export const BUCKETS = [
 		],
 	},
 	{
+		name: 'videothumbnails',
+		policy: {
+			Version: '2012-10-17',
+			Statement: [
+				{
+					Sid: 'PublicRead',
+					Effect: 'Allow',
+					Principal: '*',
+					Action: ['s3:GetObject', 's3:GetObjectVersion'],
+					Resource: [`arn:aws:s3:::videothumbnails/*`],
+				},
+			],
+		},
+		allowedMimeTypes: [
+			'image/apng',
+			'image/avif',
+			'image/gif',
+			'image/jpeg',
+			'image/png',
+			'image/webp',
+		],
+	},
+	{
 		name: 'public',
 		policy: {
 			Version: '2012-10-17',
