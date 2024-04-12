@@ -131,7 +131,7 @@ export class SubtitleService {
 
 		await this.drizzleService.db
 			.update(schema.subtitles)
-			.set({ isActive: false })
+			.set({ isActive: false, deletedAt: new Date() })
 			.where(eq(schema.subtitles.id, deleteSubtitleDto.id));
 
 		return {

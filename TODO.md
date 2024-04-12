@@ -8,6 +8,7 @@ This is a video-sharing platform.
 - [ ] complete tests
 - [ ] setup OpenApi V3
 - [ ] setup pagination
+- [ ] find a way to add computed values for language name in subtitle schema
 - [ ] implement log aggregation
 - [ ] implement google oauth
 - [ ] use templates for emails

@@ -143,7 +143,7 @@ export class VideoService {
 
 		await this.drizzleService.db
 			.update(schema.videos)
-			.set({ isActive: false })
+			.set({ isActive: false, deletedAt: new Date() })
 			.where(eq(schema.videos.id, deleteVideoDto.id));
 
 		return {

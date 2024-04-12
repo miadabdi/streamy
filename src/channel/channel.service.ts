@@ -129,7 +129,7 @@ export class ChannelService {
 
 		await this.drizzleService.db
 			.update(schema.channels)
-			.set({ isActive: false })
+			.set({ isActive: false, deletedAt: new Date() })
 			.where(eq(schema.channels.id, deleteChannelDto.id));
 
 		return {

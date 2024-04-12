@@ -5,6 +5,7 @@ import {
 	integer,
 	pgEnum,
 	pgTable,
+	primaryKey,
 	serial,
 	text,
 	timestamp,
@@ -119,7 +120,6 @@ export const channelsRelations = relations(channels, ({ many, one }) => ({
 	videos: many(videos),
 }));
 
-// declaring enum in database
 export const videoProccessingStatus = pgEnum('video_proccessing_status', [
 	'ready_for_upload',
 	'ready_for_processing',
@@ -128,6 +128,7 @@ export const videoProccessingStatus = pgEnum('video_proccessing_status', [
 	'failed_in_processing',
 	'done',
 ]);
+export const VideoProccessingStatusEnum = z.enum(videoProccessingStatus.enumValues);
 
 export const videos = pgTable(
 	'videos',
@@ -152,7 +153,9 @@ export const videos = pgTable(
 			.references(() => channels.id),
 		duration: integer('duration'),
 		thumbnailFileId: integer('thumbnail_file_id').references(() => files.id),
-		processingStatus: videoProccessingStatus('processing_status'),
+		processingStatus: videoProccessingStatus('processing_status').default(
+			VideoProccessingStatusEnum.Enum.ready_for_upload,
+		),
 	},
 	(videos) => {
 		return {
@@ -168,6 +171,7 @@ export const videosRelations = relations(videos, ({ many, one }) => ({
 		references: [channels.id],
 	}),
 	subtitles: many(subtitles),
+	playlistsVideos: many(playlistsVideos),
 }));
 
 export const subtitles = pgTable(
@@ -198,10 +202,73 @@ export const subtitlesRelations = relations(subtitles, ({ many, one }) => ({
 	}),
 }));
 
-export const VideoProccessingStatusEnum = z.enum(videoProccessingStatus.enumValues);
+export const playlistPrivacy = pgEnum('playlist_privacy', ['private', 'public']);
+export const PlaylistPrivacyEnum = z.enum(playlistPrivacy.enumValues);
+
+export const playlistType = pgEnum('playlist_type', ['likes', 'dislikes', 'watched', 'custom']);
+export const PlaylistTypeEnum = z.enum(playlistType.enumValues);
+
+export const playlists = pgTable(
+	'playlists',
+	{
+		id: serial('id').primaryKey(),
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+		isActive: boolean('is_active').default(true),
+		deletedAt: timestamp('deleted_at', { precision: 6, withTimezone: true }),
+		name: varchar('name', { length: 256 }).notNull(),
+		description: varchar('description', { length: 2048 }).notNull(),
+		channelId: integer('channel_id').references(() => channels.id),
+		privacy: playlistPrivacy('privacy').default(PlaylistPrivacyEnum.Enum.private),
+		type: playlistType('type').notNull(),
+	},
+	(playlists) => {
+		return {};
+	},
+);
+
+export const playlistsRelations = relations(playlists, ({ many, one }) => ({
+	channel: one(channels, {
+		fields: [playlists.channelId],
+		references: [channels.id],
+	}),
+	playlistsVideos: many(playlistsVideos),
+}));
+
+export const playlistsVideos = pgTable(
+	'playlists_videos',
+	{
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		playlistId: integer('playlist_id').references(() => playlists.id),
+		videoId: integer('video_id').references(() => videos.id),
+	},
+	(playlistsVideos) => {
+		return {
+			pk: primaryKey({
+				name: 'playlists_videos_pk',
+				columns: [playlistsVideos.videoId, playlistsVideos.playlistId],
+			}),
+		};
+	},
+);
+
+export const playlistsVideosRelations = relations(playlistsVideos, ({ many, one }) => ({
+	playlist: one(playlists, {
+		fields: [playlistsVideos.playlistId],
+		references: [playlists.id],
+	}),
+	video: one(videos, {
+		fields: [playlistsVideos.videoId],
+		references: [videos.id],
+	}),
+}));
 
 export type User = typeof users.$inferSelect;
 export type File = typeof files.$inferSelect;
 export type Channel = typeof channels.$inferSelect;
 export type Video = typeof videos.$inferSelect;
 export type Subtitle = typeof subtitles.$inferSelect;
+export type Playlist = typeof playlists.$inferSelect;
+export type PlaylistsVideos = typeof playlistsVideos.$inferSelect;
