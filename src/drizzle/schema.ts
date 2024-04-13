@@ -268,6 +268,53 @@ export const playlistsVideosRelations = relations(playlistsVideos, ({ many, one 
 	}),
 }));
 
+export const tags = pgTable(
+	'tags',
+	{
+		id: serial('id').primaryKey(),
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+		isActive: boolean('is_active').default(true),
+		deletedAt: timestamp('deleted_at', { precision: 6, withTimezone: true }),
+		title: varchar('title', { length: 128 }).notNull(),
+	},
+	(tags) => {
+		return {
+			tagIdx: uniqueIndex('tags_title_idx').on(tags.title),
+		};
+	},
+);
+
+export const tagsVideos = pgTable(
+	'tags_videos',
+	{
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		tagId: integer('tag_id').references(() => tags.id),
+		videoId: integer('video_id').references(() => videos.id),
+	},
+	(tagsVideos) => {
+		return {
+			pk: primaryKey({
+				name: 'tags_videos_pk',
+				columns: [tagsVideos.videoId, tagsVideos.tagId],
+			}),
+		};
+	},
+);
+
+export const tagsVideosRelations = relations(tagsVideos, ({ many, one }) => ({
+	tag: one(tags, {
+		fields: [tagsVideos.tagId],
+		references: [tags.id],
+	}),
+	video: one(videos, {
+		fields: [tagsVideos.videoId],
+		references: [videos.id],
+	}),
+}));
+
 export type User = typeof users.$inferSelect;
 export type File = typeof files.$inferSelect;
 export type Channel = typeof channels.$inferSelect;
@@ -275,3 +322,5 @@ export type Video = typeof videos.$inferSelect;
 export type Subtitle = typeof subtitles.$inferSelect;
 export type Playlist = typeof playlists.$inferSelect;
 export type PlaylistsVideos = typeof playlistsVideos.$inferSelect;
+export type Tag = typeof tags.$inferSelect;
+export type TagsVideos = typeof tagsVideos.$inferSelect;

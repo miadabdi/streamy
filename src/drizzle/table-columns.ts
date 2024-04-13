@@ -8,3 +8,5 @@ export const videosTableColumns = getTableColumns(schema.videos);
 export const subtitlesTableColumns = getTableColumns(schema.subtitles);
 export const playlistTableColumns = getTableColumns(schema.playlists);
 export const playlistsVideosTableColumns = getTableColumns(schema.playlistsVideos);
+export const tagsTableColumns = getTableColumns(schema.tags);
+export const tagsVideosTableColumns = getTableColumns(schema.tagsVideos);
