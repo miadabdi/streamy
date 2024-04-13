@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { eq } from 'drizzle-orm';
+import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
@@ -16,21 +17,8 @@ export class VideoService {
 	constructor(
 		private drizzleService: DrizzleService,
 		private fileService: FileService,
+		private channelService: ChannelService,
 	) {}
-
-	async userOwnsChannel(id: number, user: User) {
-		const channel = await this.drizzleService.db.query.channels.findFirst({
-			where: eq(schema.channels.id, id),
-		});
-
-		if (!channel) {
-			throw new NotFoundException('Channel not found');
-		}
-
-		if (channel.ownerId !== user.id) {
-			throw new ForbiddenException("You don't own this channel");
-		}
-	}
 
 	async userOwnsVideo(id: number, user: User) {
 		const video = await this.drizzleService.db.query.videos.findFirst({
@@ -41,11 +29,11 @@ export class VideoService {
 		});
 
 		if (!video) {
-			throw new NotFoundException('Video not found');
+			throw new NotFoundException(`Video with id ${id} not found`);
 		}
 
 		if (video.channel.ownerId !== user.id) {
-			throw new ForbiddenException("You don't own this video");
+			throw new ForbiddenException(`You don't own video with id ${id}`);
 		}
 	}
 
@@ -61,7 +49,7 @@ export class VideoService {
 	}
 
 	async createVideo(createVideoDto: CreateVideoDto, user: User) {
-		await this.userOwnsChannel(createVideoDto.channelId, user);
+		await this.channelService.userOwnsChannel(createVideoDto.channelId, user);
 
 		const videoId = await this.generateVideoId();
 

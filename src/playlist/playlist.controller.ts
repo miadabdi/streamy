@@ -14,6 +14,7 @@ import { GetUser } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
 import { User } from '../drizzle/schema';
 import { CreatePlaylistDto, DeletePlaylistDto, GetPlaylistByIdDto, UpdatePlaylistDto } from './dto';
+import { AddVideosDto } from './dto/add-videos.dto';
 import { PlaylistService } from './playlist.service';
 
 @Controller('/playlist')
@@ -25,6 +26,12 @@ export class PlaylistController {
 	@Post()
 	createPlaylist(@Body() createPlaylistDto: CreatePlaylistDto, @GetUser() user: User) {
 		return this.playlistService.createPlaylist(createPlaylistDto, user);
+	}
+
+	@HttpCode(HttpStatus.CREATED)
+	@Post('/add-videos')
+	addVideos(@Body() addVideosDto: AddVideosDto, @GetUser() user: User) {
+		return this.playlistService.addVideos(addVideosDto, user);
 	}
 
 	@HttpCode(HttpStatus.OK)

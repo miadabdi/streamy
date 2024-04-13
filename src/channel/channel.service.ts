@@ -24,6 +24,20 @@ export class ChannelService {
 		private fileService: FileService,
 	) {}
 
+	async userOwnsChannel(id: number, user) {
+		const channel = await this.drizzleService.db.query.channels.findFirst({
+			where: eq(schema.channels.id, id),
+		});
+
+		if (!channel) {
+			throw new NotFoundException(`Channel with id ${id} not found`);
+		}
+
+		if (channel.ownerId !== user.id) {
+			throw new ForbiddenException(`You don't own channel with id ${id}`);
+		}
+	}
+
 	async createChannel(createChannelDto: CreateChannelDto, user: User, tx?: TransactionType) {
 		const manager = tx ? tx : this.drizzleService.db;
 
@@ -53,17 +67,7 @@ export class ChannelService {
 		user: User,
 		avatar?: Express.Multer.File,
 	) {
-		const channel = await this.drizzleService.db.query.channels.findFirst({
-			where: eq(schema.channels.id, updateChannelDto.id),
-		});
-
-		if (!channel) {
-			throw new NotFoundException('Channel not found');
-		}
-
-		if (channel.ownerId !== user.id) {
-			throw new ForbiddenException("You don't own this channel");
-		}
+		await this.userOwnsChannel(updateChannelDto.id, user);
 
 		if (updateChannelDto.username) {
 			const dupChannel = await this.drizzleService.db.query.channels.findFirst({
@@ -115,17 +119,7 @@ export class ChannelService {
 	}
 
 	async deleteChannel(deleteChannelDto: DeleteChannelDto, @GetUser() user: User) {
-		const channel = await this.drizzleService.db.query.channels.findFirst({
-			where: eq(schema.channels.id, deleteChannelDto.id),
-		});
-
-		if (!channel) {
-			throw new NotFoundException('Channel not found');
-		}
-
-		if (channel.ownerId !== user.id) {
-			throw new ForbiddenException("You don't own this channel");
-		}
+		await this.userOwnsChannel(deleteChannelDto.id, user);
 
 		await this.drizzleService.db
 			.update(schema.channels)

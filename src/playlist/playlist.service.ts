@@ -1,12 +1,15 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { playlistTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
+import { VideoService } from '../video/video.service';
 import { CreatePlaylistDto, DeletePlaylistDto, UpdatePlaylistDto } from './dto';
+import { AddVideosDto } from './dto/add-videos.dto';
 
 @Injectable()
 export class PlaylistService {
@@ -15,21 +18,9 @@ export class PlaylistService {
 	constructor(
 		private drizzleService: DrizzleService,
 		private fileService: FileService,
+		private videoService: VideoService,
+		private channelService: ChannelService,
 	) {}
-
-	async userOwnsChannel(id: number, user: User) {
-		const channel = await this.drizzleService.db.query.channels.findFirst({
-			where: eq(schema.channels.id, id),
-		});
-
-		if (!channel) {
-			throw new NotFoundException('Channel not found');
-		}
-
-		if (channel.ownerId !== user.id) {
-			throw new ForbiddenException("You don't own this channel");
-		}
-	}
 
 	async userOwnsPlaylist(id: number, user: User) {
 		const playlist = await this.drizzleService.db.query.playlists.findFirst({
@@ -49,7 +40,7 @@ export class PlaylistService {
 	}
 
 	async createPlaylist(createPlaylistDto: CreatePlaylistDto, user: User) {
-		await this.userOwnsChannel(createPlaylistDto.channelId, user);
+		await this.channelService.userOwnsChannel(createPlaylistDto.channelId, user);
 
 		const { ...returningKeys } = playlistTableColumns;
 		const playlists = await this.drizzleService.db
@@ -77,6 +68,26 @@ export class PlaylistService {
 			.execute();
 
 		return updatedPlaylist[0];
+	}
+
+	async addVideos(addVideosDto: AddVideosDto, user: User) {
+		await this.userOwnsPlaylist(addVideosDto.playlistId, user);
+
+		for (const videoId of addVideosDto.videoIds) {
+			await this.videoService.userOwnsVideo(videoId, user);
+		}
+
+		const values = addVideosDto.videoIds.map((videoId) => {
+			return {
+				videoId,
+				playlistId: addVideosDto.playlistId,
+			};
+		});
+		await this.drizzleService.db.insert(schema.playlistsVideos).values(values).execute();
+
+		return {
+			message: 'Videos were added to the playlist',
+		};
 	}
 
 	async getPlaylistById(id: number) {

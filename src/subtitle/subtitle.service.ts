@@ -7,6 +7,7 @@ import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { subtitlesTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
+import { VideoService } from '../video/video.service';
 import { CreateSubtitleDto, DeleteSubtitleDto, UpdateSubtitleDto } from './dto';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class SubtitleService {
 	constructor(
 		private drizzleService: DrizzleService,
 		private fileService: FileService,
+		private videoService: VideoService,
 	) {}
 
 	async userOwnsSubtitle(id: number, user: User) {
@@ -31,28 +33,11 @@ export class SubtitleService {
 		});
 
 		if (!subtitle) {
-			throw new NotFoundException('Subtitle not found');
+			throw new NotFoundException(`Subtitle with id ${id} not found`);
 		}
 
 		if (subtitle.video.channel.ownerId !== user.id) {
-			throw new ForbiddenException("You don't own this subtitle");
-		}
-	}
-
-	async userOwnsVideo(id: number, user: User) {
-		const video = await this.drizzleService.db.query.videos.findFirst({
-			where: eq(schema.videos.id, id),
-			with: {
-				channel: true,
-			},
-		});
-
-		if (!video) {
-			throw new NotFoundException('Video not found');
-		}
-
-		if (video.channel.ownerId !== user.id) {
-			throw new ForbiddenException("You don't own this video");
+			throw new ForbiddenException(`You don't own subtitle with id ${id}`);
 		}
 	}
 
@@ -61,7 +46,7 @@ export class SubtitleService {
 		file: Express.Multer.File,
 		user: User,
 	) {
-		await this.userOwnsVideo(createSubtitleDto.videoId, user);
+		await this.videoService.userOwnsVideo(createSubtitleDto.videoId, user);
 
 		const fileRecord = await this.fileService.uploadAndCreateFileRecord(
 			file,
