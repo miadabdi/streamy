@@ -8,6 +8,7 @@ import { MailModule } from './mail/mail.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
 import { PlaylistModule } from './playlist/playlist.module';
 import { SubtitleModule } from './subtitle/subtitle.module';
+import { TagModule } from './tag/tags.module';
 import { UserModule } from './user/user.module';
 import { VideoModule } from './video/video.module';
 
@@ -25,6 +26,7 @@ import { VideoModule } from './video/video.module';
 		VideoModule,
 		SubtitleModule,
 		PlaylistModule,
+		TagModule,
 	],
 	controllers: [],
 	providers: [],

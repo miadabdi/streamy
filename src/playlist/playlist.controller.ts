@@ -13,8 +13,13 @@ import {
 import { GetUser } from '../common/decorators';
 import { JwtAuthGuard } from '../common/guards';
 import { User } from '../drizzle/schema';
-import { CreatePlaylistDto, DeletePlaylistDto, GetPlaylistByIdDto, UpdatePlaylistDto } from './dto';
-import { AddVideosDto } from './dto/add-videos.dto';
+import {
+	AddVideosDto,
+	CreatePlaylistDto,
+	DeletePlaylistDto,
+	GetPlaylistByIdDto,
+	UpdatePlaylistDto,
+} from './dto';
 import { PlaylistService } from './playlist.service';
 
 @Controller('/playlist')

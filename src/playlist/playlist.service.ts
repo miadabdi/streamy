@@ -8,8 +8,7 @@ import { User } from '../drizzle/schema';
 import { playlistTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
 import { VideoService } from '../video/video.service';
-import { CreatePlaylistDto, DeletePlaylistDto, UpdatePlaylistDto } from './dto';
-import { AddVideosDto } from './dto/add-videos.dto';
+import { AddVideosDto, CreatePlaylistDto, DeletePlaylistDto, UpdatePlaylistDto } from './dto';
 
 @Injectable()
 export class PlaylistService {
