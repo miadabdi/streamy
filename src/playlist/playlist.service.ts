@@ -6,7 +6,6 @@ import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { playlistTableColumns } from '../drizzle/table-columns';
-import { FileService } from '../file/file.service';
 import { VideoService } from '../video/video.service';
 import { AddVideosDto, CreatePlaylistDto, DeletePlaylistDto, UpdatePlaylistDto } from './dto';
 
@@ -16,7 +15,6 @@ export class PlaylistService {
 
 	constructor(
 		private drizzleService: DrizzleService,
-		private fileService: FileService,
 		private videoService: VideoService,
 		private channelService: ChannelService,
 	) {}
