@@ -6,6 +6,7 @@ import { ConfigModuleSetup, ThrottlerModuleSetup } from './externalModules';
 import { FileModule } from './file/file.module';
 import { MailModule } from './mail/mail.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
+import { PlaylistModule } from './playlist/playlist.module';
 import { SubtitleModule } from './subtitle/subtitle.module';
 import { UserModule } from './user/user.module';
 import { VideoModule } from './video/video.module';
@@ -23,6 +24,7 @@ import { VideoModule } from './video/video.module';
 		ChannelModule,
 		VideoModule,
 		SubtitleModule,
+		PlaylistModule,
 	],
 	controllers: [],
 	providers: [],

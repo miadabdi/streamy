@@ -12,7 +12,7 @@ import {
 	uniqueIndex,
 	varchar,
 } from 'drizzle-orm/pg-core';
-import { z } from 'zod';
+import { strEnum } from '../common/helpers/str-enum';
 
 // Index name convention: [tableName]_[field]_idx
 
@@ -128,7 +128,8 @@ export const videoProccessingStatus = pgEnum('video_proccessing_status', [
 	'failed_in_processing',
 	'done',
 ]);
-export const VideoProccessingStatusEnum = z.enum(videoProccessingStatus.enumValues);
+export const VideoProccessingStatusEnum = strEnum(videoProccessingStatus.enumValues);
+export type TVideoProccessingStatusEnum = keyof typeof VideoProccessingStatusEnum;
 
 export const videos = pgTable(
 	'videos',
@@ -154,7 +155,7 @@ export const videos = pgTable(
 		duration: integer('duration'),
 		thumbnailFileId: integer('thumbnail_file_id').references(() => files.id),
 		processingStatus: videoProccessingStatus('processing_status').default(
-			VideoProccessingStatusEnum.Enum.ready_for_upload,
+			VideoProccessingStatusEnum.ready_for_upload,
 		),
 	},
 	(videos) => {
@@ -203,10 +204,12 @@ export const subtitlesRelations = relations(subtitles, ({ many, one }) => ({
 }));
 
 export const playlistPrivacy = pgEnum('playlist_privacy', ['private', 'public']);
-export const PlaylistPrivacyEnum = z.enum(playlistPrivacy.enumValues);
+export const PlaylistPrivacyEnum = strEnum(playlistPrivacy.enumValues);
+export type TPlaylistPrivacyEnum = keyof typeof PlaylistPrivacyEnum;
 
 export const playlistType = pgEnum('playlist_type', ['likes', 'dislikes', 'watched', 'custom']);
-export const PlaylistTypeEnum = z.enum(playlistType.enumValues);
+export const PlaylistTypeEnum = strEnum(playlistType.enumValues);
+export type TPlaylistTypeEnum = keyof typeof PlaylistTypeEnum;
 
 export const playlists = pgTable(
 	'playlists',
@@ -221,8 +224,8 @@ export const playlists = pgTable(
 		name: varchar('name', { length: 256 }).notNull(),
 		description: varchar('description', { length: 2048 }).notNull(),
 		channelId: integer('channel_id').references(() => channels.id),
-		privacy: playlistPrivacy('privacy').default(PlaylistPrivacyEnum.Enum.private),
-		type: playlistType('type').notNull(),
+		privacy: playlistPrivacy('privacy').default(PlaylistPrivacyEnum.private),
+		type: playlistType('type').default(PlaylistTypeEnum.custom),
 	},
 	(playlists) => {
 		return {};

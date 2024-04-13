@@ -71,7 +71,7 @@ export class VideoService {
 			.values({
 				...createVideoDto,
 				videoId,
-				processingStatus: schema.VideoProccessingStatusEnum.Enum.ready_for_upload,
+				processingStatus: schema.VideoProccessingStatusEnum.ready_for_upload,
 			})
 			.returning(returningKeys)
 			.execute();
