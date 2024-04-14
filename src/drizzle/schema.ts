@@ -1,6 +1,7 @@
 import { relations } from 'drizzle-orm';
 import {
 	boolean,
+	foreignKey,
 	index,
 	integer,
 	pgEnum,
@@ -342,6 +343,54 @@ export const tagsVideosRelations = relations(tagsVideos, ({ many, one }) => ({
 		fields: [tagsVideos.videoId],
 		references: [videos.id],
 	}),
+}));
+
+export const comments = pgTable(
+	'comments',
+	{
+		id: serial('id').primaryKey(),
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		updatedAt: timestamp('updated_at', { precision: 6, withTimezone: true })
+			.defaultNow()
+			.$onUpdate(() => new Date()),
+		isActive: boolean('is_active').default(true),
+		deletedAt: timestamp('deleted_at', { precision: 6, withTimezone: true }),
+		isEdited: boolean('is_edited').default(false),
+		videoId: integer('video_id')
+			.notNull()
+			.references(() => videos.id),
+		ownerId: integer('owner_id')
+			.notNull()
+			.references(() => users.id),
+		replyTo: integer('reply_to'),
+		content: varchar('content', { length: 1024 }).notNull(),
+	},
+	(comments) => {
+		return {
+			videoIdx: index('comments_video_id_idx').on(comments.videoId),
+			replyReference: foreignKey({
+				columns: [comments.replyTo],
+				foreignColumns: [comments.id],
+			}).onDelete('set null'),
+		};
+	},
+);
+
+export const commentsRelations = relations(comments, ({ many, one }) => ({
+	video: one(videos, {
+		fields: [comments.videoId],
+		references: [videos.id],
+	}),
+	owner: one(users, {
+		fields: [comments.ownerId],
+		references: [users.id],
+	}),
+	repliedTo: one(comments, {
+		fields: [comments.replyTo],
+		references: [comments.id],
+		relationName: 'comments_parent',
+	}),
+	replies: many(comments, { relationName: 'comments_parent' }),
 }));
 
 export type User = typeof users.$inferSelect;
