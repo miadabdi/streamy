@@ -13,7 +13,8 @@ import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { channelsTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
-import { CreateChannelDto, DeleteChannelDto, UpdateChannelDto } from './dto';
+import { AddSubscriptionDto, CreateChannelDto, DeleteChannelDto, UpdateChannelDto } from './dto';
+import { DeleteSubscriptionDto } from './dto/delete-subscription.dto';
 
 @Injectable()
 export class ChannelService {
@@ -106,15 +107,81 @@ export class ChannelService {
 		return updatedChannel[0];
 	}
 
+	async deleteSubscription(deleteSubscriptionDto: DeleteSubscriptionDto, user: User) {
+		await this.userOwnsChannel(deleteSubscriptionDto.followerId, user);
+
+		// const followee = await this.drizzleService.db.query.channels.findFirst({
+		// 	where: eq(schema.channels.id, deleteSubscriptionDto.followeeId),
+		// });
+
+		// if (!followee) {
+		// 	throw new NotFoundException(
+		// 		`Followee channel with id ${deleteSubscriptionDto.followeeId} not found`,
+		// 	);
+		// }
+
+		await this.drizzleService.db
+			.delete(schema.subscriptions)
+			.where(
+				and(
+					eq(schema.subscriptions.followeeId, deleteSubscriptionDto.followeeId),
+					eq(schema.subscriptions.followerId, deleteSubscriptionDto.followerId),
+				),
+			)
+			.execute();
+
+		return {
+			message: 'Subscription deleted successfully',
+		};
+	}
+
+	async addSubscription(addSubscriptionDto: AddSubscriptionDto, user: User) {
+		await this.userOwnsChannel(addSubscriptionDto.followerId, user);
+
+		const followee = await this.drizzleService.db.query.channels.findFirst({
+			where: eq(schema.channels.id, addSubscriptionDto.followeeId),
+		});
+
+		if (!followee) {
+			throw new NotFoundException(
+				`Followee channel with id ${addSubscriptionDto.followeeId} not found`,
+			);
+		}
+
+		await this.drizzleService.db
+			.insert(schema.subscriptions)
+			.values(addSubscriptionDto)
+			.onConflictDoNothing()
+			.execute();
+
+		return {
+			message: 'Subscription added successfully',
+		};
+	}
+
 	async getChannelByUsername(username: string) {
 		return this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.username, username),
+			with: {
+				subscriptions: {
+					with: {
+						followee: true,
+					},
+				},
+			},
 		});
 	}
 
 	async getChannelById(id: number) {
 		return this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.id, id),
+			with: {
+				subscriptions: {
+					with: {
+						followee: true,
+					},
+				},
+			},
 		});
 	}
 
