@@ -118,6 +118,35 @@ export const channelsRelations = relations(channels, ({ many, one }) => ({
 		references: [files.id],
 	}),
 	videos: many(videos),
+	subscriptions: many(subscriptions),
+}));
+
+export const subscriptions = pgTable(
+	'subscriptions',
+	{
+		createdAt: timestamp('created_at', { precision: 6, withTimezone: true }).defaultNow(),
+		followerId: integer('follower_id').references(() => channels.id),
+		followeeId: integer('followee_id').references(() => channels.id),
+	},
+	(subscriptions) => {
+		return {
+			pk: primaryKey({
+				name: 'subscription_pk',
+				columns: [subscriptions.followeeId, subscriptions.followerId],
+			}),
+		};
+	},
+);
+
+export const subscriptionsRelations = relations(subscriptions, ({ many, one }) => ({
+	follower: one(channels, {
+		fields: [subscriptions.followerId],
+		references: [channels.id],
+	}),
+	followee: one(channels, {
+		fields: [subscriptions.followeeId],
+		references: [channels.id],
+	}),
 }));
 
 export const videoProccessingStatus = pgEnum('video_proccessing_status', [
@@ -324,3 +353,4 @@ export type Playlist = typeof playlists.$inferSelect;
 export type PlaylistsVideos = typeof playlistsVideos.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
 export type TagsVideos = typeof tagsVideos.$inferSelect;
+export type Subscriptions = typeof subscriptions.$inferSelect;

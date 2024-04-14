@@ -10,3 +10,4 @@ export const playlistTableColumns = getTableColumns(schema.playlists);
 export const playlistsVideosTableColumns = getTableColumns(schema.playlistsVideos);
 export const tagsTableColumns = getTableColumns(schema.tags);
 export const tagsVideosTableColumns = getTableColumns(schema.tagsVideos);
+export const subscriptionsTableColumns = getTableColumns(schema.subscriptions);
