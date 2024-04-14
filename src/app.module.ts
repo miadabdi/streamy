@@ -11,6 +11,7 @@ import { SubtitleModule } from './subtitle/subtitle.module';
 import { TagModule } from './tag/tags.module';
 import { UserModule } from './user/user.module';
 import { VideoModule } from './video/video.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
 	imports: [
@@ -27,6 +28,7 @@ import { VideoModule } from './video/video.module';
 		SubtitleModule,
 		PlaylistModule,
 		TagModule,
+		CommentModule,
 	],
 	controllers: [],
 	providers: [],

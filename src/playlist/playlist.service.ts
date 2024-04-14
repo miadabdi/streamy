@@ -5,7 +5,7 @@ import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
-import { playlistTableColumns } from '../drizzle/table-columns';
+import { playlistsTableColumns } from '../drizzle/table-columns';
 import { VideoService } from '../video/video.service';
 import { AddVideosDto, CreatePlaylistDto, DeletePlaylistDto, UpdatePlaylistDto } from './dto';
 
@@ -39,7 +39,7 @@ export class PlaylistService {
 	async createPlaylist(createPlaylistDto: CreatePlaylistDto, user: User) {
 		await this.channelService.userOwnsChannel(createPlaylistDto.channelId, user);
 
-		const { ...returningKeys } = playlistTableColumns;
+		const { ...returningKeys } = playlistsTableColumns;
 		const playlists = await this.drizzleService.db
 			.insert(schema.playlists)
 			.values({
@@ -54,7 +54,7 @@ export class PlaylistService {
 	async updatePlaylist(updatePlaylistDto: UpdatePlaylistDto, user: User) {
 		await this.userOwnsPlaylist(updatePlaylistDto.id, user);
 
-		const { ...returningKeys } = playlistTableColumns;
+		const { ...returningKeys } = playlistsTableColumns;
 		const updatedPlaylist = await this.drizzleService.db
 			.update(schema.playlists)
 			.set({
