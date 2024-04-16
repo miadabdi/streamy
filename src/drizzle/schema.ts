@@ -64,9 +64,9 @@ export const files = pgTable(
 			.defaultNow()
 			.$onUpdate(() => new Date()),
 		bucketName: varchar('bucket_name', { length: 100 }).notNull(),
-		path: text('path').notNull(),
-		mimetype: varchar('mimetype', { length: 50 }).notNull(),
-		sizeInByte: integer('size_in_byte').notNull(),
+		path: varchar('path', { length: 1024 }).notNull(),
+		mimetype: varchar('mimetype', { length: 50 }),
+		sizeInByte: integer('size_in_byte'),
 		userId: integer('user_id')
 			.notNull()
 			.references(() => users.id),
@@ -187,6 +187,7 @@ export const videos = pgTable(
 		processingStatus: videoProccessingStatus('processing_status').default(
 			VideoProccessingStatusEnum.ready_for_upload,
 		),
+		videoFileId: integer('video_file_id').references(() => files.id),
 	},
 	(videos) => {
 		return {

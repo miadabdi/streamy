@@ -28,6 +28,53 @@ export const BUCKETS = [
 		],
 	},
 	{
+		name: 'hls',
+		policy: {
+			Version: '2012-10-17',
+			Statement: [
+				{
+					Sid: 'PublicRead',
+					Effect: 'Allow',
+					Principal: '*',
+					Action: ['s3:GetObject', 's3:GetObjectVersion'],
+					Resource: [`arn:aws:s3:::hls/*`],
+				},
+			],
+		},
+		allowedMimeTypes: [
+			'text/plain',
+			'video/mp4',
+			'video/mpeg',
+			'video/mp2t',
+			'video/webm',
+			'video/x-matroska',
+			'application/octet-stream',
+		],
+	},
+	{
+		name: 'videos',
+		policy: {
+			Version: '2012-10-17',
+			Statement: [
+				{
+					Sid: 'PublicRead',
+					Effect: 'Allow',
+					Principal: '*',
+					Action: ['s3:GetObject', 's3:GetObjectVersion'],
+					Resource: [`arn:aws:s3:::videos/*`],
+				},
+			],
+		},
+		allowedMimeTypes: [
+			'video/mp4',
+			'video/mpeg',
+			'video/mp2t',
+			'video/webm',
+			'video/x-matroska',
+			'application/octet-stream',
+		],
+	},
+	{
 		name: 'channelavatars',
 		policy: {
 			Version: '2012-10-17',

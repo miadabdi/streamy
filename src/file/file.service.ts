@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { randomBytes } from 'crypto';
 import { BUCKET_NAMES_TYPE } from '../common/constants';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { filesTableColumns } from '../drizzle/table-columns';
 import { MinioClientService } from '../minio-client/minio-client.service';
+import { GetPresignedGetURLDto } from './dto';
+import { CreateFileDto } from './dto/create-file.dto';
+import { GetPresignedPutURLDto } from './dto/get-presigned-put-url.dto';
 
 @Injectable()
 export class FileService {
@@ -16,11 +18,32 @@ export class FileService {
 		private drizzleService: DrizzleService,
 	) {}
 
-	async getPresignedURL(user: User) {
-		const random = randomBytes(8).toString('hex');
+	async getPresignedPutURL(getPresignedPutURLDto: GetPresignedPutURLDto, user: User) {
 		// return this.minioClientService.presignedPostUrl('images', 'random.png', ['image/png'], 5);
 
-		return this.minioClientService.presignedUrl('images', `${random}.png`, 3600);
+		const { url, randomFileName } = await this.minioClientService.presignedUrl(
+			getPresignedPutURLDto.bucket,
+			getPresignedPutURLDto.path,
+			3600,
+		);
+
+		await this.createFileRecord(
+			{
+				bucketName: getPresignedPutURLDto.bucket,
+				path: randomFileName,
+			},
+			user,
+		);
+
+		return url;
+	}
+
+	async getPresignedGetURL(getPresignedGetURLDto: GetPresignedGetURLDto, user: User) {
+		return this.minioClientService.presignedGetUrl(
+			getPresignedGetURLDto.bucket,
+			getPresignedGetURLDto.path,
+			3600,
+		);
 	}
 
 	async uploadAndCreateFileRecord(
@@ -31,13 +54,24 @@ export class FileService {
 	) {
 		const result = await this.minioClientService.putObject(file, directory, bucketName);
 
-		const fileRecord = await this.drizzleService.db
-			.insert(schema.files)
-			.values({
+		const fileRecord = await this.createFileRecord(
+			{
 				bucketName: result.bucketName,
 				path: result.path,
 				sizeInByte: result.size,
 				mimetype: result.mimetype,
+			},
+			user,
+		);
+
+		return fileRecord;
+	}
+
+	async createFileRecord(createFileDto: CreateFileDto, user: User) {
+		const fileRecord = await this.drizzleService.db
+			.insert(schema.files)
+			.values({
+				...createFileDto,
 				userId: user.id,
 			})
 			.returning(filesTableColumns);

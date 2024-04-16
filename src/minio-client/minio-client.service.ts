@@ -4,10 +4,10 @@ import {
 	InternalServerErrorException,
 	Logger,
 } from '@nestjs/common';
-import { createHash } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import moment from 'moment';
 import { MinioService } from 'nestjs-minio-client';
-import { join } from 'path';
+import { basename, dirname, join } from 'path';
 import { BUCKETS, BUCKET_NAMES_TYPE } from '../common/constants';
 
 @Injectable()
@@ -84,16 +84,39 @@ export class MinioClientService {
 		return preSigned;
 	}
 
-	async presignedUrl(bucketName: BUCKET_NAMES_TYPE, fileName: string, expiry: number) {
+	async presignedUrl(bucketName: BUCKET_NAMES_TYPE, path: string, expiry: number) {
+		const bucket = BUCKETS.find((bucket) => bucket.name === bucketName);
+
+		const random = randomBytes(8).toString('hex');
+		const name = basename(path);
+		const dir = dirname(path);
+
+		const randomFileName = `${dir != '.' ? dir + '/' : ''}${random}-${name}`;
+
+		// expiry in seconds
+		const url = await this.minio.client.presignedPutObject(bucket.name, randomFileName, expiry);
+
+		return {
+			url,
+			randomFileName,
+		};
+	}
+
+	async presignedGetUrl(bucketName: BUCKET_NAMES_TYPE, path: string, expiry: number) {
 		const bucket = BUCKETS.find((bucket) => bucket.name === bucketName);
 
 		// expiry in seconds
-		const url = await this.minio.client.presignedPutObject(bucket.name, fileName, expiry);
+		const url = await this.minio.client.presignedGetObject(bucket.name, path, expiry);
 
 		return url;
 	}
 
-	async putObject(file: Express.Multer.File, directory: string, bucketName: BUCKET_NAMES_TYPE) {
+	async putObject(
+		file: Express.Multer.File,
+		directory: string,
+		bucketName: BUCKET_NAMES_TYPE,
+		contentType?: string,
+	) {
 		const bucket = BUCKETS.find((bucket) => bucket.name === bucketName);
 
 		if (!bucket) {
@@ -109,7 +132,7 @@ export class MinioClientService {
 		}
 
 		const metaData = {
-			'Content-Type': file.mimetype,
+			'Content-Type': contentType ? contentType : file.mimetype,
 		};
 
 		const timestamp = Date.now().toString();
