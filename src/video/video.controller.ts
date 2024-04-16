@@ -25,6 +25,7 @@ import {
 	SetVideoThumbnailDto,
 	UpdateVideoDto,
 } from './dto';
+import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 import { VideoService } from './video.service';
 
 @Controller('/video')
@@ -65,6 +66,15 @@ export class VideoController {
 	@Get('/by-video-id')
 	getVideoByVideoId(@Query() getVideoByVideoIdDto: GetVideoByVideoIdDto, @GetUser() user: User) {
 		return this.videoService.getVideoByVideoId(getVideoByVideoIdDto.videoId);
+	}
+
+	@Get('/get-presigned-put-url')
+	@UseGuards(JwtAuthGuard)
+	async getPresignedPutURL(
+		@Query() getVideoPresignedPutURLDto: GetVideoPresignedPutURLDto,
+		@GetUser() user: User,
+	) {
+		return this.videoService.getPresignedPutURL(getVideoPresignedPutURLDto, user);
 	}
 
 	@HttpCode(HttpStatus.OK)

@@ -27,7 +27,7 @@ export class FileService {
 			3600,
 		);
 
-		await this.createFileRecord(
+		const fileRecord = await this.createFileRecord(
 			{
 				bucketName: getPresignedPutURLDto.bucket,
 				path: randomFileName,
@@ -35,7 +35,7 @@ export class FileService {
 			user,
 		);
 
-		return url;
+		return { url, fileRecord };
 	}
 
 	async getPresignedGetURL(getPresignedGetURLDto: GetPresignedGetURLDto, user: User) {

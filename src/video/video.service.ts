@@ -9,6 +9,7 @@ import { User } from '../drizzle/schema';
 import { videosTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
 import { CreateVideoDto, DeleteVideoDto, SetVideoThumbnailDto, UpdateVideoDto } from './dto';
+import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 
 @Injectable()
 export class VideoService {
@@ -115,6 +116,27 @@ export class VideoService {
 				subtitles: true,
 			},
 		});
+	}
+
+	async getPresignedPutURL(getVideoPresignedPutURLDto: GetVideoPresignedPutURLDto, user: User) {
+		const { url, fileRecord } = await this.fileService.getPresignedPutURL(
+			{
+				bucket: 'videos',
+				path: getVideoPresignedPutURLDto.path,
+			},
+			user,
+		);
+
+		await this.drizzleService.db
+			.update(schema.videos)
+			.set({ videoFileId: fileRecord.id })
+			.where(eq(schema.videos.id, getVideoPresignedPutURLDto.id))
+			.execute();
+
+		return {
+			url,
+			fileRecord,
+		};
 	}
 
 	async getVideoById(id: number) {
