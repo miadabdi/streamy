@@ -3,6 +3,10 @@ export const API_PREFIX = 'api';
 export const JWT_COOKIE_NAME = 'access_token';
 export const JWT_STRATEGY_NAME = 'jwt';
 export const ROUTE_TIMEOUT = 30000;
+
+export const RMQ_QUEUES = ['q.video.process'] as const;
+export type RMQ_QUEUES_TYPE = (typeof RMQ_QUEUES)[0];
+
 export const BUCKETS = [
 	{
 		name: 'images',

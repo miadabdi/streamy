@@ -8,6 +8,7 @@ import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { videosTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
+import { ProducerService } from '../queue/producer.service';
 import { CreateVideoDto, DeleteVideoDto, SetVideoThumbnailDto, UpdateVideoDto } from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 
@@ -19,7 +20,12 @@ export class VideoService {
 		private drizzleService: DrizzleService,
 		private fileService: FileService,
 		private channelService: ChannelService,
+		private producerService: ProducerService,
 	) {}
+
+	async sendVideoProcessMsg(payload: any) {
+		await this.producerService.addToQueue('q.video.process', payload);
+	}
 
 	async handleVideoUploadEvent(record: any) {
 		const bucketName = record.s3.bucket.name;
@@ -45,11 +51,20 @@ export class VideoService {
 			await this.drizzleService.db
 				.update(schema.videos)
 				.set({ processingStatus: schema.VideoProccessingStatusEnum.ready_for_processing })
+				.where(eq(schema.videos.videoFileId, fileRecord.id))
 				.execute();
 
 			this.logger.debug(
 				`Video upload event: Done, bucketName: ${bucketName}, filePath: ${filePath}`,
 			);
+
+			await this.sendVideoProcessMsg({
+				fileId: fileRecord.id,
+				bucketName,
+				filePath,
+				sizeInByte,
+				mimetype,
+			});
 		} else {
 			this.logger.debug(
 				`Video upload event: fileRecord not found, bucketName: ${bucketName}, filePath: ${filePath}`,

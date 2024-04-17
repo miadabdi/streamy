@@ -27,5 +27,6 @@ export const ConfigModuleSetup = ConfigModule.forRoot({
 		MINIO_PORT: Joi.number().min(0).max(65535).required(),
 		MINIO_ACCESS_KEY: Joi.string().min(1).required(),
 		MINIO_SECRET_KEY: Joi.string().min(1).required(),
+		RMQ_URL: Joi.string().min(1).required(),
 	}),
 });
