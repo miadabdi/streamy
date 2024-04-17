@@ -4,8 +4,8 @@ export const JWT_COOKIE_NAME = 'access_token';
 export const JWT_STRATEGY_NAME = 'jwt';
 export const ROUTE_TIMEOUT = 30000;
 
-export const RMQ_QUEUES = ['q.video.process'] as const;
-export type RMQ_QUEUES_TYPE = (typeof RMQ_QUEUES)[0];
+export const RMQ_QUEUES = ['q.video.process', 'q.email.send'] as const;
+export type RMQ_QUEUES_TYPE = (typeof RMQ_QUEUES)[number];
 
 export const BUCKETS = [
 	{
@@ -171,7 +171,7 @@ export const BUCKETS = [
 	},
 ] as const;
 export const BUCKET_NAMES = BUCKETS.map((bucket) => bucket.name);
-export type BUCKET_NAMES_TYPE = (typeof BUCKET_NAMES)[0];
+export type BUCKET_NAMES_TYPE = (typeof BUCKET_NAMES)[number];
 export const CHANNEL_USERNAME_REGEX = '^(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$';
 
 // List of language tags according to RFC 5646.

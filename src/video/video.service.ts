@@ -11,6 +11,7 @@ import { FileService } from '../file/file.service';
 import { ProducerService } from '../queue/producer.service';
 import { CreateVideoDto, DeleteVideoDto, SetVideoThumbnailDto, UpdateVideoDto } from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
+import { VideoProcessMsg } from './interface/video-process-msg.interface';
 
 @Injectable()
 export class VideoService {
@@ -23,7 +24,7 @@ export class VideoService {
 		private producerService: ProducerService,
 	) {}
 
-	async sendVideoProcessMsg(payload: any) {
+	async sendVideoProcessRMQMsg(payload: VideoProcessMsg) {
 		await this.producerService.addToQueue('q.video.process', payload);
 	}
 
@@ -58,7 +59,7 @@ export class VideoService {
 				`Video upload event: Done, bucketName: ${bucketName}, filePath: ${filePath}`,
 			);
 
-			await this.sendVideoProcessMsg({
+			await this.sendVideoProcessRMQMsg({
 				fileId: fileRecord.id,
 				bucketName,
 				filePath,

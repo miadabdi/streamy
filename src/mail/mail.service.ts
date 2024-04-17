@@ -1,12 +1,21 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
 import { SentMessageInfo } from 'nodemailer';
+import { ProducerService } from '../queue/producer.service';
+import { SendEmailMsg } from './interface/send-email-msg.interface';
 
 @Injectable()
 export class MailService {
 	private logger = new Logger(MailService.name);
 
-	constructor(private readonly mailerService: MailerService) {}
+	constructor(
+		private readonly mailerService: MailerService,
+		private producerService: ProducerService,
+	) {}
+
+	async sendEmailRMQMsg(sendEmailMsg: SendEmailMsg) {
+		await this.producerService.addToQueue('q.email.send', sendEmailMsg);
+	}
 
 	sendWithTemp(
 		to: string,

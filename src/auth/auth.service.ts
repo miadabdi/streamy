@@ -112,7 +112,12 @@ export class AuthService {
 			httpOnly: true,
 		});
 
-		// this.mailService.sendHtml(user.email, 'Welcome to B{log', 'Welcome to Blog');
+		await this.mailService.sendEmailRMQMsg({
+			to: user.email,
+			subject: 'New Sign in',
+			html: '<h1>New Sign in</h1>',
+		});
+
 		await this.drizzleService.db
 			.update(schema.users)
 			.set({ lastLoginAt: new Date() })
