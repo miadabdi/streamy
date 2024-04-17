@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -20,6 +20,42 @@ export class VideoService {
 		private fileService: FileService,
 		private channelService: ChannelService,
 	) {}
+
+	async handleVideoUploadEvent(record: any) {
+		const bucketName = record.s3.bucket.name;
+		const filePath = record.s3.object.key;
+		const sizeInByte = record.s3.object.size;
+		const mimetype = record.s3.object.contentType;
+
+		this.logger.debug(
+			`Video upload event: bucketName: ${bucketName}, filePath: ${filePath}, sizeInByte=${sizeInByte}, mimetype=${mimetype}`,
+		);
+
+		const fileRecord = await this.drizzleService.db.query.files.findFirst({
+			where: and(eq(schema.files.bucketName, bucketName), eq(schema.files.path, filePath)),
+		});
+
+		if (fileRecord) {
+			await this.drizzleService.db
+				.update(schema.files)
+				.set({ sizeInByte, mimetype })
+				.where(and(eq(schema.files.bucketName, bucketName), eq(schema.files.path, filePath)))
+				.execute();
+
+			await this.drizzleService.db
+				.update(schema.videos)
+				.set({ processingStatus: schema.VideoProccessingStatusEnum.ready_for_processing })
+				.execute();
+
+			this.logger.debug(
+				`Video upload event: Done, bucketName: ${bucketName}, filePath: ${filePath}`,
+			);
+		} else {
+			this.logger.debug(
+				`Video upload event: fileRecord not found, bucketName: ${bucketName}, filePath: ${filePath}`,
+			);
+		}
+	}
 
 	async userOwnsVideo(id: number, user: User) {
 		const video = await this.drizzleService.db.query.videos.findFirst({

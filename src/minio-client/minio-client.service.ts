@@ -33,22 +33,6 @@ export class MinioClientService {
 				await this.client.setBucketPolicy(bucket.name, JSON.stringify(bucket.policy));
 				this.logger.log(`Policy set on bucket ${bucket.name}`);
 			}
-
-			const listener = this.client.listenBucketNotification(bucket.name, '', '', [
-				's3:ObjectCreated:*',
-			]);
-			listener.on('notification', function (record) {
-				// For example: 's3:ObjectCreated:Put event occurred (2016-08-23T18:26:07.214Z)'
-				console.log('%s event occurred (%s)', record.eventName, record.eventTime);
-				console.log(
-					'New object: %s/%s (size: %d)',
-					record.s3.bucket.name,
-					record.s3.object.key,
-					record.s3.object.size,
-				);
-				console.dir(record, { depth: null });
-				// listener.stop()
-			});
 		}
 	}
 

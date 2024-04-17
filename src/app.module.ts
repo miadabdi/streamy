@@ -12,6 +12,7 @@ import { TagModule } from './tag/tags.module';
 import { UserModule } from './user/user.module';
 import { VideoModule } from './video/video.module';
 import { CommentModule } from './comment/comment.module';
+import { MinioListenerModule } from './minio-listener/minio-listener.module';
 
 @Module({
 	imports: [
@@ -29,6 +30,7 @@ import { CommentModule } from './comment/comment.module';
 		PlaylistModule,
 		TagModule,
 		CommentModule,
+		MinioListenerModule,
 	],
 	controllers: [],
 	providers: [],
