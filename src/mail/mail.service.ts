@@ -1,6 +1,7 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable, Logger } from '@nestjs/common';
 import { SentMessageInfo } from 'nodemailer';
+import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
 import { SendEmailMsg } from './interface/send-email-msg.interface';
 
@@ -11,7 +12,17 @@ export class MailService {
 	constructor(
 		private readonly mailerService: MailerService,
 		private producerService: ProducerService,
+		private consumerService: ConsumerService,
 	) {}
+
+	onModuleInit() {
+		this.consumerService.listenOnQueue('q.email.send', this.consumeEmailSendMsg.bind(this));
+	}
+
+	async consumeEmailSendMsg(content: SendEmailMsg) {
+		console.log(`About to call email send to, ${content.to}`);
+		await this.mailerService.sendMail({ ...content });
+	}
 
 	async sendEmailRMQMsg(sendEmailMsg: SendEmailMsg) {
 		await this.producerService.addToQueue('q.email.send', sendEmailMsg);
@@ -64,7 +75,7 @@ export class MailService {
 				Reset Token: ${token}
 		`;
 
-		return this.mailerService.sendMail({
+		return this.sendEmailRMQMsg({
 			to,
 			subject,
 			html,
@@ -79,7 +90,7 @@ export class MailService {
 				<h2>password for account with email ${email} got changed</h2>
 		`;
 
-		return this.mailerService.sendMail({
+		return this.sendEmailRMQMsg({
 			to,
 			subject,
 			html,
