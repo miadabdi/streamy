@@ -10,12 +10,15 @@ import { AppModule } from './app.module';
 import { API_PREFIX } from './common/constants';
 import { AllExceptionsFilter } from './common/exceptions';
 import { LoggingInterceptor, TimeoutInterceptor } from './common/interceptors';
-import { logger } from './winston';
+import { LoggerService } from './logger/logger.service';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule, {
-		logger,
+		// logger,
+		bufferLogs: true,
 	});
+
+	app.useLogger(app.get(LoggerService));
 
 	const configService = app.get(ConfigService);
 

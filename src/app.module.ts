@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ClsModule } from 'nestjs-cls';
+import { v4 as uuidv4 } from 'uuid';
 import { AuthModule } from './auth/auth.module';
 import { ChannelModule } from './channel/channel.module';
 import { CommentModule } from './comment/comment.module';
@@ -14,6 +16,7 @@ import { SubtitleModule } from './subtitle/subtitle.module';
 import { TagModule } from './tag/tags.module';
 import { UserModule } from './user/user.module';
 import { VideoModule } from './video/video.module';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
 	imports: [
@@ -33,8 +36,16 @@ import { VideoModule } from './video/video.module';
 		CommentModule,
 		MinioListenerModule,
 		QueueModule,
+		ClsModule.forRoot({
+			global: true,
+			middleware: {
+				mount: true,
+				generateId: true,
+				idGenerator: (req: Request) => req.headers['x-correlation-id'] ?? uuidv4(),
+			},
+		}),
+		LoggerModule,
 	],
 	controllers: [],
-	providers: [],
 })
 export class AppModule {}

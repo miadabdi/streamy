@@ -1,7 +1,8 @@
-import { utilities as nestWinstonModuleUtilities, WinstonModule } from 'nest-winston';
+import { WinstonModule } from 'nest-winston';
 import winston from 'winston';
 import winstonDailyRotateFile from 'winston-daily-rotate-file';
-import { APP_NAME } from './common/constants';
+import { APP_NAME } from '../common/constants';
+import { nestLikeConsoleFormat } from './nest-like-console-format';
 
 const transports = {
 	console: new winston.transports.Console({
@@ -9,16 +10,10 @@ const transports = {
 		format: winston.format.combine(
 			winston.format.timestamp({ format: 'YYYY-MM-DD hh:mm:ss.SSS A' }),
 			winston.format.ms(),
-			nestWinstonModuleUtilities.format.nestLike(APP_NAME, {
+			nestLikeConsoleFormat(APP_NAME, {
 				colors: true,
 				prettyPrint: true,
 			}),
-			// winston.format.printf((info) => {
-			// 	return `${info.timestamp} [${info.level}] [${info.context ? info.context : info.stack}] ${
-			// 		info.message
-			// 	}`;
-			// }),
-			// winston.format.align(),
 		),
 	}),
 	combinedFile: new winstonDailyRotateFile({
@@ -27,13 +22,15 @@ const transports = {
 		extension: '.log',
 		level: 'info',
 		format: winston.format.combine(
-			// winston.format.timestamp({
-			// 	format: 'YYYY-MM-DD hh:mm:ss.SSS A',
-			// }),
 			winston.format.timestamp(),
 			winston.format.errors({ stack: true }),
 			winston.format.splat(),
-			winston.format.json(),
+			winston.format((info) => {
+				info.requestId = info.context.requestId;
+				info.context = info.context.context;
+				return info;
+			})(),
+			winston.format.json({}),
 		),
 	}),
 	errorFile: new winstonDailyRotateFile({
@@ -42,12 +39,14 @@ const transports = {
 		extension: '.log',
 		level: 'error',
 		format: winston.format.combine(
-			// winston.format.timestamp({
-			// 	format: 'YYYY-MM-DD hh:mm:ss.SSS A',
-			// }),
 			winston.format.timestamp(),
 			winston.format.errors({ stack: true }),
 			winston.format.splat(),
+			winston.format((info) => {
+				info.requestId = info.context.requestId;
+				info.context = info.context.context;
+				return info;
+			})(),
 			winston.format.json(),
 		),
 	}),
