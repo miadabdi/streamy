@@ -22,6 +22,7 @@ import {
 	DeleteVideoDto,
 	GetVideoByIdDto,
 	GetVideoByVideoIdDto,
+	SendVideoToProcessQueueDto,
 	SetVideoThumbnailDto,
 	UpdateVideoDto,
 } from './dto';
@@ -32,6 +33,15 @@ import { VideoService } from './video.service';
 @UseGuards(JwtAuthGuard)
 export class VideoController {
 	constructor(private videoService: VideoService) {}
+
+	@HttpCode(HttpStatus.CREATED)
+	@Post('/send-video-to-process-queue')
+	sendVideoInProcessQueue(
+		@Query() sendVideoInProcessQueueDto: SendVideoToProcessQueueDto,
+		@GetUser() user: User,
+	) {
+		return this.videoService.sendVideoInProcessQueue(sendVideoInProcessQueueDto, user);
+	}
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post()

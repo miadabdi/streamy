@@ -204,6 +204,14 @@ export const videosRelations = relations(videos, ({ many, one }) => ({
 	}),
 	subtitles: many(subtitles),
 	playlistsVideos: many(playlistsVideos),
+	thumbnailFile: one(files, {
+		fields: [videos.thumbnailFileId],
+		references: [files.id],
+	}),
+	videoFile: one(files, {
+		fields: [videos.videoFileId],
+		references: [files.id],
+	}),
 }));
 
 export const subtitles = pgTable(

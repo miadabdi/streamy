@@ -1,4 +1,10 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+	BadRequestException,
+	ForbiddenException,
+	Injectable,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { and, eq } from 'drizzle-orm';
 import { ChannelService } from '../channel/channel.service';
@@ -9,7 +15,13 @@ import { User } from '../drizzle/schema';
 import { videosTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
 import { ProducerService } from '../queue/producer.service';
-import { CreateVideoDto, DeleteVideoDto, SetVideoThumbnailDto, UpdateVideoDto } from './dto';
+import {
+	CreateVideoDto,
+	DeleteVideoDto,
+	SendVideoToProcessQueueDto,
+	SetVideoThumbnailDto,
+	UpdateVideoDto,
+} from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 import { VideoProcessMsg } from './interface/video-process-msg.interface';
 
@@ -58,14 +70,6 @@ export class VideoService {
 			this.logger.debug(
 				`Video upload event: Done, bucketName: ${bucketName}, filePath: ${filePath}`,
 			);
-
-			await this.sendVideoProcessRMQMsg({
-				fileId: fileRecord.id,
-				bucketName,
-				filePath,
-				sizeInByte,
-				mimetype,
-			});
 		} else {
 			this.logger.debug(
 				`Video upload event: fileRecord not found, bucketName: ${bucketName}, filePath: ${filePath}`,
@@ -99,6 +103,47 @@ export class VideoService {
 
 			if (!dupVideo) return id;
 		}
+	}
+
+	async sendVideoInProcessQueue(
+		sendVideoToProcessQueueDto: SendVideoToProcessQueueDto,
+		user: User,
+	) {
+		await this.userOwnsVideo(sendVideoToProcessQueueDto.id, user);
+
+		const video = await this.drizzleService.db.query.videos.findFirst({
+			where: eq(schema.videos.id, sendVideoToProcessQueueDto.id),
+			with: {
+				videoFile: true,
+			},
+		});
+
+		if (video.processingStatus != schema.VideoProccessingStatusEnum.ready_for_processing) {
+			throw new BadRequestException(
+				`Video is not in ready_for_processing state, current state: ${video.processingStatus}`,
+			);
+		}
+
+		await this.sendVideoProcessRMQMsg({
+			videoId: video.id,
+			fileId: video.videoFile.id,
+			bucketName: video.videoFile.bucketName,
+			filePath: video.videoFile.path,
+			sizeInByte: video.videoFile.sizeInByte,
+			mimetype: video.videoFile.mimetype,
+		});
+
+		await this.drizzleService.db
+			.update(schema.videos)
+			.set({
+				processingStatus: schema.VideoProccessingStatusEnum.waiting_in_queue,
+			})
+			.where(eq(schema.videos.id, sendVideoToProcessQueueDto.id))
+			.execute();
+
+		return {
+			message: 'Video sent to process queue successfully',
+		};
 	}
 
 	async createVideo(createVideoDto: CreateVideoDto, user: User) {
