@@ -240,6 +240,10 @@ export const subtitlesRelations = relations(subtitles, ({ many, one }) => ({
 		fields: [subtitles.videoId],
 		references: [videos.id],
 	}),
+	file: one(files, {
+		fields: [subtitles.fileId],
+		references: [files.id],
+	}),
 }));
 
 export const playlistPrivacy = pgEnum('playlist_privacy', ['private', 'public']);

@@ -115,6 +115,11 @@ export class VideoService {
 			where: eq(schema.videos.id, sendVideoToProcessQueueDto.id),
 			with: {
 				videoFile: true,
+				subtitles: {
+					with: {
+						file: true,
+					},
+				},
 			},
 		});
 
@@ -131,6 +136,17 @@ export class VideoService {
 			filePath: video.videoFile.path,
 			sizeInByte: video.videoFile.sizeInByte,
 			mimetype: video.videoFile.mimetype,
+			subs: video.subtitles.map((sub) => {
+				return {
+					id: sub.id,
+					langRFC5646: sub.langRFC5646,
+					fileId: sub.file.id,
+					filePath: sub.file.path,
+					bucketName: sub.file.bucketName,
+					sizeInByte: sub.file.sizeInByte,
+					mimetype: sub.file.mimetype,
+				};
+			}),
 		});
 
 		await this.drizzleService.db
