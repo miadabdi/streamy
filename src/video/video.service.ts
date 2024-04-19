@@ -14,6 +14,7 @@ import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { videosTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
+import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
 import {
 	CreateVideoDto,
@@ -23,6 +24,7 @@ import {
 	UpdateVideoDto,
 } from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
+import { SetVideoStatusMsg } from './interface';
 import { VideoProcessMsg } from './interface/video-process-msg.interface';
 
 @Injectable()
@@ -34,10 +36,22 @@ export class VideoService {
 		private fileService: FileService,
 		private channelService: ChannelService,
 		private producerService: ProducerService,
+		private consumerService: ConsumerService,
 	) {}
+
+	onModuleInit() {
+		this.consumerService.listenOnQueue('q.set.video.status', this.consumeSetStatusMsg.bind(this));
+	}
 
 	async sendVideoProcessRMQMsg(payload: VideoProcessMsg) {
 		await this.producerService.addToQueue('q.video.process', payload);
+	}
+
+	async consumeSetStatusMsg(message: SetVideoStatusMsg) {
+		await this.drizzleService.db
+			.update(schema.videos)
+			.set({ processingStatus: message.status, ffmpegProcessLogs: message.logs })
+			.where(eq(schema.videos.id, message.videoId));
 	}
 
 	async handleVideoUploadEvent(record: any) {

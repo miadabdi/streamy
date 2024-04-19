@@ -4,7 +4,7 @@ export const JWT_COOKIE_NAME = 'access_token';
 export const JWT_STRATEGY_NAME = 'jwt';
 export const ROUTE_TIMEOUT = 30000;
 
-export const RMQ_QUEUES = ['q.video.process', 'q.email.send'] as const;
+export const RMQ_QUEUES = ['q.video.process', 'q.email.send', 'q.set.video.status'] as const;
 export type RMQ_QUEUES_TYPE = (typeof RMQ_QUEUES)[number];
 
 export const BUCKETS = [

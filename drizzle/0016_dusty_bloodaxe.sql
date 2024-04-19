@@ -1,0 +1,1 @@
+ALTER TABLE "videos" ADD COLUMN "ffmpeg_process_logs" text;

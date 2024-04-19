@@ -56,10 +56,10 @@ async function bootstrap() {
 	await app.listen(port);
 
 	const config = new DocumentBuilder()
-		.setTitle('Blog Apis')
-		.setDescription('Introducing all APIs of blog')
+		.setTitle('Streamy Apis')
+		.setDescription('Introducing all APIs of Streamy')
 		.setVersion('1.0')
-		.addTag('blog')
+		.addTag('Streamy')
 		.build();
 	const document = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('api', app, document);

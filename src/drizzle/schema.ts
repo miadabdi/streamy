@@ -183,6 +183,7 @@ export const videos = pgTable(
 			.notNull()
 			.references(() => channels.id),
 		duration: integer('duration'),
+		ffmpegProcessLogs: text('ffmpeg_process_logs'),
 		thumbnailFileId: integer('thumbnail_file_id').references(() => files.id),
 		processingStatus: videoProccessingStatus('processing_status').default(
 			VideoProccessingStatusEnum.ready_for_upload,
