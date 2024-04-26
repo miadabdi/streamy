@@ -28,5 +28,8 @@ export const ConfigModuleSetup = ConfigModule.forRoot({
 		MINIO_ACCESS_KEY: Joi.string().min(1).required(),
 		MINIO_SECRET_KEY: Joi.string().min(1).required(),
 		RMQ_URL: Joi.string().min(1).required(),
+		ELASTICSEARCH_NODE: Joi.string().min(1).required(),
+		ELASTICSEARCH_USERNAME: Joi.string().min(1).required(),
+		ELASTICSEARCH_PASSWORD: Joi.string().min(1).required(),
 	}),
 });
