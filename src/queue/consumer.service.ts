@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import amqp, { ChannelWrapper } from 'amqp-connection-manager';
-import { RMQ_QUEUES_TYPE } from '../common/constants';
+import { RMQ_QUEUES_TYPE } from './queues';
 
 @Injectable()
 export class ConsumerService implements OnModuleInit {
