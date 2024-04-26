@@ -9,7 +9,7 @@ import { createHash, randomBytes } from 'crypto';
 import moment from 'moment';
 import { MinioService } from 'nestjs-minio-client';
 import { basename, dirname, join } from 'path';
-import { BUCKETS, BUCKET_NAMES_TYPE } from '../common/constants';
+import { BUCKETS, BUCKET_NAMES_TYPE } from './minio.schema';
 
 @Injectable()
 export class MinioClientService {

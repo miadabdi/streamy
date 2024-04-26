@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BUCKET_NAMES_TYPE } from '../common/constants';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { User } from '../drizzle/schema';
 import { filesTableColumns } from '../drizzle/table-columns';
 import { MinioClientService } from '../minio-client/minio-client.service';
+import { BUCKET_NAMES_TYPE } from '../minio-client/minio.schema';
 import { GetPresignedGetURLDto } from './dto';
 import { CreateFileDto } from './dto/create-file.dto';
 import { GetPresignedPutURLDto } from './dto/get-presigned-put-url.dto';

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { BUCKETS } from '../common/constants';
 import { MinioClientService } from '../minio-client/minio-client.service';
+import { BUCKETS } from '../minio-client/minio.schema';
 import { VideoService } from '../video/video.service';
 
 @Injectable()

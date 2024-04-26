@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
-import { BUCKET_NAMES, BUCKET_NAMES_TYPE } from '../../common/constants';
+import { BUCKET_NAMES, BUCKET_NAMES_TYPE } from '../../minio-client/minio.schema';
 
 export class CreateFileDto {
 	@IsEnum(BUCKET_NAMES)
