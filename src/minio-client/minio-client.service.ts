@@ -4,6 +4,7 @@ import {
 	InternalServerErrorException,
 	Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'crypto';
 import moment from 'moment';
 import { MinioService } from 'nestjs-minio-client';
@@ -14,7 +15,10 @@ import { BUCKETS, BUCKET_NAMES_TYPE } from '../common/constants';
 export class MinioClientService {
 	private logger = new Logger(MinioClientService.name);
 
-	constructor(private readonly minio: MinioService) {}
+	constructor(
+		private readonly minio: MinioService,
+		private configService: ConfigService,
+	) {}
 
 	public get client() {
 		return this.minio.client;
@@ -133,8 +137,11 @@ export class MinioClientService {
 		try {
 			await this.client.putObject(bucketName, completePath, file.buffer, metaData);
 
+			const minioEndpoint = this.configService.get<string>('MINIO_ENDPOINT');
+			const minioPort = this.configService.get<string>('MINIO_PORT');
+
 			return {
-				url: `${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${bucketName}/${completePath}`,
+				url: `${minioEndpoint}:${minioPort}/${bucketName}/${completePath}`,
 				path: completePath,
 				bucketName,
 				mimetype: file.mimetype,

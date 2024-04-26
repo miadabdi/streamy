@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 import { NodeEnv } from '../common/enums';
 
 export const ConfigModuleSetup = ConfigModule.forRoot({
-	envFilePath: '.env',
+	envFilePath: 'app.env',
 	isGlobal: true,
 	cache: true,
 	validationSchema: Joi.object({

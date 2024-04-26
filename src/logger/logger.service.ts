@@ -21,7 +21,7 @@ export class LoggerService {
 	fatal(message: string, context?: string) {
 		const id = this.contextStorageService.getContextId();
 
-		logger.fatal(message, { context, requestId: id });
+		logger.error(message, { context, requestId: id });
 	}
 
 	error(message: string, trace: string, context?: string) {

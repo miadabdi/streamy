@@ -1,7 +1,13 @@
 import { ConfigService } from '@nestjs/config';
+import dotenv from 'dotenv';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { join } from 'path';
 import { Pool, PoolConfig } from 'pg';
 import * as schema from './schema';
+
+dotenv.config({
+	path: join(__dirname, '../../app.env'),
+});
 
 export const DrizzleAsyncProvider = 'drizzleProvider';
 

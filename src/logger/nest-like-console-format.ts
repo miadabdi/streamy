@@ -34,7 +34,7 @@ export const nestLikeConsoleFormat = (
 
 		let requestId = null;
 		if (typeof context == 'object') {
-			requestId = context.requestId;
+			requestId = context.requestId ? context.requestId : null;
 			context = context.context;
 		}
 
