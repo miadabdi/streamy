@@ -17,6 +17,7 @@ import { TagModule } from './tag/tags.module';
 import { UserModule } from './user/user.module';
 import { VideoModule } from './video/video.module';
 import { LoggerModule } from './logger/logger.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
 	imports: [
@@ -45,6 +46,7 @@ import { LoggerModule } from './logger/logger.module';
 			},
 		}),
 		LoggerModule,
+		SearchModule,
 	],
 	controllers: [],
 })
