@@ -72,6 +72,8 @@ export default class VideoSearchService {
 				multi_match: {
 					query: text,
 					fields: ['name^2', 'description'],
+					fuzziness: 'auto',
+					fuzzy_transpositions: true,
 				},
 			},
 		});

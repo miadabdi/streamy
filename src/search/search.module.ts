@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import VideoSearchService from './video-search.service';
 
 @Module({
@@ -17,7 +15,7 @@ import VideoSearchService from './video-search.service';
 					password: configService.get('ELASTICSEARCH_PASSWORD'),
 				},
 				tls: {
-					ca: readFileSync(join(__dirname, '../../../es_certs/ca/ca.crt'), { encoding: 'utf-8' }),
+					// ca: readFileSync(join(__dirname, '../../../es_certs/ca/ca.crt'), { encoding: 'utf-8' }),
 					// ca: readFileSync(join(__dirname, '../../../es_certs/es01/es01.crt')),
 					// cert: readFileSync(join(__dirname, '../../../es_certs/es01/es01.crt')),
 					rejectUnauthorized: false,
