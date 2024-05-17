@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { NestjsClsContextStorageService } from './cls';
 import { logger } from './winston';
 
+/**
+ * Custom Logger Service to be used in nest app
+ */
 @Injectable()
 export class LoggerService {
 	constructor(private contextStorageService: NestjsClsContextStorageService) {}

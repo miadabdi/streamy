@@ -19,11 +19,19 @@ export class MailService {
 		this.consumerService.listenOnQueue('q.email.send', this.consumeEmailSendMsg.bind(this));
 	}
 
+	/**
+	 * this method is used to process consumed email messages from rabbitmq
+	 * @param {SendEmailMsg} content
+	 */
 	async consumeEmailSendMsg(content: SendEmailMsg) {
 		console.log(`About to call email send to, ${content.to}`);
 		await this.mailerService.sendMail({ ...content });
 	}
 
+	/**
+	 * adds a email to email queue for async processing
+	 * @param {SendEmailMsg} sendEmailMsg
+	 */
 	async sendEmailRMQMsg(sendEmailMsg: SendEmailMsg) {
 		await this.producerService.addToQueue('q.email.send', sendEmailMsg);
 	}
@@ -44,6 +52,13 @@ export class MailService {
 		});
 	}
 
+	/**
+	 * sends email with html
+	 * @param {string} to destination email address
+	 * @param {string} subject subject of email being sent
+	 * @param {string} html html for the body of the email
+	 * @returns {SentMessageInfo}
+	 */
 	sendHtml(to: string, subject: string, html: string): Promise<SentMessageInfo> {
 		this.logger.log(`Sending mail to ${to}`);
 
@@ -54,6 +69,13 @@ export class MailService {
 		});
 	}
 
+	/**
+	 * sends plain text email
+	 * @param {string} to destination email address
+	 * @param {string} subject subject of email being sent
+	 * @param {string} message
+	 * @returns {SentMessageInfo}
+	 */
 	sendPlain(to: string, subject: string, message: string): Promise<SentMessageInfo> {
 		this.logger.log(`Sending mail to ${to}`);
 
@@ -64,6 +86,12 @@ export class MailService {
 		});
 	}
 
+	/**
+	 * sends forgot password email
+	 * @param {string} to destination email address
+	 * @param token forgot password token
+	 * @returns {SentMessageInfo}
+	 */
 	sendForgotPassword(to: string, token: string): Promise<SentMessageInfo> {
 		this.logger.log(`Sending forgot email to ${to}`);
 
@@ -82,6 +110,12 @@ export class MailService {
 		});
 	}
 
+	/**
+	 * sends forgot password email
+	 * @param {string} to destination email address
+	 * @param {string} email email of the user which its password changed
+	 * @returns {SentMessageInfo}
+	 */
 	sendPasswordChanged(to: string, email: string): Promise<SentMessageInfo> {
 		this.logger.log(`Sending password changed email to ${to}`);
 
