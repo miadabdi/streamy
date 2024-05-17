@@ -21,6 +21,7 @@ import { usersTableColumns } from '../drizzle/table-columns';
 import { MailService } from '../mail/mail.service';
 import { UserService } from '../user/user.service';
 import { ForgotPasswordDto, ResetPasswordDto, SignInDto, SignUpDto } from './dto';
+import { Payload } from './interface';
 
 @Injectable()
 export class AuthService {
@@ -35,15 +36,32 @@ export class AuthService {
 		private userService: UserService,
 	) {}
 
-	hash(input: string, iterations: number = 3) {
+	/**
+	 * this method hashes the input
+	 * @param {string} input the string to hash
+	 * @param {number} [iterations=3] number of iteration, higher more secure more cpu intensive
+	 * @returns {string}
+	 */
+	hash(input: string, iterations: number = 3): Promise<string> {
 		return argon.hash(input, { timeCost: iterations });
 	}
 
-	matchHash(hashed: string, input: string) {
+	/**
+	 * this method verifies if input matches hashed string
+	 * @param {string} hashed hashed string
+	 * @param {string} input input string to be verified
+	 * @returns {boolean}
+	 */
+	matchHash(hashed: string, input: string): Promise<boolean> {
 		return argon.verify(hashed, input);
 	}
 
-	async signUp(signUpDto: SignUpDto) {
+	/**
+	 * creates a user and a channel associated with that user
+	 * @param {SignUpDto} signUpDto
+	 * @returns {User}
+	 */
+	async signUp(signUpDto: SignUpDto): Promise<User> {
 		const uniqueUser = await this.drizzleService.db.query.users.findFirst({
 			where: eq(schema.users.email, signUpDto.email),
 		});
@@ -86,7 +104,13 @@ export class AuthService {
 		}
 	}
 
-	async signIn(response: Response, signInDto: SignInDto) {
+	/**
+	 * validates cridentials then sends back a jwt in cookies
+	 * @param {Response} response response object of current api call
+	 * @param {SignInDto} signInDto
+	 * @returns {undefined}
+	 */
+	async signIn(response: Response, signInDto: SignInDto): Promise<undefined> {
 		const user = await this.drizzleService.db.query.users.findFirst({
 			where: eq(schema.users.email, signInDto.email),
 		});
@@ -125,9 +149,15 @@ export class AuthService {
 			.execute();
 	}
 
-	async signToken(userId: number, email: string) {
-		const paylaod = {
-			sub: userId,
+	/**
+	 * signs and returns a jwt token
+	 * @param {number} userId userId will be saved in jwt
+	 * @param {email} email email will be saved in jwt
+	 * @returns {string}
+	 */
+	async signToken(userId: number, email: string): Promise<string> {
+		const paylaod: Payload = {
+			userId,
 			email,
 		};
 
@@ -142,7 +172,12 @@ export class AuthService {
 		return token;
 	}
 
-	async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+	/**
+	 * creates forgotPassword token and sends to user's email
+	 * @param {ForgotPasswordDto} forgotPasswordDto
+	 * @returns {{ message: string }}
+	 */
+	async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
 		const user = await this.drizzleService.db.query.users.findFirst({
 			where: eq(schema.users.email, forgotPasswordDto.email),
 		});
@@ -169,7 +204,12 @@ export class AuthService {
 		};
 	}
 
-	async resetPassword(resetPasswordDto: ResetPasswordDto) {
+	/**
+	 * checks resetToken and if valid, password will be changed
+	 * @param {ResetPasswordDto} resetPasswordDto
+	 * @returns {{ message: string }}
+	 */
+	async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
 		const user = await this.drizzleService.db.query.users.findFirst({
 			where: eq(schema.users.email, resetPasswordDto.email),
 		});
