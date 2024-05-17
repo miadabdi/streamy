@@ -10,7 +10,7 @@ import { GetUser } from '../common/decorators';
 import { TransactionType } from '../common/types/transaction.type';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
-import { User } from '../drizzle/schema';
+import { Channel, User } from '../drizzle/schema';
 import { channelsTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
 import { AddSubscriptionDto, CreateChannelDto, DeleteChannelDto, UpdateChannelDto } from './dto';
@@ -25,7 +25,14 @@ export class ChannelService {
 		private fileService: FileService,
 	) {}
 
-	async userOwnsChannel(id: number, user) {
+	/**
+	 * checks if user owns channel with id of id
+	 * @param {number} id
+	 * @param {User} user
+	 * @throws {NotFoundException} id not found in channels table
+	 * @throws {ForbiddenException} user must own channel
+	 */
+	async userOwnsChannel(id: number, user: User): Promise<undefined> {
 		const channel = await this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.id, id),
 		});
@@ -39,7 +46,18 @@ export class ChannelService {
 		}
 	}
 
-	async createChannel(createChannelDto: CreateChannelDto, user: User, tx?: TransactionType) {
+	/**
+	 * creates a channel
+	 * @param {CreateChannelDto} createChannelDto
+	 * @param {User} user
+	 * @param {TransactionType} tx pass to user certain transaction for operations
+	 * @returns {Channel}
+	 */
+	async createChannel(
+		createChannelDto: CreateChannelDto,
+		user: User,
+		tx?: TransactionType,
+	): Promise<Channel> {
 		const manager = tx ? tx : this.drizzleService.db;
 
 		const dupChannel = await manager.query.channels.findFirst({
@@ -63,11 +81,18 @@ export class ChannelService {
 		return channel[0];
 	}
 
+	/**
+	 * updates a channel's info, and replaces its avatar
+	 * @param {UpdateChannelDto} updateChannelDto
+	 * @param {User} user
+	 * @param {Express.Multer.File} avatar
+	 * @returns {Channel}
+	 */
 	async updateChannel(
 		updateChannelDto: UpdateChannelDto,
 		user: User,
 		avatar?: Express.Multer.File,
-	) {
+	): Promise<Channel> {
 		await this.userOwnsChannel(updateChannelDto.id, user);
 
 		if (updateChannelDto.username) {
@@ -107,18 +132,27 @@ export class ChannelService {
 		return updatedChannel[0];
 	}
 
-	async deleteSubscription(deleteSubscriptionDto: DeleteSubscriptionDto, user: User) {
+	/**
+	 * removes a subscription
+	 * @param {DeleteSubscriptionDto} deleteSubscriptionDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async deleteSubscription(
+		deleteSubscriptionDto: DeleteSubscriptionDto,
+		user: User,
+	): Promise<{ message: string }> {
 		await this.userOwnsChannel(deleteSubscriptionDto.followerId, user);
 
-		// const followee = await this.drizzleService.db.query.channels.findFirst({
-		// 	where: eq(schema.channels.id, deleteSubscriptionDto.followeeId),
-		// });
+		const followee = await this.drizzleService.db.query.channels.findFirst({
+			where: eq(schema.channels.id, deleteSubscriptionDto.followeeId),
+		});
 
-		// if (!followee) {
-		// 	throw new NotFoundException(
-		// 		`Followee channel with id ${deleteSubscriptionDto.followeeId} not found`,
-		// 	);
-		// }
+		if (!followee) {
+			throw new NotFoundException(
+				`Followee channel with id ${deleteSubscriptionDto.followeeId} not found`,
+			);
+		}
 
 		await this.drizzleService.db
 			.delete(schema.subscriptions)
@@ -135,7 +169,16 @@ export class ChannelService {
 		};
 	}
 
-	async addSubscription(addSubscriptionDto: AddSubscriptionDto, user: User) {
+	/**
+	 * adds a subscription
+	 * @param {AddSubscriptionDto} addSubscriptionDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async addSubscription(
+		addSubscriptionDto: AddSubscriptionDto,
+		user: User,
+	): Promise<{ message: string }> {
 		await this.userOwnsChannel(addSubscriptionDto.followerId, user);
 
 		const followee = await this.drizzleService.db.query.channels.findFirst({
@@ -159,7 +202,12 @@ export class ChannelService {
 		};
 	}
 
-	async getChannelByUsername(username: string) {
+	/**
+	 * finds a channel with specific username and returns if exists
+	 * @param {string} username username of a channel
+	 * @returns {Channel | null}
+	 */
+	async getChannelByUsername(username: string): Promise<Channel | null> {
 		return this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.username, username),
 			with: {
@@ -172,7 +220,12 @@ export class ChannelService {
 		});
 	}
 
-	async getChannelById(id: number) {
+	/**
+	 * finds a channel with specific id and returns if exists
+	 * @param {number} id id of a channel
+	 * @returns {Channel | null}
+	 */
+	async getChannelById(id: number): Promise<Channel | null> {
 		return this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.id, id),
 			with: {
@@ -185,7 +238,16 @@ export class ChannelService {
 		});
 	}
 
-	async deleteChannel(deleteChannelDto: DeleteChannelDto, @GetUser() user: User) {
+	/**
+	 * deletes a channel
+	 * @param {DeleteChannelDto} deleteChannelDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async deleteChannel(
+		deleteChannelDto: DeleteChannelDto,
+		@GetUser() user: User,
+	): Promise<{ message: string }> {
 		await this.userOwnsChannel(deleteChannelDto.id, user);
 
 		await this.drizzleService.db
