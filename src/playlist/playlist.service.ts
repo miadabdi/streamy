@@ -4,7 +4,7 @@ import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
-import { User } from '../drizzle/schema';
+import { Playlist, User } from '../drizzle/schema';
 import { playlistsTableColumns } from '../drizzle/table-columns';
 import { VideoService } from '../video/video.service';
 import { AddVideosDto, CreatePlaylistDto, DeletePlaylistDto, UpdatePlaylistDto } from './dto';
@@ -19,6 +19,13 @@ export class PlaylistService {
 		private channelService: ChannelService,
 	) {}
 
+	/**
+	 * checks if user owns a playlist
+	 * @param {number} id id of playlist
+	 * @param {User} user
+	 * @throws {NotFoundException} playlist with id not found
+	 * @throws {ForbiddenException} user does not own the playlist
+	 */
 	async userOwnsPlaylist(id: number, user: User) {
 		const playlist = await this.drizzleService.db.query.playlists.findFirst({
 			where: eq(schema.playlists.id, id),
@@ -36,7 +43,13 @@ export class PlaylistService {
 		}
 	}
 
-	async createPlaylist(createPlaylistDto: CreatePlaylistDto, user: User) {
+	/**
+	 * creates a playlist
+	 * @param {CreatePlaylistDto} createPlaylistDto
+	 * @param {User} user
+	 * @returns {Playlist}
+	 */
+	async createPlaylist(createPlaylistDto: CreatePlaylistDto, user: User): Promise<Playlist> {
 		await this.channelService.userOwnsChannel(createPlaylistDto.channelId, user);
 
 		const { ...returningKeys } = playlistsTableColumns;
@@ -51,7 +64,13 @@ export class PlaylistService {
 		return playlists[0];
 	}
 
-	async updatePlaylist(updatePlaylistDto: UpdatePlaylistDto, user: User) {
+	/**
+	 * updates a playlist
+	 * @param {UpdatePlaylistDto} updatePlaylistDto
+	 * @param {User} user
+	 * @returns {Playlist}
+	 */
+	async updatePlaylist(updatePlaylistDto: UpdatePlaylistDto, user: User): Promise<Playlist> {
 		await this.userOwnsPlaylist(updatePlaylistDto.id, user);
 
 		const { ...returningKeys } = playlistsTableColumns;
@@ -67,7 +86,13 @@ export class PlaylistService {
 		return updatedPlaylist[0];
 	}
 
-	async addVideos(addVideosDto: AddVideosDto, user: User) {
+	/**
+	 * adds a video to playlist
+	 * @param {AddVideosDto} addVideosDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async addVideos(addVideosDto: AddVideosDto, user: User): Promise<{ message: string }> {
 		await this.userOwnsPlaylist(addVideosDto.playlistId, user);
 
 		for (const videoId of addVideosDto.videoIds) {
@@ -87,13 +112,27 @@ export class PlaylistService {
 		};
 	}
 
-	async getPlaylistById(id: number) {
+	/**
+	 * finds and returns a playlist with id of input id
+	 * @param {number} id
+	 * @returns {Playlist}
+	 */
+	async getPlaylistById(id: number): Promise<Playlist> {
 		return this.drizzleService.db.query.playlists.findFirst({
 			where: eq(schema.playlists.id, id),
 		});
 	}
 
-	async deletePlaylist(deletePlaylistDto: DeletePlaylistDto, @GetUser() user: User) {
+	/**
+	 * deletes a playlist
+	 * @param {DeletePlaylistDto} deletePlaylistDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async deletePlaylist(
+		deletePlaylistDto: DeletePlaylistDto,
+		@GetUser() user: User,
+	): Promise<{ message: string }> {
 		await this.userOwnsPlaylist(deletePlaylistDto.id, user);
 
 		await this.drizzleService.db
