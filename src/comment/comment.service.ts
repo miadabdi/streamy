@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
-import { User } from '../drizzle/schema';
+import { Comment, User } from '../drizzle/schema';
 import { commentsTableColumns } from '../drizzle/table-columns';
 import { VideoService } from '../video/video.service';
 import { CreateCommentDto, DeleteCommentDto, UpdateCommentDto } from './dto';
@@ -17,6 +17,13 @@ export class CommentService {
 		private videoService: VideoService,
 	) {}
 
+	/**
+	 * checks if user owns a comment record
+	 * @param {number} id id of comment record
+	 * @param {User} user
+	 * @throws {NotFoundException} if comment with provided id was not found
+	 * @throws {ForbiddenException} if user does not own the comment
+	 */
 	async userOwnsComment(id: number, user: User) {
 		const comment = await this.drizzleService.db.query.comments.findFirst({
 			where: eq(schema.comments.id, id),
@@ -31,7 +38,13 @@ export class CommentService {
 		}
 	}
 
-	async createComment(createCommentDto: CreateCommentDto, user: User) {
+	/**
+	 * creates a comment
+	 * @param {CreateCommentDto} createCommentDto
+	 * @param {User} user
+	 * @returns {Comment}
+	 */
+	async createComment(createCommentDto: CreateCommentDto, user: User): Promise<Comment> {
 		const video = await this.videoService.getVideoById(createCommentDto.videoId);
 		if (!video) {
 			throw new NotFoundException(`Video with id ${createCommentDto.videoId} not found`);
@@ -62,7 +75,13 @@ export class CommentService {
 		return comments[0];
 	}
 
-	async updateComment(updateCommentDto: UpdateCommentDto, user: User) {
+	/**
+	 * updates a comment
+	 * @param {UpdateCommentDto} updateCommentDto
+	 * @param {User} user
+	 * @returns {Comment}
+	 */
+	async updateComment(updateCommentDto: UpdateCommentDto, user: User): Promise<Comment> {
 		await this.userOwnsComment(updateCommentDto.id, user);
 
 		const { ...returningKeys } = commentsTableColumns;
@@ -78,7 +97,12 @@ export class CommentService {
 		return updatedComment[0];
 	}
 
-	async getCommentById(id: number) {
+	/**
+	 * returns a comment with the id
+	 * @param {number} id
+	 * @returns {Comment}
+	 */
+	async getCommentById(id: number): Promise<Comment> {
 		return this.drizzleService.db.query.comments.findFirst({
 			where: eq(schema.comments.id, id),
 			with: {
@@ -90,7 +114,16 @@ export class CommentService {
 		});
 	}
 
-	async deleteComment(deleteCommentDto: DeleteCommentDto, @GetUser() user: User) {
+	/**
+	 * deletes a comment
+	 * @param {DeleteCommentDto} deleteCommentDto
+	 * @param {User} user
+	 * @returns {{message: string}}
+	 */
+	async deleteComment(
+		deleteCommentDto: DeleteCommentDto,
+		@GetUser() user: User,
+	): Promise<{ message: string }> {
 		await this.userOwnsComment(deleteCommentDto.id, user);
 
 		await this.drizzleService.db

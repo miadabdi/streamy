@@ -410,6 +410,7 @@ export const commentsRelations = relations(comments, ({ many, one }) => ({
 export type User = typeof users.$inferSelect;
 export type File = typeof files.$inferSelect;
 export type Channel = typeof channels.$inferSelect;
+export type Comment = typeof comments.$inferSelect;
 export type Video = typeof videos.$inferSelect;
 export type Subtitle = typeof subtitles.$inferSelect;
 export type Playlist = typeof playlists.$inferSelect;
