@@ -31,7 +31,7 @@ export class FileService {
 	): Promise<PresignedUrlResponse> {
 		// return this.minioClientService.presignedPostUrl('images', 'random.png', ['image/png'], 5);
 
-		const { url, randomFileName } = await this.minioClientService.presignedUrl(
+		const { url, randomFileName } = await this.minioClientService.presignedPutUrl(
 			getPresignedPutURLDto.bucket,
 			getPresignedPutURLDto.path,
 			3600,

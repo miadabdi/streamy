@@ -7,9 +7,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'crypto';
 import moment from 'moment';
-import { MinioService } from 'nestjs-minio-client';
+import { MinioService, MinioClient } from 'nestjs-minio-client';
 import { basename, dirname, join } from 'path';
 import { BUCKETS, BUCKET_NAMES_TYPE } from './minio.schema';
+import { PostPolicyResult } from 'minio';
 
 @Injectable()
 export class MinioClientService {
@@ -20,12 +21,13 @@ export class MinioClientService {
 		private configService: ConfigService,
 	) {}
 
-	public get client() {
+	public get client(): MinioClient {
 		return this.minio.client;
 	}
 
 	async onModuleInit() {
 		for (const bucket of BUCKETS) {
+			// creating and configuring buckets
 			if (await this.client.bucketExists(bucket.name)) {
 				this.logger.log(`Bucket ${bucket.name} exists`);
 			} else {
@@ -40,12 +42,22 @@ export class MinioClientService {
 		}
 	}
 
+	/**
+	 * creates a presigned post url
+	 * @param {BUCKET_NAMES_TYPE} bucketName
+	 * @param {string} fileName
+	 * @param {string[]} mimetypes
+	 * @param {number} expiryDays
+	 * @returns {PostPolicyResult}
+	 */
 	async presignedPostUrl(
 		bucketName: BUCKET_NAMES_TYPE,
 		fileName: string,
 		mimetypes: string[],
 		expiryDays: number,
-	) {
+		minMB: number = 0.01,
+		maxMB: number = 10,
+	): Promise<PostPolicyResult> {
 		const bucket = BUCKETS.find((bucket) => bucket.name === bucketName);
 
 		// Construct a new postPolicy.
@@ -59,20 +71,31 @@ export class MinioClientService {
 			policy.setContentType(mimetype);
 		}
 
-		const expires = moment().add(expiryDays, 'minutes');
+		const expires = moment().add(expiryDays, 'days');
 		policy.setExpires(expires.toDate());
 
-		policy.setContentLengthRange(1 * 1024, 15 * 1024 * 1024);
+		policy.setContentLengthRange(minMB * 1024 * 1024, maxMB * 1024 * 1024);
 		policy.setUserMetaData({
 			channel: 22,
 		});
 
-		const preSigned = this.minio.client.presignedPostPolicy(policy);
+		const preSigned = await this.minio.client.presignedPostPolicy(policy);
 
 		return preSigned;
 	}
 
-	async presignedUrl(bucketName: BUCKET_NAMES_TYPE, path: string, expiry: number) {
+	/**
+	 * creates a presigned put url
+	 * @param {BUCKET_NAMES_TYPE} bucketName
+	 * @param {string} path path of file in bucket
+	 * @param {number} expiry url expires in seconds
+	 * @returns {{ url: string, randomFileName: string }}
+	 */
+	async presignedPutUrl(
+		bucketName: BUCKET_NAMES_TYPE,
+		path: string,
+		expiry: number,
+	): Promise<{ url: string; randomFileName: string }> {
 		const bucket = BUCKETS.find((bucket) => bucket.name === bucketName);
 
 		const random = randomBytes(8).toString('hex');
@@ -90,6 +113,13 @@ export class MinioClientService {
 		};
 	}
 
+	/**
+	 * creates a presigned get url
+	 * @param {BUCKET_NAMES_TYPE} bucketName
+	 * @param {string} path path of file in bucket
+	 * @param {number} expiry url expires in seconds
+	 * @returns {string}
+	 */
 	async presignedGetUrl(bucketName: BUCKET_NAMES_TYPE, path: string, expiry: number) {
 		const bucket = BUCKETS.find((bucket) => bucket.name === bucketName);
 
@@ -99,6 +129,14 @@ export class MinioClientService {
 		return url;
 	}
 
+	/**
+	 * creates a presigned get url
+	 * @param {Express.Multer.File} file file in memory
+	 * @param {string} directory directory of file in bucket
+	 * @param {BUCKET_NAMES_TYPE} bucketName
+	 * @param {string} [contentType] content type of file (e.g. video/mp4)
+	 * @returns {string}
+	 */
 	async putObject(
 		file: Express.Multer.File,
 		directory: string,
@@ -153,7 +191,13 @@ export class MinioClientService {
 		}
 	}
 
-	async delete(objectName: string, bucketName: BUCKET_NAMES_TYPE) {
+	/**
+	 * deletes an object
+	 * @param {string} objectName
+	 * @param {BUCKET_NAMES_TYPE} bucketName
+	 * @returns {undefined}
+	 */
+	async delete(objectName: string, bucketName: BUCKET_NAMES_TYPE): Promise<undefined> {
 		try {
 			await this.client.removeObject(bucketName, objectName);
 		} catch (err) {
