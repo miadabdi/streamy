@@ -24,6 +24,11 @@ export class ProducerService implements OnModuleInit {
 		});
 	}
 
+	/**
+	 * sends a message to specific payload
+	 * @param {RMQ_QUEUES_TYPE} queue name of queue
+	 * @param {*} payload
+	 */
 	async addToQueue(queue: RMQ_QUEUES_TYPE, payload: any) {
 		try {
 			await this.channelWrapper.sendToQueue(queue, Buffer.from(JSON.stringify(payload)), {

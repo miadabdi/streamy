@@ -17,6 +17,11 @@ export class ConsumerService implements OnModuleInit {
 		this.channelWrapper = connection.createChannel();
 	}
 
+	/**
+	 * This method sets a callback as message handler of a specific queue
+	 * @param {RMQ_QUEUES_TYPE} queue name of queue
+	 * @param {(content: any) => Promise<any>} callback
+	 */
 	async listenOnQueue(queue: RMQ_QUEUES_TYPE, callback: (content: any) => Promise<any>) {
 		try {
 			this.logger.log(`Setup consumer for queue ${queue}`);
