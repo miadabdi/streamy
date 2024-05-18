@@ -1,3 +1,4 @@
+import { WriteResponseBase } from '@elastic/elasticsearch/lib/api/types';
 import { Injectable, Logger } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
 import { VideoSearchBody, VideoSearchResult } from './interface';
@@ -10,6 +11,7 @@ export default class VideoSearchService {
 	constructor(private readonly elasticsearchService: ElasticsearchService) {}
 
 	async onModuleInit() {
+		// if index does not exist, create it
 		const exists = await this.elasticsearchService.indices.exists({
 			index: this.index,
 		});
@@ -46,7 +48,12 @@ export default class VideoSearchService {
 		this.logger.log(`${this.index} index created`);
 	}
 
-	async indexVideo(video: VideoSearchBody) {
+	/**
+	 * indexes a document, this method is wrote specifically for video index
+	 * @param {VideoSearchBody} video
+	 * @returns {WriteResponseBase}
+	 */
+	async indexVideo(video: VideoSearchBody): Promise<WriteResponseBase> {
 		const result = await this.elasticsearchService.index<VideoSearchBody>({
 			index: this.index,
 			document: {
@@ -65,7 +72,12 @@ export default class VideoSearchService {
 		return result;
 	}
 
-	async search(text: string) {
+	/**
+	 * searches in indexed video documents on name and description fields
+	 * @param {string} text
+	 * @returns {VideoSearchResult[]}
+	 */
+	async search(text: string): Promise<VideoSearchResult[]> {
 		const { hits } = await this.elasticsearchService.search<VideoSearchResult>({
 			index: this.index,
 			query: {
@@ -78,6 +90,7 @@ export default class VideoSearchService {
 			},
 		});
 		const actualHits = hits.hits;
-		return actualHits.map((item) => item._source);
+		const result = actualHits.map((item) => item._source);
+		return result;
 	}
 }
