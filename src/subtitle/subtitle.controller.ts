@@ -57,7 +57,7 @@ export class SubtitleController {
 	@HttpCode(HttpStatus.OK)
 	@Get('/by-language-rfc5646/:identifier')
 	getLanguageOfRFC5646(@Param('identifier') identifier: string, @GetUser() user: User) {
-		return this.subtitleService.getLanguageOfRFC5646(identifier, user);
+		return this.subtitleService.getLanguageOfRFC5646(identifier);
 	}
 
 	@HttpCode(HttpStatus.OK)
@@ -66,7 +66,7 @@ export class SubtitleController {
 		@Query() getSubtitleByVideoIdDto: GetSubtitleByVideoIdDto,
 		@GetUser() user: User,
 	) {
-		return this.subtitleService.getSubtitleByVideoId(getSubtitleByVideoIdDto.videoId);
+		return this.subtitleService.getSubtitlesByVideoId(getSubtitleByVideoIdDto.videoId);
 	}
 
 	@HttpCode(HttpStatus.OK)

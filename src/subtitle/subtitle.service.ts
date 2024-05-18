@@ -4,7 +4,7 @@ import { RFC5646_LANGUAGE_TAGS } from '../common/constants';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
-import { User } from '../drizzle/schema';
+import { Subtitle, User } from '../drizzle/schema';
 import { subtitlesTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
 import { VideoService } from '../video/video.service';
@@ -20,7 +20,14 @@ export class SubtitleService {
 		private videoService: VideoService,
 	) {}
 
-	async userOwnsSubtitle(id: number, user: User) {
+	/**
+	 * checks if user owns subtitle
+	 * @param {number} id id of subtitle record
+	 * @param {User} user
+	 * @throws {NotFoundException} subtitle with provided id is not found
+	 * @throws {ForbiddenException} user does not own the subtitle
+	 */
+	async userOwnsSubtitle(id: number, user: User): Promise<undefined> {
 		const subtitle = await this.drizzleService.db.query.subtitles.findFirst({
 			where: eq(schema.subtitles.id, id),
 			with: {
@@ -41,11 +48,18 @@ export class SubtitleService {
 		}
 	}
 
+	/**
+	 * creates a subtitle
+	 * @param {CreateSubtitleDto} createSubtitleDto
+	 * @param {Express.Multer.File} file
+	 * @param {User} user
+	 * @returns {Subtitle}
+	 */
 	async createSubtitle(
 		createSubtitleDto: CreateSubtitleDto,
 		file: Express.Multer.File,
 		user: User,
-	) {
+	): Promise<Subtitle> {
 		await this.videoService.userOwnsVideo(createSubtitleDto.videoId, user);
 
 		const fileRecord = await this.fileService.uploadAndCreateFileRecord(
@@ -69,6 +83,12 @@ export class SubtitleService {
 		return subtitle[0];
 	}
 
+	/**
+	 * updates a subtitle
+	 * @param {UpdateSubtitleDto} updateSubtitleDto
+	 * @param {User} user
+	 * @returns {Subtitle}
+	 */
 	async updateSubtitle(updateSubtitleDto: UpdateSubtitleDto, user: User) {
 		await this.userOwnsSubtitle(updateSubtitleDto.id, user);
 
@@ -85,8 +105,13 @@ export class SubtitleService {
 		return updatedSubtitle[0];
 	}
 
-	async getSubtitleByVideoId(videoId: number) {
-		return this.drizzleService.db.query.subtitles.findFirst({
+	/**
+	 * finds subtitles of a video and returns all of them
+	 * @param {number} videoId
+	 * @returns {Subtitle[]}
+	 */
+	async getSubtitlesByVideoId(videoId: number): Promise<Subtitle[]> {
+		return this.drizzleService.db.query.subtitles.findMany({
 			where: eq(schema.subtitles.videoId, videoId),
 			with: {
 				video: true,
@@ -94,13 +119,23 @@ export class SubtitleService {
 		});
 	}
 
-	getLanguageOfRFC5646(identifier: string, @GetUser() user: User) {
+	/**
+	 * finds language name of a RFC5646 identifier
+	 * @param {string} identifier
+	 * @returns {{ language: string }}
+	 */
+	getLanguageOfRFC5646(identifier: string): { language: string } {
 		return {
 			language: RFC5646_LANGUAGE_TAGS[identifier],
 		};
 	}
 
-	async getSubtitleById(id: number) {
+	/**
+	 * finds a subtitle by id
+	 * @param {number} id id of subtitle record
+	 * @returns {Subtitle}
+	 */
+	async getSubtitleById(id: number): Promise<Subtitle> {
 		const subtitle = await this.drizzleService.db.query.subtitles.findFirst({
 			where: eq(schema.subtitles.id, id),
 			with: {
@@ -111,7 +146,16 @@ export class SubtitleService {
 		return subtitle;
 	}
 
-	async deleteSubtitle(deleteSubtitleDto: DeleteSubtitleDto, @GetUser() user: User) {
+	/**
+	 * deletes a subtitle
+	 * @param {DeleteSubtitleDto} deleteSubtitleDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async deleteSubtitle(
+		deleteSubtitleDto: DeleteSubtitleDto,
+		@GetUser() user: User,
+	): Promise<{ message: string }> {
 		await this.userOwnsSubtitle(deleteSubtitleDto.id, user);
 
 		await this.drizzleService.db
