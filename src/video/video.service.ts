@@ -11,7 +11,7 @@ import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
-import { User } from '../drizzle/schema';
+import { File, User, Video } from '../drizzle/schema';
 import { videosTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
 import { ConsumerService } from '../queue/consumer.service';
@@ -43,10 +43,18 @@ export class VideoService {
 		this.consumerService.listenOnQueue('q.set.video.status', this.consumeSetStatusMsg.bind(this));
 	}
 
+	/**
+	 * sending input message to `q.video.process` queue
+	 * @param {VideoProcessMsg} payload
+	 */
 	async sendVideoProcessRMQMsg(payload: VideoProcessMsg) {
 		await this.producerService.addToQueue('q.video.process', payload);
 	}
 
+	/**
+	 * saves status and logs of process operations of messages coming from queue
+	 * @param {SetVideoStatusMsg} message
+	 */
 	async consumeSetStatusMsg(message: SetVideoStatusMsg) {
 		await this.drizzleService.db
 			.update(schema.videos)
@@ -54,6 +62,11 @@ export class VideoService {
 			.where(eq(schema.videos.id, message.videoId));
 	}
 
+	/**
+	 * whenever a new video is uploaded into minio, it would fire an event,
+	 * we capture the event and update related file record and video record
+	 * @param {*} record
+	 */
 	async handleVideoUploadEvent(record: any) {
 		const bucketName = record.s3.bucket.name;
 		const filePath = record.s3.object.key;
@@ -91,6 +104,13 @@ export class VideoService {
 		}
 	}
 
+	/**
+	 * checks if user owns the video
+	 * @param {number} id id of video
+	 * @param {User} user
+	 * @throws {NotFoundException} if video not found
+	 * @throws {ForbiddenException} if user does not own the video
+	 */
 	async userOwnsVideo(id: number, user: User) {
 		const video = await this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.id, id),
@@ -108,6 +128,11 @@ export class VideoService {
 		}
 	}
 
+	/**
+	 * generate random 16 char ids and check if it does not exists
+	 * if not it returns the newly created id
+	 * @returns {string}
+	 */
 	async generateVideoId() {
 		while (true) {
 			const id = randomBytes(8).toString('hex');
@@ -119,10 +144,16 @@ export class VideoService {
 		}
 	}
 
+	/**
+	 * it would send video info such as bucket and file name and its subs into process queue
+	 * @param {SendVideoToProcessQueueDto} sendVideoToProcessQueueDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
 	async sendVideoInProcessQueue(
 		sendVideoToProcessQueueDto: SendVideoToProcessQueueDto,
 		user: User,
-	) {
+	): Promise<{ message: string }> {
 		await this.userOwnsVideo(sendVideoToProcessQueueDto.id, user);
 
 		const video = await this.drizzleService.db.query.videos.findFirst({
@@ -176,7 +207,13 @@ export class VideoService {
 		};
 	}
 
-	async createVideo(createVideoDto: CreateVideoDto, user: User) {
+	/**
+	 * creates a video
+	 * @param {CreateVideoDto} createVideoDto
+	 * @param {User} user
+	 * @returns {Video}
+	 */
+	async createVideo(createVideoDto: CreateVideoDto, user: User): Promise<Video> {
 		await this.channelService.userOwnsChannel(createVideoDto.channelId, user);
 
 		const videoId = await this.generateVideoId();
@@ -195,11 +232,18 @@ export class VideoService {
 		return video[0];
 	}
 
+	/**
+	 * uploads and creates an image file, then sets it as thumbnail for video
+	 * @param {SetVideoThumbnailDto} setVideoThumbnailDto
+	 * @param {User} user
+	 * @param {Express.Multer.File} thumbnail uploaded image
+	 * @returns {File}
+	 */
 	async setVideoThumbnail(
 		setVideoThumbnailDto: SetVideoThumbnailDto,
 		user: User,
 		thumbnail: Express.Multer.File,
-	) {
+	): Promise<File> {
 		await this.userOwnsVideo(setVideoThumbnailDto.id, user);
 
 		const file = await this.fileService.uploadAndCreateFileRecord(
@@ -220,7 +264,13 @@ export class VideoService {
 		return file;
 	}
 
-	async updateVideo(updateVideoDto: UpdateVideoDto, user: User) {
+	/**
+	 * updates a video
+	 * @param {UpdateVideoDto} updateVideoDto
+	 * @param {User} user
+	 * @returns {Video}
+	 */
+	async updateVideo(updateVideoDto: UpdateVideoDto, user: User): Promise<Video> {
 		await this.userOwnsVideo(updateVideoDto.id, user);
 
 		const { ...returningKeys } = videosTableColumns;
@@ -236,7 +286,12 @@ export class VideoService {
 		return updatedVideo[0];
 	}
 
-	async getVideoByVideoId(videoId: string) {
+	/**
+	 * fetches a video with subs by video id
+	 * @param {number} videoId
+	 * @returns {Video}
+	 */
+	async getVideoByVideoId(videoId: string): Promise<Video> {
 		return this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.videoId, videoId),
 			with: {
@@ -245,7 +300,16 @@ export class VideoService {
 		});
 	}
 
-	async getPresignedPutURL(getVideoPresignedPutURLDto: GetVideoPresignedPutURLDto, user: User) {
+	/**
+	 * creates and saves a presigned put url for video upload and returns it
+	 * @param {GetVideoPresignedPutURLDto} getVideoPresignedPutURLDto
+	 * @param {User} user
+	 * @returns {{ url: string, fileRecord: File }}
+	 */
+	async getPresignedPutURL(
+		getVideoPresignedPutURLDto: GetVideoPresignedPutURLDto,
+		user: User,
+	): Promise<{ url: string; fileRecord: File }> {
 		const { url, fileRecord } = await this.fileService.getPresignedPutURL(
 			{
 				bucket: 'videos',
@@ -266,7 +330,12 @@ export class VideoService {
 		};
 	}
 
-	async getVideoById(id: number) {
+	/**
+	 * fetches video with subs by id
+	 * @param {number} id
+	 * @returns {Video}
+	 */
+	async getVideoById(id: number): Promise<Video> {
 		return this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.id, id),
 			with: {
@@ -275,7 +344,16 @@ export class VideoService {
 		});
 	}
 
-	async deleteVideo(deleteVideoDto: DeleteVideoDto, @GetUser() user: User) {
+	/**
+	 * deletes a video
+	 * @param {DeleteVideoDto} deleteVideoDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async deleteVideo(
+		deleteVideoDto: DeleteVideoDto,
+		@GetUser() user: User,
+	): Promise<{ message: string }> {
 		await this.userOwnsVideo(deleteVideoDto.id, user);
 
 		await this.drizzleService.db
