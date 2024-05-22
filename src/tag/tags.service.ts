@@ -3,7 +3,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { GetUser } from '../common/decorators';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
-import { User } from '../drizzle/schema';
+import { Tag, User } from '../drizzle/schema';
 import { tagsTableColumns } from '../drizzle/table-columns';
 import { VideoService } from '../video/video.service';
 import { CreateTagDto, DeleteTagDto } from './dto';
@@ -18,7 +18,13 @@ export class TagService {
 		private videoService: VideoService,
 	) {}
 
-	async createTag(createTagDto: CreateTagDto, user: User) {
+	/**
+	 * creates a tag
+	 * @param {CreateTagDto} createTagDto
+	 * @param {User} user
+	 * @returns {Tag}
+	 */
+	async createTag(createTagDto: CreateTagDto, user: User): Promise<Tag> {
 		// TODO: check for admin access
 
 		const dupTag = await this.drizzleService.db.query.tags.findFirst({
@@ -41,7 +47,16 @@ export class TagService {
 		return tags[0];
 	}
 
-	async addTagsToVideo(addTagsToVideoDto: AddTagsToVideoDto, user: User) {
+	/**
+	 * adds a tag to the tags list of a video owned by logged in user
+	 * @param {AddTagsToVideoDto} addTagsToVideoDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async addTagsToVideo(
+		addTagsToVideoDto: AddTagsToVideoDto,
+		user: User,
+	): Promise<{ message: string }> {
 		await this.videoService.userOwnsVideo(addTagsToVideoDto.videoId, user);
 
 		const tagIdsUnique = [...new Set(addTagsToVideoDto.tagIds)];
@@ -74,13 +89,24 @@ export class TagService {
 		};
 	}
 
-	async getTagById(id: number) {
+	/**
+	 * finds a tag by id and returns it if found
+	 * @param {number} id
+	 * @returns {Tag}
+	 */
+	async getTagById(id: number): Promise<Tag> {
 		return this.drizzleService.db.query.tags.findFirst({
 			where: eq(schema.tags.id, id),
 		});
 	}
 
-	async deleteTag(deleteTagDto: DeleteTagDto, @GetUser() user: User) {
+	/**
+	 * deletes a tag
+	 * @param {DeleteTagDto} deleteTagDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 */
+	async deleteTag(deleteTagDto: DeleteTagDto, @GetUser() user: User): Promise<{ message: string }> {
 		// TODO: check for admin access
 
 		await this.drizzleService.db
