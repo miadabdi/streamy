@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import { ChannelService } from '../channel/channel.service';
 import { mapColsToReturningKeys } from '../common/helpers/map-cols-to-returning-keys';
 import { TransactionType } from '../common/types/transaction.type';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -13,10 +14,21 @@ import { SetCurrentChannelDto } from './dto/set-current-channel.dto';
 export class UserService {
 	private readonly logger = new Logger(UserService.name);
 
-	constructor(private drizzleService: DrizzleService) {}
+	constructor(
+		private drizzleService: DrizzleService,
+		private channelService: ChannelService,
+	) {}
 
-	async getMe(user: User, tx?: TransactionType) {
+	/**
+	 * fetches allowed user info and returns it
+	 * @param {User} user
+	 * @param {TransactionType} [tx]
+	 * @returns {User}
+	 */
+	async getMe(user: User, tx?: TransactionType): Promise<User> {
 		const manager = tx ? tx : this.drizzleService.db;
+
+		// FIXME: fetching an already available user?
 
 		const { passwordChangedAt, passwordResetToken, passwordResetExpiresAt, password, ...userKeys } =
 			usersTableColumns;
@@ -33,6 +45,12 @@ export class UserService {
 		return userRecord;
 	}
 
+	/**
+	 * updates user info
+	 * @param {UpdateUserDto} updateUserDto
+	 * @param {User} user
+	 * @returns {User}
+	 */
 	async updateUser(updateUserDto: UpdateUserDto, user: User) {
 		const {
 			password,
@@ -54,6 +72,15 @@ export class UserService {
 		return updatedUser;
 	}
 
+	/**
+	 * switches active channel of user, and saves it into user document
+	 * @param {SetCurrentChannelDto} setCurrentChannelDto
+	 * @param {User} user
+	 * @param {TransactionType} [tx]
+	 * @returns {User}
+	 * @throws {NotFoundException} channel not found
+	 * @throws {ForbiddenException} if user does not own the channel
+	 */
 	async setCurrentChannel(
 		setCurrentChannelDto: SetCurrentChannelDto,
 		user: User,
@@ -69,16 +96,7 @@ export class UserService {
 
 		const manager = tx ? tx : this.drizzleService.db;
 
-		const channel = await manager.query.channels.findFirst({
-			where: eq(schema.channels.id, setCurrentChannelDto.currentChannelId),
-		});
-
-		if (!channel) {
-			throw new NotFoundException('Channel not found');
-		}
-		if (channel.ownerId !== user.id) {
-			throw new ForbiddenException("You don't own this channel");
-		}
+		await this.channelService.userOwnsChannel(setCurrentChannelDto.currentChannelId, user);
 
 		const updateResults = await manager
 			.update(schema.users)
