@@ -161,6 +161,10 @@ export const videoProccessingStatus = pgEnum('video_proccessing_status', [
 export const VideoProccessingStatusEnum = strEnum(videoProccessingStatus.enumValues);
 export type TVideoProccessingStatusEnum = keyof typeof VideoProccessingStatusEnum;
 
+export const videoType = pgEnum('video_type', ['vod', 'live']);
+export const videoTypeEnum = strEnum(videoType.enumValues);
+export type TVideoTypeEnum = keyof typeof videoTypeEnum;
+
 export const videos = pgTable(
 	'videos',
 	{
@@ -174,6 +178,7 @@ export const videos = pgTable(
 		deletedAt: timestamp('deleted_at', { precision: 6, withTimezone: true }),
 		isReleased: boolean('is_released').default(false),
 		releasedAt: timestamp('released_at', { precision: 6, withTimezone: true }),
+		type: videoType('type').default(videoTypeEnum.vod),
 		name: varchar('name', { length: 256 }).notNull(),
 		description: varchar('description', { length: 2048 }).notNull(),
 		numberOfVisits: integer('number_of_visits').default(0),
