@@ -52,6 +52,7 @@ export class LiveService {
 		}
 
 		await this.sendLiveProcessRMQMsg({
+			id: video.id,
 			videoId: video.videoId,
 			app,
 			streamKey,
@@ -76,6 +77,8 @@ export class LiveService {
 		}
 
 		const data = await this.videoService.getLiveByVideoId(srsOnPublishDto.stream);
+
+		this.sendLiveToProcessQueue(srsOnPublishDto.app, srsOnPublishDto.stream);
 
 		if (data) {
 			return { code: 0 };
