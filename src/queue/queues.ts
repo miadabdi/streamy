@@ -1,7 +1,12 @@
 /**
  * Allowed queue names
  */
-export const RMQ_QUEUES = ['q.video.process', 'q.email.send', 'q.set.video.status'] as const;
+export const RMQ_QUEUES = [
+	'q.video.process',
+	'q.live.process',
+	'q.email.send',
+	'q.set.video.status',
+] as const;
 
 /**
  * Allowed queue names are available as type
