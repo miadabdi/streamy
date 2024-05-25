@@ -96,7 +96,7 @@ export class UserService {
 
 		const manager = tx ? tx : this.drizzleService.db;
 
-		await this.channelService.userOwnsChannel(setCurrentChannelDto.currentChannelId, user);
+		await this.channelService.userOwnsChannel(setCurrentChannelDto.currentChannelId, user, tx);
 
 		const updateResults = await manager
 			.update(schema.users)

@@ -29,11 +29,14 @@ export class ChannelService {
 	 * checks if user owns channel with id of id
 	 * @param {number} id
 	 * @param {User} user
+	 * @param {TransactionType} [tx]
 	 * @throws {NotFoundException} id not found in channels table
 	 * @throws {ForbiddenException} user must own channel
 	 */
-	async userOwnsChannel(id: number, user: User): Promise<undefined> {
-		const channel = await this.drizzleService.db.query.channels.findFirst({
+	async userOwnsChannel(id: number, user: User, tx?: TransactionType): Promise<undefined> {
+		const manager = tx ? tx : this.drizzleService.db;
+
+		const channel = await manager.query.channels.findFirst({
 			where: eq(schema.channels.id, id),
 		});
 

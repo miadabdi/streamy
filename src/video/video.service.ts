@@ -304,6 +304,21 @@ export class VideoService {
 	}
 
 	/**
+	 * finds a video record with type of live and passed videoId
+	 * @param {string} videoId
+	 * @returns {Video}
+	 */
+	getLiveByVideoId(videoId: string) {
+		return this.drizzleService.db.query.videos.findFirst({
+			where: and(
+				eq(schema.videos.videoId, videoId),
+				eq(schema.videos.type, schema.videoTypeEnum.live),
+				eq(schema.videos.isActive, true),
+			),
+		});
+	}
+
+	/**
 	 * creates and saves a presigned put url for video upload and returns it
 	 * @param {GetVideoPresignedPutURLDto} getVideoPresignedPutURLDto
 	 * @param {User} user

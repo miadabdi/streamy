@@ -14,12 +14,14 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser } from '../common/decorators';
+import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards';
 import { SharpPipe } from '../common/pipes/sharp-pipe.pipe';
 import { User } from '../drizzle/schema';
 import {
 	CreateVideoDto,
 	DeleteVideoDto,
+	GetLiveByVideoIdDto,
 	GetVideoByIdDto,
 	GetVideoByVideoIdDto,
 	SendVideoToProcessQueueDto,
@@ -47,6 +49,13 @@ export class VideoController {
 	@Post()
 	createVideo(@Body() createVideoDto: CreateVideoDto, @GetUser() user: User) {
 		return this.videoService.createVideo(createVideoDto, user);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Get('/live-by-video-id')
+	@Public()
+	getLiveByVideoId(@Query() getLiveByVideoIdDto: GetLiveByVideoIdDto) {
+		return this.videoService.getLiveByVideoId(getLiveByVideoIdDto.videoId);
 	}
 
 	@HttpCode(HttpStatus.OK)
