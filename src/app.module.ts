@@ -18,6 +18,7 @@ import { UserModule } from './user/user.module';
 import { VideoModule } from './video/video.module';
 import { LoggerModule } from './logger/logger.module';
 import { SearchModule } from './search/search.module';
+import { LiveModule } from './live/live.module';
 
 @Module({
 	imports: [
@@ -47,6 +48,7 @@ import { SearchModule } from './search/search.module';
 		}),
 		LoggerModule,
 		SearchModule,
+		LiveModule,
 	],
 	controllers: [],
 })
