@@ -37,7 +37,7 @@ export class AuthController {
 
 	@HttpCode(HttpStatus.OK)
 	@Get('/signout')
-	async logout(@Res({ passthrough: true }) response: Response) {
+	async signOut(@Res({ passthrough: true }) response: Response) {
 		response.cookie(JWT_COOKIE_NAME, '', { expires: new Date() });
 	}
 }
