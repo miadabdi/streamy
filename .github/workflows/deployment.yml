@@ -13,7 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - name: Get code
+      - name: Get code from changes
         uses: actions/checkout@v4
       - name: Install NodeJS
         uses: actions/setup-node@v4
