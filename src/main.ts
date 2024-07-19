@@ -31,7 +31,10 @@ async function bootstrap() {
 	app.use(cookieParser());
 	app.use(hpp());
 
-	app.enableCors();
+	app.enableCors({
+		origin: '*',
+		credentials: true,
+	});
 
 	app.setGlobalPrefix(API_PREFIX);
 
