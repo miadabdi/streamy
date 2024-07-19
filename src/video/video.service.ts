@@ -409,6 +409,9 @@ export class VideoService {
 			where: eq(schema.videos.videoId, videoId),
 			with: {
 				subtitles: true,
+				videoFile: true,
+				thumbnailFile: true,
+				comments: true,
 			},
 		});
 	}
@@ -470,6 +473,7 @@ export class VideoService {
 				subtitles: true,
 				videoFile: true,
 				thumbnailFile: true,
+				comments: true,
 			},
 		});
 	}

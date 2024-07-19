@@ -120,6 +120,17 @@ export class PlaylistService {
 	async getPlaylistById(id: number): Promise<Playlist> {
 		return this.drizzleService.db.query.playlists.findFirst({
 			where: eq(schema.playlists.id, id),
+			with: {
+				playlistsVideos: {
+					with: {
+						video: {
+							with: {
+								thumbnailFile: true,
+							},
+						},
+					},
+				},
+			},
 		});
 	}
 
