@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ChannelModule } from '../channel/channel.module';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 import { FileModule } from '../file/file.module';
@@ -7,7 +7,7 @@ import { TagController } from './tags.controller';
 import { TagService } from './tags.service';
 
 @Module({
-	imports: [DrizzleModule, FileModule, ChannelModule, VideoModule],
+	imports: [DrizzleModule, FileModule, ChannelModule, forwardRef(() => VideoModule)],
 	controllers: [TagController],
 	providers: [TagService],
 	exports: [TagService],

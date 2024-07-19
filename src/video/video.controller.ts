@@ -17,7 +17,8 @@ import { GetUser } from '../common/decorators';
 import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards';
 import { SharpPipe } from '../common/pipes/sharp-pipe.pipe';
-import { User } from '../drizzle/schema';
+import { DrizzleService } from '../drizzle/drizzle.service';
+import { User, Video } from '../drizzle/schema';
 import {
 	CreateVideoDto,
 	DeleteVideoDto,
@@ -34,7 +35,10 @@ import { VideoService } from './video.service';
 @Controller('/video')
 @UseGuards(JwtAuthGuard)
 export class VideoController {
-	constructor(private videoService: VideoService) {}
+	constructor(
+		private videoService: VideoService,
+		private drizzleService: DrizzleService,
+	) {}
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post('/send-video-to-process-queue')
@@ -47,8 +51,14 @@ export class VideoController {
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post()
-	createVideo(@Body() createVideoDto: CreateVideoDto, @GetUser() user: User) {
-		return this.videoService.createVideo(createVideoDto, user);
+	async createVideo(@Body() createVideoDto: CreateVideoDto, @GetUser() user: User) {
+		let video: Video;
+
+		await this.drizzleService.db.transaction(async (tx) => {
+			video = await this.videoService.createVideo(createVideoDto, user, tx);
+		});
+
+		return video;
 	}
 
 	@HttpCode(HttpStatus.OK)

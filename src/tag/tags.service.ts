@@ -1,6 +1,14 @@
-import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+	ConflictException,
+	forwardRef,
+	Inject,
+	Injectable,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { and, eq, inArray } from 'drizzle-orm';
 import { GetUser } from '../common/decorators';
+import { TransactionType } from '../common/types/transaction.type';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { Tag, User } from '../drizzle/schema';
@@ -15,6 +23,7 @@ export class TagService {
 
 	constructor(
 		private drizzleService: DrizzleService,
+		@Inject(forwardRef(() => VideoService))
 		private videoService: VideoService,
 	) {}
 
@@ -56,12 +65,15 @@ export class TagService {
 	async addTagsToVideo(
 		addTagsToVideoDto: AddTagsToVideoDto,
 		user: User,
+		tx?: TransactionType,
 	): Promise<{ message: string }> {
-		await this.videoService.userOwnsVideo(addTagsToVideoDto.videoId, user);
+		const manager = tx ? tx : this.drizzleService.db;
+
+		await this.videoService.userOwnsVideo(addTagsToVideoDto.videoId, user, tx);
 
 		const tagIdsUnique = [...new Set(addTagsToVideoDto.tagIds)];
 
-		const tags = await this.drizzleService.db.query.tags.findMany({
+		const tags = await manager.query.tags.findMany({
 			where: and(inArray(schema.tags.id, tagIdsUnique), eq(schema.tags.isActive, true)),
 		});
 
@@ -78,11 +90,7 @@ export class TagService {
 				videoId: addTagsToVideoDto.videoId,
 			};
 		});
-		await this.drizzleService.db
-			.insert(schema.tagsVideos)
-			.values(values)
-			.onConflictDoNothing()
-			.execute();
+		await manager.insert(schema.tagsVideos).values(values).onConflictDoNothing().execute();
 
 		return {
 			message: 'Tags were added to the video',

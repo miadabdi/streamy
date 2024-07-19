@@ -1,6 +1,8 @@
 import {
 	BadRequestException,
 	ForbiddenException,
+	forwardRef,
+	Inject,
 	Injectable,
 	Logger,
 	NotFoundException,
@@ -9,6 +11,7 @@ import { randomBytes } from 'crypto';
 import { and, eq } from 'drizzle-orm';
 import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
+import { TransactionType } from '../common/types/transaction.type';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
 import { File, User, Video } from '../drizzle/schema';
@@ -16,6 +19,7 @@ import { videosTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
+import { TagService } from '../tag/tags.service';
 import {
 	CreateVideoDto,
 	DeleteVideoDto,
@@ -37,6 +41,8 @@ export class VideoService {
 		private channelService: ChannelService,
 		private producerService: ProducerService,
 		private consumerService: ConsumerService,
+		@Inject(forwardRef(() => TagService))
+		private tagService: TagService,
 	) {}
 
 	onModuleInit() {
@@ -111,8 +117,10 @@ export class VideoService {
 	 * @throws {NotFoundException} if video not found
 	 * @throws {ForbiddenException} if user does not own the video
 	 */
-	async userOwnsVideo(id: number, user: User) {
-		const video = await this.drizzleService.db.query.videos.findFirst({
+	async userOwnsVideo(id: number, user: User, tx?: TransactionType) {
+		const manager = tx ? tx : this.drizzleService.db;
+
+		const video = await manager.query.videos.findFirst({
 			where: eq(schema.videos.id, id),
 			with: {
 				channel: true,
@@ -213,13 +221,18 @@ export class VideoService {
 	 * @param {User} user
 	 * @returns {Video}
 	 */
-	async createVideo(createVideoDto: CreateVideoDto, user: User): Promise<Video> {
-		await this.channelService.userOwnsChannel(createVideoDto.channelId, user);
+	async createVideo(
+		createVideoDto: CreateVideoDto,
+		user: User,
+		tx?: TransactionType,
+	): Promise<Video> {
+		const manager = tx ? tx : this.drizzleService.db;
+		await this.channelService.userOwnsChannel(createVideoDto.channelId, user, tx);
 
 		const videoId = await this.generateVideoId();
 
 		const { ...returningKeys } = videosTableColumns;
-		const video = await this.drizzleService.db
+		const videoRes = await manager
 			.insert(schema.videos)
 			.values({
 				...createVideoDto,
@@ -232,7 +245,18 @@ export class VideoService {
 			.returning(returningKeys)
 			.execute();
 
-		return video[0];
+		const video = videoRes[0];
+
+		await this.tagService.addTagsToVideo(
+			{
+				tagIds: createVideoDto.tagIds,
+				videoId: video.id,
+			},
+			user,
+			tx,
+		);
+
+		return video;
 	}
 
 	/**
@@ -358,6 +382,8 @@ export class VideoService {
 			where: eq(schema.videos.id, id),
 			with: {
 				subtitles: true,
+				videoFile: true,
+				thumbnailFile: true,
 			},
 		});
 	}
