@@ -127,6 +127,20 @@
       "when": 1716486738238,
       "tag": "0017_fresh_vin_gonzales",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1721367071848,
+      "tag": "0018_orange_edwin_jarvis",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1721367146265,
+      "tag": "0019_bright_black_tarantula",
+      "breakpoints": true
     }
   ]
 }

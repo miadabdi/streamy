@@ -119,7 +119,8 @@ export const channelsRelations = relations(channels, ({ many, one }) => ({
 		references: [files.id],
 	}),
 	videos: many(videos),
-	subscriptions: many(subscriptions),
+	subscriptions: many(subscriptions, { relationName: 'subscriptions' }),
+	subscribers: many(subscriptions, { relationName: 'subscribers' }),
 }));
 
 export const subscriptions = pgTable(
@@ -143,10 +144,12 @@ export const subscriptionsRelations = relations(subscriptions, ({ many, one }) =
 	follower: one(channels, {
 		fields: [subscriptions.followerId],
 		references: [channels.id],
+		relationName: 'subscriptions',
 	}),
 	followee: one(channels, {
 		fields: [subscriptions.followeeId],
 		references: [channels.id],
+		relationName: 'subscribers',
 	}),
 }));
 
