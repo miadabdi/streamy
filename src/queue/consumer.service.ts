@@ -1,16 +1,14 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import amqp, { ChannelWrapper } from 'amqp-connection-manager';
 import { RMQ_QUEUES_TYPE } from './queues';
 
 @Injectable()
-export class ConsumerService implements OnModuleInit {
+export class ConsumerService {
 	private logger = new Logger(ConsumerService.name);
 	private channelWrapper: ChannelWrapper;
 
-	constructor(private configService: ConfigService) {}
-
-	async onModuleInit() {
+	constructor(private configService: ConfigService) {
 		const amqpConnectionString = this.configService.get<string>('RMQ_URL');
 
 		const connection = amqp.connect([amqpConnectionString]);
@@ -49,6 +47,7 @@ export class ConsumerService implements OnModuleInit {
 
 			this.logger.log(`Consumer service started and listening on ${queue} for messages`);
 		} catch (err) {
+			console.log(err);
 			this.logger.error(`Error starting the consumer on ${queue}: `, err);
 		}
 	}

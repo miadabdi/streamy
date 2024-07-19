@@ -1,16 +1,14 @@
-import { Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import amqp, { Channel, ChannelWrapper } from 'amqp-connection-manager';
 import { RMQ_QUEUES, RMQ_QUEUES_TYPE } from './queues';
 
 @Injectable()
-export class ProducerService implements OnModuleInit {
+export class ProducerService {
 	private logger = new Logger(ProducerService.name);
 	private channelWrapper: ChannelWrapper;
 
-	constructor(private configService: ConfigService) {}
-
-	async onModuleInit() {
+	constructor(private configService: ConfigService) {
 		const amqpConnectionString = this.configService.get<string>('RMQ_URL');
 
 		const connection = amqp.connect([amqpConnectionString]);
