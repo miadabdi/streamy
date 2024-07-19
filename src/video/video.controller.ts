@@ -30,6 +30,7 @@ import {
 	UpdateVideoDto,
 } from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
+import { GetVideosDto } from './dto/get-videos';
 import { VideoService } from './video.service';
 
 @Controller('/video')
@@ -95,6 +96,12 @@ export class VideoController {
 	@Get('/by-video-id')
 	getVideoByVideoId(@Query() getVideoByVideoIdDto: GetVideoByVideoIdDto, @GetUser() user: User) {
 		return this.videoService.getVideoByVideoId(getVideoByVideoIdDto.videoId);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Get()
+	getAllVideos(@Query() getVideosDto: GetVideosDto, @GetUser() user: User) {
+		return this.videoService.getAllVideos(getVideosDto, user);
 	}
 
 	@Get('/get-presigned-put-url')

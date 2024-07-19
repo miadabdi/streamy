@@ -8,7 +8,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray, or } from 'drizzle-orm';
 import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { TransactionType } from '../common/types/transaction.type';
@@ -28,6 +28,7 @@ import {
 	UpdateVideoDto,
 } from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
+import { GetVideosDto } from './dto/get-videos';
 import { SetVideoStatusMsg } from './interface';
 import { VideoProcessMsg } from './interface/video-process-msg.interface';
 
@@ -213,6 +214,65 @@ export class VideoService {
 		return {
 			message: 'Video sent to process queue successfully',
 		};
+	}
+
+	/**
+	 * get all videos with specified filters
+	 * @param {GetVideosDto} getVideosDto
+	 * @param {User} user
+	 * @returns {Video[]}
+	 */
+	async getAllVideos(getVideosDto: GetVideosDto, @GetUser() user: User) {
+		console.log(getVideosDto);
+
+		const andArr = [eq(schema.videos.type, getVideosDto.type)];
+
+		if (getVideosDto.channelId) {
+			andArr.push(eq(schema.videos.channelId, getVideosDto.channelId));
+		}
+
+		if (getVideosDto.includeNotReleased) {
+			// if user wants to get not released videos it should only see unreleased videos of their channel
+			const owned = await this.drizzleService.db
+				.select()
+				.from(schema.channels)
+				.where(eq(schema.channels.ownerId, user.id))
+				.execute();
+
+			const ownedChannelIds = owned.map((channel) => channel.id);
+
+			andArr.push(
+				or(eq(schema.videos.isReleased, true), inArray(schema.videos.channelId, ownedChannelIds)),
+			);
+		} else {
+			andArr.push(eq(schema.videos.isReleased, true));
+		}
+
+		if (getVideosDto.onlySubbed) {
+			const subbed = await this.drizzleService.db
+				.select()
+				.from(schema.subscriptions)
+				.where(eq(schema.subscriptions.followerId, user.currentChannelId))
+				.execute();
+
+			const subbedChannelIds = subbed.map((sub) => sub.followeeId);
+
+			if (subbedChannelIds.length == 0) {
+				return [];
+			}
+
+			andArr.push(inArray(schema.videos.channelId, subbedChannelIds));
+		}
+
+		return this.drizzleService.db.query.videos.findMany({
+			where: and(...andArr),
+			limit: getVideosDto.limit,
+			offset: getVideosDto.offset,
+			orderBy: [desc(schema.videos.releasedAt), desc(schema.videos.createdAt)],
+			with: {
+				channel: true,
+			},
+		});
 	}
 
 	/**
