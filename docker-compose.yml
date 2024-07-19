@@ -86,7 +86,6 @@ services:
     image: elasticsearch:8.13.0
     volumes:
       - es_certs:/usr/share/elasticsearch/config/certs
-      - ./es_certs:/usr/share/elasticsearch/config/certs
     user: '0'
     networks:
       - local
