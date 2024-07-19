@@ -57,7 +57,7 @@ export class ChannelController {
 	updateChannel(
 		@Body() updateChannelDto: UpdateChannelDto,
 		@GetUser() user: User,
-		@UploadedFile(SharpPipe) avatar: Express.Multer.File,
+		@UploadedFile(new SharpPipe({ width: 400, height: 400 })) avatar: Express.Multer.File,
 	) {
 		return this.channelService.updateChannel(updateChannelDto, user, avatar);
 	}

@@ -23,7 +23,10 @@ export class FileController {
 	@Post('/upload-image')
 	@UseGuards(JwtAuthGuard)
 	@UseInterceptors(FileInterceptor('image'))
-	async uploadImage(@UploadedFile(SharpPipe) image: Express.Multer.File, @GetUser() user: User) {
+	async uploadImage(
+		@UploadedFile(new SharpPipe({ height: 1080, width: 1920 })) image: Express.Multer.File,
+		@GetUser() user: User,
+	) {
 		return this.fileService.uploadImage(image, user);
 	}
 
