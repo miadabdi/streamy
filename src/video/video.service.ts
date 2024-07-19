@@ -117,8 +117,9 @@ export class VideoService {
 	 * @param {User} user
 	 * @throws {NotFoundException} if video not found
 	 * @throws {ForbiddenException} if user does not own the video
+	 * @returns {Video}
 	 */
-	async userOwnsVideo(id: number, user: User, tx?: TransactionType) {
+	async userOwnsVideo(id: number, user: User, tx?: TransactionType): Promise<Video> {
 		const manager = tx ? tx : this.drizzleService.db;
 
 		const video = await manager.query.videos.findFirst({
@@ -135,6 +136,8 @@ export class VideoService {
 		if (video.channel.ownerId !== user.id) {
 			throw new ForbiddenException(`You don't own video with id ${id}`);
 		}
+
+		return video;
 	}
 
 	/**
@@ -273,6 +276,29 @@ export class VideoService {
 				channel: true,
 			},
 		});
+	}
+
+	/**
+	 * this method set a video to released
+	 * @param {number} id id of video
+	 * @param {User} user currently logged in user
+	 * @returns {{ message: string }}
+	 */
+	async releaseVideo(id: number, user: User): Promise<{ message: string }> {
+		const video = await this.userOwnsVideo(id, user);
+
+		if (video.processingStatus != schema.VideoProccessingStatusEnum.done) {
+			throw new ForbiddenException('Video status is not set to done');
+		}
+
+		await this.drizzleService.db
+			.update(schema.videos)
+			.set({ isReleased: true, releasedAt: new Date() })
+			.execute();
+
+		return {
+			message: 'Video released successfully',
+		};
 	}
 
 	/**

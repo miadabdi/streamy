@@ -5,6 +5,7 @@ import {
 	Get,
 	HttpCode,
 	HttpStatus,
+	ParseIntPipe,
 	Patch,
 	Post,
 	Query,
@@ -67,6 +68,12 @@ export class VideoController {
 	@Public()
 	getLiveByVideoId(@Query() getLiveByVideoIdDto: GetLiveByVideoIdDto) {
 		return this.videoService.getLiveByVideoId(getLiveByVideoIdDto.videoId);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Post('/release')
+	releaseVideo(@Body('id', ParseIntPipe) id: number, @GetUser() user: User) {
+		return this.videoService.releaseVideo(id, user);
 	}
 
 	@HttpCode(HttpStatus.OK)
