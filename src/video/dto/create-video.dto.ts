@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsInt, IsString, Length } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsOptional, IsString, Length } from 'class-validator';
 import { Default } from '../../common/decorators/default-value.decorator';
 import { TVideoTypeEnum, videoTypeEnum } from '../../drizzle/schema';
 
@@ -19,6 +19,7 @@ export class CreateVideoDto {
 	@IsEnum(videoTypeEnum)
 	type: TVideoTypeEnum;
 
+	@IsOptional()
 	@IsArray()
 	@IsInt({ each: true })
 	@Default([])

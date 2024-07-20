@@ -15,7 +15,7 @@ export class SharpPipe implements PipeTransform<Express.Multer.File, Promise<Exp
 
 		DefaultValuePipe;
 		image.buffer = await sharp(image.buffer)
-			.resize({ height: 400, width: 400, fit: 'cover' })
+			.resize({ height: this.size.height, width: this.size.width, fit: 'cover' })
 			.jpeg({ mozjpeg: true })
 			.toBuffer();
 		image.originalname = filename;

@@ -214,9 +214,14 @@ export class ChannelService {
 		return this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.username, username),
 			with: {
+				avatar: true,
 				subscriptions: {
 					with: {
-						followee: true,
+						followee: {
+							with: {
+								avatar: true,
+							},
+						},
 					},
 				},
 			},
@@ -234,9 +239,14 @@ export class ChannelService {
 			with: {
 				subscriptions: {
 					with: {
-						followee: true,
+						followee: {
+							with: {
+								avatar: true,
+							},
+						},
 					},
 				},
+				avatar: true,
 			},
 		});
 	}
