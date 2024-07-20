@@ -476,7 +476,20 @@ export class VideoService {
 				subtitles: true,
 				videoFile: true,
 				thumbnailFile: true,
-				comments: true,
+				comments: {
+					with: {
+						owner: {
+							with: {
+								avatar: true,
+							},
+						},
+					},
+				},
+				channel: {
+					with: {
+						avatar: true,
+					},
+				},
 			},
 		});
 	}

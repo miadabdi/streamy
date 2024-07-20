@@ -67,7 +67,6 @@ export class CommentService {
 			.insert(schema.comments)
 			.values({
 				...createCommentDto,
-				ownerId: user.id,
 			})
 			.returning(returningKeys)
 			.execute();

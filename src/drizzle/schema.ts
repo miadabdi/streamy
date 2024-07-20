@@ -384,7 +384,7 @@ export const comments = pgTable(
 			.references(() => videos.id),
 		ownerId: integer('owner_id')
 			.notNull()
-			.references(() => users.id),
+			.references(() => channels.id),
 		replyTo: integer('reply_to'),
 		content: varchar('content', { length: 1024 }).notNull(),
 	},
@@ -404,9 +404,9 @@ export const commentsRelations = relations(comments, ({ many, one }) => ({
 		fields: [comments.videoId],
 		references: [videos.id],
 	}),
-	owner: one(users, {
+	owner: one(channels, {
 		fields: [comments.ownerId],
-		references: [users.id],
+		references: [channels.id],
 	}),
 	repliedTo: one(comments, {
 		fields: [comments.replyTo],

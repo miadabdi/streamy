@@ -141,6 +141,13 @@
       "when": 1721367146265,
       "tag": "0019_bright_black_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1721496049568,
+      "tag": "0020_whole_vision",
+      "breakpoints": true
     }
   ]
 }

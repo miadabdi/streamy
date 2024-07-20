@@ -14,4 +14,8 @@ export class CreateCommentDto {
 	@IsInt()
 	@Type(() => Number)
 	replyTo: number;
+
+	@IsInt()
+	@Type(() => Number)
+	ownerId: number;
 }
