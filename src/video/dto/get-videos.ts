@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsEnum, IsInt, IsOptional } from 'class-validator';
 import { TVideoTypeEnum, videoTypeEnum } from '../../drizzle/schema';
 
@@ -20,13 +20,13 @@ export class GetVideosDto {
 
 	@IsOptional()
 	@IsBoolean()
-	@Type(() => Boolean)
+	@Transform(({ value }) => value === 'true')
 	includeNotReleased: boolean = false;
 
 	@IsOptional()
 	@IsBoolean()
-	@Type(() => Boolean)
-	onlySubbed: boolean;
+	@Transform(({ value }) => value === 'true')
+	onlySubbed: boolean = false;
 
 	@IsOptional()
 	@IsEnum(videoTypeEnum)

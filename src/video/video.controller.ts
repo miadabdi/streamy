@@ -107,7 +107,7 @@ export class VideoController {
 
 	@HttpCode(HttpStatus.OK)
 	@Get()
-	getAllVideos(@Body() getVideosDto: GetVideosDto, @GetUser() user: User) {
+	getAllVideos(@Query() getVideosDto: GetVideosDto, @GetUser() user: User) {
 		return this.videoService.getAllVideos(getVideosDto, user);
 	}
 
