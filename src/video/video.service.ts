@@ -333,14 +333,16 @@ export class VideoService {
 
 		const video = videoRes[0];
 
-		await this.tagService.addTagsToVideo(
-			{
-				tagIds: createVideoDto.tagIds,
-				videoId: video.id,
-			},
-			user,
-			tx,
-		);
+		if (createVideoDto.tagIds && createVideoDto.tagIds.length > 0) {
+			await this.tagService.addTagsToVideo(
+				{
+					tagIds: createVideoDto.tagIds,
+					videoId: video.id,
+				},
+				user,
+				tx,
+			);
+		}
 
 		return video;
 	}
