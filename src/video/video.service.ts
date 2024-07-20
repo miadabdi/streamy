@@ -294,6 +294,7 @@ export class VideoService {
 		await this.drizzleService.db
 			.update(schema.videos)
 			.set({ isReleased: true, releasedAt: new Date() })
+			.where(eq(schema.videos.id, id))
 			.execute();
 
 		return {
