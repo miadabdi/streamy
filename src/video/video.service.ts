@@ -8,7 +8,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { and, desc, eq, inArray, or } from 'drizzle-orm';
+import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
 import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { TransactionType } from '../common/types/transaction.type';
@@ -17,6 +17,7 @@ import * as schema from '../drizzle/schema';
 import { File, User, Video } from '../drizzle/schema';
 import { videosTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
+import { PlaylistService } from '../playlist/playlist.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
 import { TagService } from '../tag/tags.service';
@@ -29,6 +30,8 @@ import {
 } from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 import { GetVideosDto } from './dto/get-videos';
+import { ILikeType, LikeDislikeVideoDto } from './dto/like-dislike-video.dto';
+import { WatchedVideoDto } from './dto/watched-video.dto';
 import { SetVideoStatusMsg } from './interface';
 import { VideoProcessMsg } from './interface/video-process-msg.interface';
 
@@ -44,6 +47,7 @@ export class VideoService {
 		private consumerService: ConsumerService,
 		@Inject(forwardRef(() => TagService))
 		private tagService: TagService,
+		private playlistService: PlaylistService,
 	) {}
 
 	onModuleInit() {
@@ -403,6 +407,173 @@ export class VideoService {
 	}
 
 	/**
+	 * add a video watched by your channel to watched playlist
+	 * @param {LikeDislikeVideoDto} likeDislikeVideoDto
+	 * @param {User} user
+	 * @param {TransactionType} tx[]
+	 */
+	async watchedVideo(watchedVideoDto: WatchedVideoDto, user: User, tx?: TransactionType) {
+		const manager = tx ? tx : this.drizzleService.db;
+
+		const playlistOfChannel = await this.playlistService.getPlaylistsOfChannel(
+			watchedVideoDto.watcherChannelId,
+		);
+
+		const watchPlaylist = playlistOfChannel.find(
+			(playlist) => playlist.type == schema.PlaylistTypeEnum.watched,
+		);
+
+		if (!watchPlaylist) {
+			throw new BadRequestException('Watched playlist for your channel does not exists');
+		}
+
+		await this.playlistService.addVideos(
+			{
+				videoIds: [watchedVideoDto.videoId],
+				playlistId: watchPlaylist.id,
+			},
+			user,
+			tx,
+		);
+
+		await manager
+			.update(schema.videos)
+			.set({
+				numberOfVisits: sql`${schema.videos.numberOfVisits} + 1`,
+			})
+			.where(eq(schema.videos.id, watchedVideoDto.videoId))
+			.execute();
+
+		return {
+			message: 'Operation done successfully.',
+		};
+	}
+
+	/**
+	 * Like or dislike a video by your channel
+	 * @param {LikeDislikeVideoDto} likeDislikeVideoDto
+	 * @param {User} user
+	 * @param {TransactionType} tx[]
+	 */
+	async likeDislikeVideo(
+		likeDislikeVideoDto: LikeDislikeVideoDto,
+		user: User,
+		tx?: TransactionType,
+	) {
+		const manager = tx ? tx : this.drizzleService.db;
+
+		const playlistOfChannel = await this.playlistService.getPlaylistsOfChannel(
+			likeDislikeVideoDto.likerChannelId,
+		);
+
+		if (likeDislikeVideoDto.type == ILikeType.like) {
+			const likePlaylist = playlistOfChannel.find(
+				(playlist) => playlist.type == schema.PlaylistTypeEnum.likes,
+			);
+
+			if (!likePlaylist) {
+				throw new BadRequestException('Like playlist for your channel does not exists');
+			}
+
+			await this.playlistService.addVideos(
+				{
+					videoIds: [likeDislikeVideoDto.videoId],
+					playlistId: likePlaylist.id,
+				},
+				user,
+				tx,
+			);
+
+			await manager
+				.update(schema.videos)
+				.set({
+					numberOfLikes: sql`${schema.videos.numberOfLikes} + 1`,
+				})
+				.where(eq(schema.videos.id, likeDislikeVideoDto.videoId))
+				.execute();
+		} else if (likeDislikeVideoDto.type == ILikeType.dislike) {
+			const dislikePlaylist = playlistOfChannel.find(
+				(playlist) => playlist.type == schema.PlaylistTypeEnum.dislikes,
+			);
+
+			if (!dislikePlaylist) {
+				throw new BadRequestException('Dislike playlist for your channel does not exists');
+			}
+
+			await this.playlistService.addVideos(
+				{
+					videoIds: [likeDislikeVideoDto.videoId],
+					playlistId: dislikePlaylist.id,
+				},
+				user,
+				tx,
+			);
+
+			await manager
+				.update(schema.videos)
+				.set({
+					numberOfDislikes: sql`${schema.videos.numberOfDislikes} + 1`,
+				})
+				.where(eq(schema.videos.id, likeDislikeVideoDto.videoId))
+				.execute();
+		} else if (likeDislikeVideoDto.type == ILikeType.unlike) {
+			const likePlaylist = playlistOfChannel.find(
+				(playlist) => playlist.type == schema.PlaylistTypeEnum.likes,
+			);
+
+			if (!likePlaylist) {
+				throw new BadRequestException('Like playlist for your channel does not exists');
+			}
+
+			await this.playlistService.removeVideos(
+				{
+					videoIds: [likeDislikeVideoDto.videoId],
+					playlistId: likePlaylist.id,
+				},
+				user,
+				tx,
+			);
+
+			await manager
+				.update(schema.videos)
+				.set({
+					numberOfLikes: sql`${schema.videos.numberOfLikes} - 1`,
+				})
+				.where(eq(schema.videos.id, likeDislikeVideoDto.videoId))
+				.execute();
+		} else if (likeDislikeVideoDto.type == ILikeType.undislike) {
+			const dislikePlaylist = playlistOfChannel.find(
+				(playlist) => playlist.type == schema.PlaylistTypeEnum.dislikes,
+			);
+
+			if (!dislikePlaylist) {
+				throw new BadRequestException('Like playlist for your channel does not exists');
+			}
+
+			await this.playlistService.removeVideos(
+				{
+					videoIds: [likeDislikeVideoDto.videoId],
+					playlistId: dislikePlaylist.id,
+				},
+				user,
+				tx,
+			);
+
+			await manager
+				.update(schema.videos)
+				.set({
+					numberOfDislikes: sql`${schema.videos.numberOfDislikes} - 1`,
+				})
+				.where(eq(schema.videos.id, likeDislikeVideoDto.videoId))
+				.execute();
+		}
+
+		return {
+			message: 'Operation done successfully.',
+		};
+	}
+
+	/**
 	 * fetches a video with subs by video id
 	 * @param {number} videoId
 	 * @returns {Video}
@@ -411,10 +582,28 @@ export class VideoService {
 		return this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.videoId, videoId),
 			with: {
+				videosToTags: {
+					with: {
+						tag: true,
+					},
+				},
 				subtitles: true,
 				videoFile: true,
 				thumbnailFile: true,
-				comments: true,
+				comments: {
+					with: {
+						owner: {
+							with: {
+								avatar: true,
+							},
+						},
+					},
+				},
+				channel: {
+					with: {
+						avatar: true,
+					},
+				},
 			},
 		});
 	}
@@ -473,6 +662,11 @@ export class VideoService {
 		return this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.id, id),
 			with: {
+				videosToTags: {
+					with: {
+						tag: true,
+					},
+				},
 				subtitles: true,
 				videoFile: true,
 				thumbnailFile: true,

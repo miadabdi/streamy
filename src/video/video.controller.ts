@@ -32,6 +32,8 @@ import {
 } from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 import { GetVideosDto } from './dto/get-videos';
+import { LikeDislikeVideoDto } from './dto/like-dislike-video.dto';
+import { WatchedVideoDto } from './dto/watched-video.dto';
 import { VideoService } from './video.service';
 
 @Controller('/video')
@@ -49,6 +51,30 @@ export class VideoController {
 		@GetUser() user: User,
 	) {
 		return this.videoService.sendVideoInProcessQueue(sendVideoInProcessQueueDto, user);
+	}
+
+	@HttpCode(HttpStatus.CREATED)
+	@Post('/like-dislike')
+	async likeDislikeVideo(@Body() likeDislikeVideoDto: LikeDislikeVideoDto, @GetUser() user: User) {
+		let result;
+
+		await this.drizzleService.db.transaction(async (tx) => {
+			result = await this.videoService.likeDislikeVideo(likeDislikeVideoDto, user, tx);
+		});
+
+		return result;
+	}
+
+	@HttpCode(HttpStatus.CREATED)
+	@Post('/watched')
+	async watchedVideo(@Body() watchedVideoDto: WatchedVideoDto, @GetUser() user: User) {
+		let result;
+
+		await this.drizzleService.db.transaction(async (tx) => {
+			result = await this.videoService.watchedVideo(watchedVideoDto, user, tx);
+		});
+
+		return result;
 	}
 
 	@HttpCode(HttpStatus.CREATED)
