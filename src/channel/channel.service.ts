@@ -1,6 +1,8 @@
 import {
 	ConflictException,
 	ForbiddenException,
+	forwardRef,
+	Inject,
 	Injectable,
 	Logger,
 	NotFoundException,
@@ -13,6 +15,7 @@ import * as schema from '../drizzle/schema';
 import { Channel, User } from '../drizzle/schema';
 import { channelsTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
+import { PlaylistService } from '../playlist/playlist.service';
 import { AddSubscriptionDto, CreateChannelDto, DeleteChannelDto, UpdateChannelDto } from './dto';
 import { DeleteSubscriptionDto } from './dto/delete-subscription.dto';
 
@@ -23,6 +26,8 @@ export class ChannelService {
 	constructor(
 		private drizzleService: DrizzleService,
 		private fileService: FileService,
+		@Inject(forwardRef(() => PlaylistService))
+		private playlistService: PlaylistService,
 	) {}
 
 	/**
@@ -72,7 +77,7 @@ export class ChannelService {
 		}
 
 		const { ...returningKeys } = channelsTableColumns;
-		const channel = await manager
+		const channelsRes = await manager
 			.insert(schema.channels)
 			.values({
 				ownerId: user.id,
@@ -81,7 +86,45 @@ export class ChannelService {
 			.returning(returningKeys)
 			.execute();
 
-		return channel[0];
+		const channel = channelsRes[0];
+
+		await this.playlistService.createPlaylist(
+			{
+				channelId: channel.id,
+				name: 'Liked Videos',
+				description: 'Liked Videos',
+				privacy: schema.PlaylistPrivacyEnum.private,
+				type: 'likes',
+			},
+			user,
+			tx,
+		);
+
+		await this.playlistService.createPlaylist(
+			{
+				channelId: channel.id,
+				name: 'Disliked Videos',
+				description: 'Disliked Videos',
+				privacy: schema.PlaylistPrivacyEnum.private,
+				type: 'dislikes',
+			},
+			user,
+			tx,
+		);
+
+		await this.playlistService.createPlaylist(
+			{
+				channelId: channel.id,
+				name: 'Watched Videos',
+				description: 'Watched Videos',
+				privacy: schema.PlaylistPrivacyEnum.private,
+				type: 'watched',
+			},
+			user,
+			tx,
+		);
+
+		return channel;
 	}
 
 	/**

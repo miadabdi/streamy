@@ -222,6 +222,7 @@ export const videosRelations = relations(videos, ({ many, one }) => ({
 		references: [files.id],
 	}),
 	comments: many(comments),
+	videosToTags: many(tagsVideos),
 }));
 
 export const subtitles = pgTable(
