@@ -126,4 +126,10 @@ export class TagService {
 			message: 'Tag Deleted Successfully',
 		};
 	}
+
+	getTags() {
+		return this.drizzleService.db.query.tags.findMany({
+			where: eq(schema.tags.isActive, true),
+		});
+	}
 }
