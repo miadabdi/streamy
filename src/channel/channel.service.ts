@@ -267,6 +267,15 @@ export class ChannelService {
 						},
 					},
 				},
+				playlists: {
+					with: {
+						playlistsVideos: {
+							with: {
+								video: true,
+							},
+						},
+					},
+				},
 			},
 		});
 	}
@@ -290,6 +299,15 @@ export class ChannelService {
 					},
 				},
 				avatar: true,
+				playlists: {
+					with: {
+						playlistsVideos: {
+							with: {
+								video: true,
+							},
+						},
+					},
+				},
 			},
 		});
 	}

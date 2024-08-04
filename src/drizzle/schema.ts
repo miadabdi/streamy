@@ -121,6 +121,7 @@ export const channelsRelations = relations(channels, ({ many, one }) => ({
 	videos: many(videos),
 	subscriptions: many(subscriptions, { relationName: 'subscriptions' }),
 	subscribers: many(subscriptions, { relationName: 'subscribers' }),
+	playlists: many(playlists),
 }));
 
 export const subscriptions = pgTable(

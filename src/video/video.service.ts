@@ -278,6 +278,8 @@ export class VideoService {
 			orderBy: [desc(schema.videos.releasedAt), desc(schema.videos.createdAt)],
 			with: {
 				channel: true,
+				thumbnailFile: true,
+				videoFile: true,
 			},
 		});
 	}
