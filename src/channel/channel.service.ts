@@ -7,7 +7,7 @@ import {
 	Logger,
 	NotFoundException,
 } from '@nestjs/common';
-import { and, eq, not } from 'drizzle-orm';
+import { and, eq, not, sql } from 'drizzle-orm';
 import { GetUser } from '../common/decorators';
 import { TransactionType } from '../common/types/transaction.type';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -210,6 +210,11 @@ export class ChannelService {
 			)
 			.execute();
 
+		await this.drizzleService.db
+			.update(schema.channels)
+			.set({ numberOfSubscribers: sql`${schema.channels.numberOfSubscribers} - 1` })
+			.where(eq(schema.channels.id, deleteSubscriptionDto.followeeId));
+
 		return {
 			message: 'Subscription deleted successfully',
 		};
@@ -242,6 +247,11 @@ export class ChannelService {
 			.values(addSubscriptionDto)
 			.onConflictDoNothing()
 			.execute();
+
+		await this.drizzleService.db
+			.update(schema.channels)
+			.set({ numberOfSubscribers: sql`${schema.channels.numberOfSubscribers} + 1` })
+			.where(eq(schema.channels.id, addSubscriptionDto.followeeId));
 
 		return {
 			message: 'Subscription added successfully',
