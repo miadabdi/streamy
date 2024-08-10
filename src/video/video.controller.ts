@@ -114,7 +114,7 @@ export class VideoController {
 	setVideoThumbnail(
 		@Body() setVideoThumbnailDto: SetVideoThumbnailDto,
 		@GetUser() user: User,
-		@UploadedFile(new SharpPipe({ width: 1080, height: 1920 })) thumbnail: Express.Multer.File,
+		@UploadedFile(new SharpPipe({ width: 1280, height: 720 })) thumbnail: Express.Multer.File,
 	) {
 		return this.videoService.setVideoThumbnail(setVideoThumbnailDto, user, thumbnail);
 	}
