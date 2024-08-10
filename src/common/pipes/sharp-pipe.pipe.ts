@@ -10,6 +10,8 @@ export class SharpPipe implements PipeTransform<Express.Multer.File, Promise<Exp
 		image: Express.Multer.File,
 		metadata: ArgumentMetadata,
 	): Promise<Express.Multer.File> {
+		if (!image) return image;
+
 		const originalName = path.parse(image.originalname).name;
 		const filename = originalName + '.jpg';
 
