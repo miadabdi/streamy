@@ -8,7 +8,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { TransactionType } from '../common/types/transaction.type';
@@ -20,6 +20,7 @@ import { FileService } from '../file/file.service';
 import { PlaylistService } from '../playlist/playlist.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
+import VideoSearchService from '../search/video-search.service';
 import { TagService } from '../tag/tags.service';
 import {
 	CreateVideoDto,
@@ -31,6 +32,7 @@ import {
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 import { GetVideosDto } from './dto/get-videos';
 import { ILikeType, LikeDislikeVideoDto } from './dto/like-dislike-video.dto';
+import { SearchVideosDto } from './dto/search-videos.dto';
 import { WatchedVideoDto } from './dto/watched-video.dto';
 import { SetVideoStatusMsg } from './interface';
 import { VideoProcessMsg } from './interface/video-process-msg.interface';
@@ -48,6 +50,7 @@ export class VideoService {
 		@Inject(forwardRef(() => TagService))
 		private tagService: TagService,
 		private playlistService: PlaylistService,
+		private videoSearchService: VideoSearchService,
 	) {}
 
 	onModuleInit() {
@@ -60,6 +63,27 @@ export class VideoService {
 	 */
 	async sendVideoProcessRMQMsg(payload: VideoProcessMsg) {
 		await this.producerService.addToQueue('q.video.process', payload);
+	}
+
+	async search(searchVideosDto: SearchVideosDto, user: User) {
+		const result = await this.videoSearchService.search(searchVideosDto.text);
+
+		const videos = await this.drizzleService.db.query.videos.findMany({
+			where: and(
+				inArray(
+					schema.videos.id,
+					result.map((res) => res.id),
+				),
+			),
+			orderBy: [desc(schema.videos.releasedAt), desc(schema.videos.createdAt)],
+			with: {
+				channel: true,
+				thumbnailFile: true,
+				videoFile: true,
+			},
+		});
+
+		return videos;
 	}
 
 	/**
@@ -224,12 +248,12 @@ export class VideoService {
 	}
 
 	/**
-	 * get all videos with specified filters
+	 * get all videos with specified filters from owned channels
 	 * @param {GetVideosDto} getVideosDto
 	 * @param {User} user
 	 * @returns {Video[]}
 	 */
-	async getAllVideos(getVideosDto: GetVideosDto, @GetUser() user: User) {
+	async getAllVideosOfMyChannel(getVideosDto: GetVideosDto, @GetUser() user: User) {
 		console.log(getVideosDto);
 
 		const andArr = [eq(schema.videos.type, getVideosDto.type)];
@@ -238,21 +262,42 @@ export class VideoService {
 			andArr.push(eq(schema.videos.channelId, getVideosDto.channelId));
 		}
 
-		if (getVideosDto.includeNotReleased) {
-			// if user wants to get not released videos it should only see unreleased videos of their channel
-			const owned = await this.drizzleService.db
-				.select()
-				.from(schema.channels)
-				.where(eq(schema.channels.ownerId, user.id))
-				.execute();
+		const owned = await this.drizzleService.db
+			.select()
+			.from(schema.channels)
+			.where(eq(schema.channels.ownerId, user.id))
+			.execute();
 
-			const ownedChannelIds = owned.map((channel) => channel.id);
+		const ownedChannelIds = owned.map((channel) => channel.id);
 
-			andArr.push(
-				or(eq(schema.videos.isReleased, true), inArray(schema.videos.channelId, ownedChannelIds)),
-			);
-		} else {
-			andArr.push(eq(schema.videos.isReleased, true));
+		andArr.push(inArray(schema.videos.channelId, ownedChannelIds));
+
+		return this.drizzleService.db.query.videos.findMany({
+			where: and(...andArr),
+			limit: getVideosDto.limit,
+			offset: getVideosDto.offset,
+			orderBy: [desc(schema.videos.releasedAt), desc(schema.videos.createdAt)],
+			with: {
+				channel: true,
+				thumbnailFile: true,
+				videoFile: true,
+			},
+		});
+	}
+
+	/**
+	 * get all videos with specified filters
+	 * @param {GetVideosDto} getVideosDto
+	 * @param {User} user
+	 * @returns {Video[]}
+	 */
+	async getAllVideos(getVideosDto: GetVideosDto, @GetUser() user: User) {
+		console.log(getVideosDto);
+
+		const andArr = [eq(schema.videos.isReleased, true), eq(schema.videos.type, getVideosDto.type)];
+
+		if (getVideosDto.channelId) {
+			andArr.push(eq(schema.videos.channelId, getVideosDto.channelId));
 		}
 
 		if (getVideosDto.onlySubbed) {
@@ -297,11 +342,22 @@ export class VideoService {
 			throw new ForbiddenException('Video status is not set to done');
 		}
 
-		await this.drizzleService.db
+		const { ...returningKeys } = videosTableColumns;
+
+		const releaseDate = new Date();
+		const updatedVideos = await this.drizzleService.db
 			.update(schema.videos)
-			.set({ isReleased: true, releasedAt: new Date() })
+			.set({ isReleased: true, releasedAt: releaseDate })
 			.where(eq(schema.videos.id, id))
+			.returning(returningKeys)
 			.execute();
+
+		const updatedVideo = updatedVideos[0];
+
+		await this.videoSearchService.indexVideo({
+			id: updatedVideo.id,
+			releasedAt: releaseDate,
+		});
 
 		return {
 			message: 'Video released successfully',
@@ -351,6 +407,18 @@ export class VideoService {
 			);
 		}
 
+		await this.videoSearchService.indexVideo({
+			channelId: video.channelId,
+			description: video.description,
+			duration: video.duration,
+			id: video.id,
+			name: video.name,
+			numberOfDislikes: video.numberOfDislikes,
+			numberOfLikes: video.numberOfLikes,
+			numberOfVisits: video.numberOfVisits,
+			releasedAt: video.releasedAt,
+		});
+
 		return video;
 	}
 
@@ -396,7 +464,7 @@ export class VideoService {
 		await this.userOwnsVideo(updateVideoDto.id, user);
 
 		const { ...returningKeys } = videosTableColumns;
-		const updatedVideo = await this.drizzleService.db
+		const updatedVideos = await this.drizzleService.db
 			.update(schema.videos)
 			.set({
 				...updateVideoDto,
@@ -405,7 +473,21 @@ export class VideoService {
 			.returning(returningKeys)
 			.execute();
 
-		return updatedVideo[0];
+		const updatedVideo = updatedVideos[0];
+
+		await this.videoSearchService.indexVideo({
+			channelId: updatedVideo.channelId,
+			description: updatedVideo.description,
+			duration: updatedVideo.duration,
+			id: updatedVideo.id,
+			name: updatedVideo.name,
+			numberOfDislikes: updatedVideo.numberOfDislikes,
+			numberOfLikes: updatedVideo.numberOfLikes,
+			numberOfVisits: updatedVideo.numberOfVisits,
+			releasedAt: updatedVideo.releasedAt,
+		});
+
+		return updatedVideo;
 	}
 
 	/**
@@ -445,6 +527,8 @@ export class VideoService {
 			})
 			.where(eq(schema.videos.id, watchedVideoDto.videoId))
 			.execute();
+
+		await this.updateIndexVideo(watchedVideoDto.videoId, tx);
 
 		return {
 			message: 'Operation done successfully.',
@@ -569,6 +653,8 @@ export class VideoService {
 				.where(eq(schema.videos.id, likeDislikeVideoDto.videoId))
 				.execute();
 		}
+
+		await this.updateIndexVideo(likeDislikeVideoDto.videoId, tx);
 
 		return {
 			message: 'Operation done successfully.',
@@ -707,8 +793,30 @@ export class VideoService {
 			.set({ isActive: false, deletedAt: new Date() })
 			.where(eq(schema.videos.id, deleteVideoDto.id));
 
+		await this.videoSearchService.deleteIndexVideo(deleteVideoDto.id);
+
 		return {
 			message: 'Video Deleted Successfully',
 		};
+	}
+
+	async updateIndexVideo(videoId: number, tx?: TransactionType) {
+		const manager = tx ? tx : this.drizzleService.db;
+
+		const video = await manager.query.videos.findFirst({
+			where: eq(schema.videos.id, videoId),
+		});
+
+		await this.videoSearchService.indexVideo({
+			id: video.id,
+			channelId: video.channelId,
+			description: video.description,
+			duration: video.duration,
+			name: video.name,
+			numberOfDislikes: video.numberOfDislikes,
+			numberOfLikes: video.numberOfLikes,
+			numberOfVisits: video.numberOfVisits,
+			releasedAt: video.releasedAt,
+		});
 	}
 }
