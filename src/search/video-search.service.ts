@@ -56,6 +56,7 @@ export default class VideoSearchService {
 	async indexVideo(video: VideoSearchBody): Promise<WriteResponseBase> {
 		const result = await this.elasticsearchService.index<VideoSearchBody>({
 			index: this.index,
+			id: video.id.toString(),
 			document: {
 				id: video.id,
 				channelId: video.channelId,
@@ -73,12 +74,26 @@ export default class VideoSearchService {
 	}
 
 	/**
+	 * deletes an indexed document, this method is wrote specifically for video index
+	 * @param {number} videoId
+	 * @returns {WriteResponseBase}
+	 */
+	async deleteIndexVideo(videoId: number): Promise<WriteResponseBase> {
+		const result = await this.elasticsearchService.delete({
+			index: this.index,
+			id: videoId.toString(),
+		});
+
+		return result;
+	}
+
+	/**
 	 * searches in indexed video documents on name and description fields
 	 * @param {string} text
 	 * @returns {VideoSearchResult[]}
 	 */
-	async search(text: string): Promise<VideoSearchResult[]> {
-		const { hits } = await this.elasticsearchService.search<VideoSearchResult>({
+	async search(text: string): Promise<VideoSearchBody[]> {
+		const { hits } = await this.elasticsearchService.search<VideoSearchBody>({
 			index: this.index,
 			query: {
 				multi_match: {

@@ -24,7 +24,7 @@ import VideoSearchService from './video-search.service';
 			inject: [ConfigService],
 		}),
 	],
-	exports: [ElasticsearchModule],
+	exports: [VideoSearchService],
 	providers: [VideoSearchService],
 })
 export class SearchModule {}
