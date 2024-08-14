@@ -33,6 +33,7 @@ import {
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 import { GetVideosDto } from './dto/get-videos';
 import { LikeDislikeVideoDto } from './dto/like-dislike-video.dto';
+import { SearchVideosDto } from './dto/search-videos.dto';
 import { WatchedVideoDto } from './dto/watched-video.dto';
 import { VideoService } from './video.service';
 
@@ -135,6 +136,18 @@ export class VideoController {
 	@Get()
 	getAllVideos(@Query() getVideosDto: GetVideosDto, @GetUser() user: User) {
 		return this.videoService.getAllVideos(getVideosDto, user);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Get('/my-channels')
+	getAllVideosOfMyChannel(@Query() getVideosDto: GetVideosDto, @GetUser() user: User) {
+		return this.videoService.getAllVideosOfMyChannel(getVideosDto, user);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Get('/search')
+	search(@Query() searchVideosDto: SearchVideosDto, @GetUser() user: User) {
+		return this.videoService.search(searchVideosDto, user);
 	}
 
 	@Get('/get-presigned-put-url')
