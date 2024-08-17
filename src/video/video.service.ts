@@ -68,13 +68,12 @@ export class VideoService {
 	async search(searchVideosDto: SearchVideosDto, user: User) {
 		const result = await this.videoSearchService.search(searchVideosDto.text);
 
+		const videoIds = result.map((res) => res.id);
+
+		if (videoIds.length == 0) return [];
+
 		const videos = await this.drizzleService.db.query.videos.findMany({
-			where: and(
-				inArray(
-					schema.videos.id,
-					result.map((res) => res.id),
-				),
-			),
+			where: and(inArray(schema.videos.id, videoIds)),
 			orderBy: [desc(schema.videos.releasedAt), desc(schema.videos.createdAt)],
 			with: {
 				channel: true,
