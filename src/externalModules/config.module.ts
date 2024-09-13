@@ -3,9 +3,10 @@ import * as Joi from 'joi';
 import { NodeEnv } from '../common/enums';
 
 export const ConfigModuleSetup = ConfigModule.forRoot({
-	envFilePath: 'app.env',
+	envFilePath: '.env',
 	isGlobal: true,
 	cache: true,
+	expandVariables: true,
 	validationSchema: Joi.object({
 		DATABASE_URL: Joi.string().min(1).required(),
 		JWT_SECRET: Joi.string().min(1).required(),

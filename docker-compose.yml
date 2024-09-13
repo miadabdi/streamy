@@ -4,11 +4,11 @@ services:
     container_name: streamy_db
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=streamy
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=thisisasecretpassword
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - '5430:5432'
+      - '${POSTGRES_PORT}:5432'
     networks:
       - local
     volumes:
@@ -25,11 +25,11 @@ services:
     container_name: streamy_db_test
     restart: no
     environment:
-      - POSTGRES_DB=streamy
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=thisisasecretpassword
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - '5431:5432'
+      - '${POSTGRES_TEST_PORT}:5432'
     networks:
       - local
     healthcheck:
@@ -47,14 +47,14 @@ services:
     networks:
       - local
     ports:
-      - '9002:9000'
-      - '9003:9001'
+      - '${MINIO_PORT}:9000'
+      - '${MINIO_CONSOLE_PORT}:9001'
     volumes:
       - minio_data:/data
     environment:
-      MINIO_ROOT_USER: streamyminioadmin
-      MINIO_ROOT_PASSWORD: thisisasecretminiopassword
-      MINIO_BROWSER_REFERRER_POLICY: no-referrer
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+      - MINIO_BROWSER_REFERRER_POLICY=no-referrer
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 30s
@@ -69,13 +69,13 @@ services:
     networks:
       - local
     ports:
-      - '5676:5672' # rmq port
-      - '15677:15672' # management panel port
+      - '${RABBITMQ_PORT}:5672' # rmq port
+      - '${RABBITMQ_CONSOLE_PORT}:15672' # management panel port
     volumes:
       - rmq_data:/var/lib/rabbitmq
     environment:
-      RABBITMQ_DEFAULT_USER: streamyrmq
-      RABBITMQ_DEFAULT_PASS: thisisasecretrmqpassword
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 30s
@@ -92,8 +92,8 @@ services:
       - local
     command: >
       bash -c '
-        if [ x${ELASTIC_PASSWORD} == x ]; then
-          echo "Set the ELASTIC_PASSWORD environment variable in the .env file";
+        if [ x${ELASTICSEARCH_PASSWORD} == x ]; then
+          echo "Set the ELASTICSEARCH_PASSWORD environment variable in the .env file";
           exit 1;
         elif [ x${KIBANA_PASSWORD} == x ]; then
           echo "Set the KIBANA_PASSWORD environment variable in the .env file";
@@ -131,7 +131,7 @@ services:
         echo "Waiting for Elasticsearch availability";
         until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
         echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -k -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -k -u "elastic:${ELASTICSEARCH_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
         sleep 60;
         echo "All done!";
       '
@@ -152,7 +152,7 @@ services:
     environment:
       - discovery.type=single-node
       - node.name=es01
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
       - bootstrap.memory_lock=true
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=true
@@ -165,7 +165,7 @@ services:
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
     ports:
-      - 9200:9200
+      - ${ELASTICSEARCH_PORT}:9200
       - 9300:9300
     volumes:
       - es_certs:/usr/share/elasticsearch/config/certs
@@ -202,7 +202,7 @@ services:
       - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
     mem_limit: ${KB_MEM_LIMIT}
     ports:
-      - 5601:5601
+      - ${KIBANA_PORT}:5601
     labels:
       co.elastic.logs/module: kibana
     networks:
