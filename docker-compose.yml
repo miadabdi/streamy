@@ -1,4 +1,45 @@
 services:
+  app:
+    build:
+      context: .
+    ports:
+      - ${PORT}:3000
+    networks:
+      - local
+    environment:
+      - ELASTICSEARCH_NODE=https://es01:9200
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - RMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rmq:5672
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@streamy_db:5432/${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - COOKIE_EXPIRES_IN=${COOKIE_EXPIRES_IN}
+      - NODE_ENV=${NODE_ENV}
+      - THROTTLE_TTL=${THROTTLE_TTL}
+      - THROTTLE_LIMIT=${THROTTLE_LIMIT}
+      - COMPRESSION_THRESHOLD=${COMPRESSION_THRESHOLD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+    depends_on:
+      setup:
+        condition: service_healthy
+      streamy_db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      rmq:
+        condition: service_healthy
+      es01:
+        condition: service_healthy
+
   streamy_db:
     image: postgres:16.2
     container_name: streamy_db
