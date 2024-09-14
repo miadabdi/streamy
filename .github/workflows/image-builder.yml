@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 env:
-  BUILDER: 'heroku/builder:22'
+  BUILDER: 'paketobuildpacks/builder:full'
   IMG_NAME: 'streamy:test'
   USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
@@ -52,6 +52,6 @@ jobs:
         with:
           args: 'inspect-image ${{ env.IMG_NAME }}'
 
-      - name: Clean Up
-        run: |
-          docker container stop 'personal-portfolio'
+      # - name: Clean Up
+      #   run: |
+      #     docker container stop 'personal-portfolio'
