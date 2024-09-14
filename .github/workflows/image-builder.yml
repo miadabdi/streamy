@@ -8,16 +8,11 @@ on:
   workflow_dispatch:
 
 env:
-  BUILDER: 'paketobuildpacks/builder:full'
+  BUILDER: 'paketobuildpacks/builder-jammy-base'
   IMG_NAME: 'streamy:test'
   USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
-  version:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
   dockerhub_remote_build:
     runs-on: ubuntu-latest
     steps:
