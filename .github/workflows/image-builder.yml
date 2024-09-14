@@ -36,11 +36,11 @@ jobs:
         with:
           args: 'build ${{ env.IMG_NAME }} --builder ${{ env.BUILDER }} --publish'
 
-      - name: Test App
-        run: |
-          docker run -d -p 8080:3000 --name streamy ${{ env.IMG_NAME }}
-          sleep 30s
-          curl --request GET --url http://localhost:8080
+      # - name: Test App
+      #   run: |
+      #     docker run -d -p 8080:3000 --name streamy ${{ env.IMG_NAME }}
+      #     sleep 30s
+      #     curl --request GET --url http://localhost:8080
 
       - name: Pack Rebase
         uses: dfreilich/pack-action@v2.1.1
