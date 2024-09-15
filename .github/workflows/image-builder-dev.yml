@@ -11,7 +11,8 @@ on:
 
 env:
   BUILDER: 'paketobuildpacks/builder-jammy-base'
-  IMG_NAME: 'streamy:dev'
+  IMG_NAME: 'streamy'
+  TAG: 'dev'
   USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
@@ -37,12 +38,12 @@ jobs:
       - name: Pack Remote Build Dev
         uses: dfreilich/pack-action@v2.1.1
         with:
-          args: 'build ${{ env.IMG_NAME }}-${{ steps.package_ver.outputs.version }} --builder ${{ env.BUILDER }} --publish'
+          args: 'build ${{ env.IMG_NAME }}:${{ env.TAG }}-${{ steps.package_ver.outputs.version }} --builder ${{ env.BUILDER }} --publish'
 
       - name: Pack Remote Build Dev Latest
         uses: dfreilich/pack-action@v2.1.1
         with:
-          args: 'build ${{ env.IMG_NAME }}-latest --builder ${{ env.BUILDER }} --publish'
+          args: 'build ${{ env.IMG_NAME }}:${{ env.TAG }}-latest --builder ${{ env.BUILDER }} --publish'
 
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v4
