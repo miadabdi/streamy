@@ -16,6 +16,7 @@ env:
   USERNAME: ${{ secrets.DOCKER_USERNAME }}
   BP_NODE_PROJECT_PATH: 'dist/src'
   BP_NODE_RUN_SCRIPTS: 'build'
+  BP_LAUNCHPOINT: './dist/src/main.js'
 
 jobs:
   dockerhub_remote_build:
