@@ -14,9 +14,6 @@ env:
   IMG_NAME: 'streamy'
   TAG: 'dev'
   USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  BP_NODE_PROJECT_PATH: 'dist/src'
-  BP_NODE_RUN_SCRIPTS: 'build'
-  BP_LAUNCHPOINT: './dist/src/main.js'
 
 jobs:
   dockerhub_remote_build:
@@ -42,19 +39,11 @@ jobs:
         uses: dfreilich/pack-action@v2.1.1
         with:
           args: 'build ${{ env.IMG_NAME }}:${{ env.TAG }}-${{ steps.package_ver.outputs.version }} --builder ${{ env.BUILDER }} --publish'
-        env:
-          BP_NODE_PROJECT_PATH: 'dist/src'
-          BP_NODE_RUN_SCRIPTS: 'build'
-          BP_LAUNCHPOINT: './dist/src/main.js'
 
       - name: Pack Remote Build Dev Latest
         uses: dfreilich/pack-action@v2.1.1
         with:
           args: 'build ${{ env.IMG_NAME }}:${{ env.TAG }}-latest --builder ${{ env.BUILDER }} --publish'
-        env:
-          BP_NODE_PROJECT_PATH: 'dist/src'
-          BP_NODE_RUN_SCRIPTS: 'build'
-          BP_LAUNCHPOINT: 'dist/src/main.js'
 
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v4
