@@ -28,7 +28,7 @@ jobs:
         # from now you can access the version
       - run: echo ${{ steps.package_ver.outputs.version }}
 
-      - name: login
+      - name: DockerHUB login
         uses: docker/login-action@v2
         with:
           username: ${{ env.USERNAME }}
@@ -38,6 +38,12 @@ jobs:
         uses: dfreilich/pack-action@v2.1.1
         with:
           args: 'build ${{ env.IMG_NAME }}-${{ steps.package_ver.outputs.version }} --builder ${{ env.BUILDER }} --publish'
+
+      - name: DockerHUB login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ env.USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Pack Remote Build Latest
         uses: dfreilich/pack-action@v2.1.1
