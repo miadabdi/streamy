@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  BUILDER: 'paketobuildpacks/builder-jammy-base'
+  BUILDER: 'paketobuildpacks/builder-jammy-full'
   IMG_NAME: 'streamy'
   TAG: 'dev'
   USERNAME: ${{ secrets.DOCKER_USERNAME }}
