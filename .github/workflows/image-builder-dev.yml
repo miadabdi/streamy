@@ -1,15 +1,17 @@
+name: Generate Docker Image Dev
+
 on:
   push:
     branches:
-      - main
+      - development
   pull_request_target:
     branches:
-      - main
+      - development
   workflow_dispatch:
 
 env:
   BUILDER: 'paketobuildpacks/builder-jammy-base'
-  IMG_NAME: 'streamy:test'
+  IMG_NAME: 'streamy:dev'
   USERNAME: ${{ secrets.DOCKER_USERNAME }}
 
 jobs:
@@ -32,10 +34,15 @@ jobs:
           username: ${{ env.USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Pack Remote Build
+      - name: Pack Remote Build Dev
         uses: dfreilich/pack-action@v2.1.1
         with:
           args: 'build ${{ env.IMG_NAME }}-${{ steps.package_ver.outputs.version }} --builder ${{ env.BUILDER }} --publish'
+
+      - name: Pack Remote Build Dev Latest
+        uses: dfreilich/pack-action@v2.1.1
+        with:
+          args: 'build ${{ env.IMG_NAME }}-latest --builder ${{ env.BUILDER }} --publish'
 
       - name: Docker Hub Description
         uses: peter-evans/dockerhub-description@v4

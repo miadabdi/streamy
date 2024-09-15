@@ -16,4 +16,6 @@ EXPOSE 3000
 
 RUN npm run build
 
+ENTRYPOINT [ "npm", "run", "db:run:migrate" ]
+
 CMD [ "node", "dist/src/main.js" ]

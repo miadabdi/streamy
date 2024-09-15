@@ -1,0 +1,278 @@
+services:
+  app:
+    image: miadabdi/streamy:dev-latest
+    ports:
+      - ${PORT}:3000
+    networks:
+      - local
+    environment:
+      - ELASTICSEARCH_NODE=https://es01:9200
+      - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - RMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rmq:5672
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@streamy_db:5432/${POSTGRES_DB}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - COOKIE_EXPIRES_IN=${COOKIE_EXPIRES_IN}
+      - NODE_ENV=${NODE_ENV}
+      - THROTTLE_TTL=${THROTTLE_TTL}
+      - THROTTLE_LIMIT=${THROTTLE_LIMIT}
+      - COMPRESSION_THRESHOLD=${COMPRESSION_THRESHOLD}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_FROM=${SMTP_FROM}
+    depends_on:
+      setup:
+        condition: service_healthy
+      streamy_db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      rmq:
+        condition: service_healthy
+      es01:
+        condition: service_healthy
+
+  streamy_db:
+    image: postgres:16.2
+    container_name: streamy_db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - '${POSTGRES_PORT}:5432'
+    networks:
+      - local
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready', '-d', 'streamy']
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 30s
+
+  streamy_db_test:
+    image: postgres:16.2
+    container_name: streamy_db_test
+    restart: no
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - '${POSTGRES_TEST_PORT}:5432'
+    networks:
+      - local
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready', '-d', 'streamy']
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 30s
+
+  minio:
+    container_name: streamy_minio
+    image: minio/minio:RELEASE.2024-04-06T05-26-02Z
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    networks:
+      - local
+    ports:
+      - '${MINIO_PORT}:9000'
+      - '${MINIO_CONSOLE_PORT}:9001'
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+      - MINIO_BROWSER_REFERRER_POLICY=no-referrer
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  rmq:
+    container_name: streamy_rmq
+    image: rabbitmq:3.13.1-management
+    hostname: rmq
+    restart: unless-stopped
+    networks:
+      - local
+    ports:
+      - '${RABBITMQ_PORT}:5672' # rmq port
+      - '${RABBITMQ_CONSOLE_PORT}:15672' # management panel port
+    volumes:
+      - rmq_data:/var/lib/rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+
+  setup:
+    image: elasticsearch:8.13.0
+    volumes:
+      - es_certs:/usr/share/elasticsearch/config/certs
+    user: '0'
+    networks:
+      - local
+    command: >
+      bash -c '
+        if [ x${ELASTICSEARCH_PASSWORD} == x ]; then
+          echo "Set the ELASTICSEARCH_PASSWORD environment variable in the .env file";
+          exit 1;
+        elif [ x${KIBANA_PASSWORD} == x ]; then
+          echo "Set the KIBANA_PASSWORD environment variable in the .env file";
+          exit 1;
+        fi;
+        if [ ! -f config/certs/ca.zip ]; then
+          echo "Creating CA";
+          bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
+          unzip config/certs/ca.zip -d config/certs;
+        fi;
+        if [ ! -f config/certs/certs.zip ]; then
+          echo "Creating certs";
+          echo -ne \
+          "instances:\n"\
+          "  - name: es01\n"\
+          "    dns:\n"\
+          "      - es01\n"\
+          "      - localhost\n"\
+          "    ip:\n"\
+          "      - 127.0.0.1\n"\
+          "  - name: kibana\n"\
+          "    dns:\n"\
+          "      - kibana\n"\
+          "      - localhost\n"\
+          "    ip:\n"\
+          "      - 127.0.0.1\n"\
+          > config/certs/instances.yml;
+          bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
+          unzip config/certs/certs.zip -d config/certs;
+        fi;
+        echo "Setting file permissions"
+        chown -R root:root config/certs;
+        find . -type d -exec chmod 777 \{\} \;;
+        find . -type f -exec chmod 777 \{\} \;;
+        echo "Waiting for Elasticsearch availability";
+        until curl -s --cacert config/certs/ca/ca.crt https://es01:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
+        echo "Setting kibana_system password";
+        until curl -s -X POST --cacert config/certs/ca/ca.crt -k -u "elastic:${ELASTICSEARCH_PASSWORD}" -H "Content-Type: application/json" https://es01:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
+        sleep 60;
+        echo "All done!";
+      '
+    healthcheck:
+      test: ['CMD-SHELL', '[ -f config/certs/es01/es01.crt ]']
+      interval: 1s
+      timeout: 5s
+      retries: 120
+
+  es01:
+    depends_on:
+      setup:
+        condition: service_healthy
+    container_name: es01
+    labels:
+      co.elastic.logs/module: elasticsearch
+    image: elasticsearch:8.13.0
+    environment:
+      - discovery.type=single-node
+      - node.name=es01
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - bootstrap.memory_lock=true
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=certs/es01/es01.key
+      - xpack.security.http.ssl.certificate=certs/es01/es01.crt
+      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.key=certs/es01/es01.key
+      - xpack.security.transport.ssl.certificate=certs/es01/es01.crt
+      - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.transport.ssl.verification_mode=certificate
+    ports:
+      - ${ELASTICSEARCH_PORT}:9200
+      - 9300:9300
+    volumes:
+      - es_certs:/usr/share/elasticsearch/config/certs
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - local
+    mem_limit: ${ES_MEM_LIMIT}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  kibana:
+    container_name: kibana
+    image: kibana:8.13.0
+    environment:
+      - SERVERNAME=kibana
+      - ELASTICSEARCH_URL=https://es01:9200
+      - ELASTICSEARCH_HOSTS=https://es01:9200
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+      - XPACK_MONITORING_ENABLED=true
+      - XPACK_MONITORING_COLLECTION_ENABLED=true
+      - XPACK_SECURITY_ENABLED=true
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD}
+    mem_limit: ${KB_MEM_LIMIT}
+    ports:
+      - ${KIBANA_PORT}:5601
+    labels:
+      co.elastic.logs/module: kibana
+    networks:
+      - local
+    volumes:
+      - kb_data:/usr/share/kibana/data
+      - es_certs:/usr/share/kibana/config/certs
+    healthcheck:
+      test: ['CMD-SHELL', "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+    depends_on:
+      es01:
+        condition: service_healthy
+
+volumes:
+  db_data:
+    driver: local
+  minio_data:
+    driver: local
+  rmq_data:
+    driver: local
+  es_data:
+    driver: local
+  es_certs:
+    driver: local
+  kb_data:
+    driver: local
+
+networks:
+  local:
+    driver: bridge
