@@ -14,6 +14,8 @@ env:
   IMG_NAME: 'streamy'
   TAG: 'dev'
   USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  BP_NODE_PROJECT_PATH: 'dist/src'
+  BP_NODE_RUN_SCRIPTS: 'build'
 
 jobs:
   dockerhub_remote_build:
