@@ -1,3 +1,3 @@
 #!/bin/sh
 npm run db:run:migrate
-node dist/src/main.js
+npm run start:prod
