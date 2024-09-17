@@ -29,8 +29,6 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
     depends_on:
-      setup:
-        condition: service_healthy
       streamy_db:
         condition: service_healthy
       minio:
@@ -205,6 +203,7 @@ services:
       - xpack.security.transport.ssl.certificate=certs/es01/es01.crt
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx1024m'
     ports:
       - ${ELASTICSEARCH_PORT}:9200
       - 9300:9300

@@ -23,7 +23,7 @@
 		"start": "nest start",
 		"start:dev": "nest start --watch",
 		"start:debug": "nest start --debug --watch",
-		"start:prod": "node dist/main",
+		"start:prod": "node dist/src/main",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
 		"test": "jest",
 		"test:watch": "jest --watch",
@@ -74,7 +74,8 @@
 		"sharp": "^0.33.5",
 		"uuid": "^10.0.0",
 		"winston": "^3.14.2",
-		"winston-daily-rotate-file": "^5.0.0"
+		"winston-daily-rotate-file": "^5.0.0",
+		"tsx": "^4.19.1"
 	},
 	"devDependencies": {
 		"@commitlint/cli": "^19.5.0",
@@ -112,8 +113,10 @@
 		"ts-loader": "^9.5.1",
 		"ts-node": "^10.9.2",
 		"tsconfig-paths": "^4.2.0",
-		"tsx": "^4.19.1",
 		"typescript": "~5.6.2"
+	},
+	"engines": {
+		"node": "20.15.0"
 	},
 	"jest": {
 		"moduleFileExtensions": [

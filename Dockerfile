@@ -16,6 +16,6 @@ EXPOSE 3000
 
 RUN npm run build
 
-ENTRYPOINT [ "npm", "run", "db:run:migrate" ]
+RUN chmod +x entrypoint.sh
 
-CMD [ "node", "dist/src/main.js" ]
+ENTRYPOINT [ "./entrypoint.sh" ]
