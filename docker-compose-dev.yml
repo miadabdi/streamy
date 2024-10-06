@@ -28,6 +28,12 @@ services:
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/v1/health-check']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     depends_on:
       streamy_db:
         condition: service_healthy
@@ -99,6 +105,7 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+      start_period: 30s
 
   rmq:
     container_name: streamy_rmq
@@ -120,7 +127,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 10s
+      start_period: 30s
 
   setup:
     image: elasticsearch:8.13.0
@@ -179,12 +186,14 @@ services:
       interval: 1s
       timeout: 5s
       retries: 120
+      start_period: 5s
 
   es01:
     depends_on:
       setup:
         condition: service_healthy
     container_name: es01
+    restart: unless-stopped
     labels:
       co.elastic.logs/module: elasticsearch
     image: elasticsearch:8.13.0
@@ -226,6 +235,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 120
+      start_period: 60s
 
   kibana:
     container_name: kibana
@@ -255,6 +265,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 120
+      start_period: 60s
     depends_on:
       es01:
         condition: service_healthy
