@@ -13,9 +13,9 @@ This is a video-sharing platform.
 - [ ] implement log aggregation
 - [ ] implement google oauth
 - [ ] use templates for emails
-- [ ] Setup email delivery by rabbitmq queues
 
 ### Done ✓
 
 - [x] setup smtp mail sender
 - [x] setup minio object storage, and its corresponding module
+- [x] Setup email delivery by rabbitmq queues
