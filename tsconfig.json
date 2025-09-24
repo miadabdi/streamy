@@ -19,6 +19,6 @@
 		"forceConsistentCasingInFileNames": false,
 		"noFallthroughCasesInSwitch": false,
 		"esModuleInterop": true,
-		"types": ["node", "multer"]
+		"types": ["node", "multer", "jest"]
 	}
 }
