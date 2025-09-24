@@ -1,5 +1,5 @@
 import safeStringify from 'fast-safe-stringify';
-import { Format } from 'logform';
+import type { Format, TransformableInfo } from 'logform';
 import { inspect } from 'util';
 import { format } from 'winston';
 
@@ -20,54 +20,85 @@ const nestLikeColorScheme: Record<string, (text: string) => string> = {
 	verbose: clc.cyanBright,
 };
 
+type NestLikeConsoleFormatOptions = { colors?: boolean; prettyPrint?: boolean };
+
 export const nestLikeConsoleFormat = (
 	appName = 'NestWinston',
-	options = {
-		colors: !process.env.NO_COLOR,
-		prettyPrint: false,
-	},
+	options?: NestLikeConsoleFormatOptions,
 ): Format =>
-	format.printf(({ context, level, timestamp, message, ms, ...meta }) => {
-		if ('info' === level) {
-			level = 'log';
-		}
+	format.printf(
+		(info: TransformableInfo & { context?: unknown; ms?: string; timestamp?: string }) => {
+			const { colors = !process.env.NO_COLOR, prettyPrint = false } = options ?? {};
+			const { level: rawLevel, message, context: contextValue, timestamp, ms, ...meta } = info;
+			const normalizedLevel = rawLevel === 'info' ? 'log' : rawLevel;
+			const { contextLabel, requestId } = extractContext(contextValue);
+			const displayTimestamp = normalizeTimestamp(timestamp);
+			const color =
+				colors && nestLikeColorScheme[normalizedLevel]
+					? nestLikeColorScheme[normalizedLevel]!
+					: (text: string): string => text;
+			const yellow = colors ? clc.yellow : (text: string): string => text;
+			const messageText =
+				typeof message === 'string' ? message : inspect(message, { colors, depth: null });
+			const formattedMeta = formatMeta(meta as Record<string, unknown>, { colors, prettyPrint });
 
-		let requestId = null;
-		if (typeof context == 'object') {
-			requestId = context.requestId ? context.requestId : null;
-			context = context.context;
-		}
+			return (
+				color(`[${appName}] ${String(process.pid).padEnd(6)} - `) +
+				(displayTimestamp ? `${displayTimestamp} ` : '') +
+				`${color(normalizedLevel.toUpperCase().padStart(7))} ` +
+				(contextLabel ? `${yellow('[' + contextLabel + ']')} ` : '') +
+				(requestId ? `${'[' + requestId + ']'} ` : '') +
+				`${color(messageText)}` +
+				(formattedMeta ? ` - ${formattedMeta}` : '') +
+				(ms ? ` ${yellow(ms)}` : '')
+			);
+		},
+	);
 
-		if ('undefined' !== typeof timestamp) {
-			// Only format the timestamp to a locale representation if it's ISO 8601 format. Any format
-			// that is not a valid date string will throw, just ignore it (it will be printed as-is).
-			try {
-				if (timestamp === new Date(timestamp).toISOString()) {
-					timestamp = new Date(timestamp).toLocaleString();
-				}
-			} catch (error) {
-				// eslint-disable-next-line no-empty
-			}
-		}
+const normalizeTimestamp = (timestamp?: string): string | undefined => {
+	if (typeof timestamp === 'undefined') {
+		return undefined;
+	}
+	try {
+		return timestamp === new Date(timestamp).toISOString()
+			? new Date(timestamp).toLocaleString()
+			: timestamp;
+	} catch {
+		return timestamp;
+	}
+};
 
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-		const color =
-			(options.colors && nestLikeColorScheme[level]) || ((text: string): string => text);
-		const yellow = options.colors ? clc.yellow : (text: string): string => text;
+const extractContext = (contextValue: unknown): { contextLabel?: string; requestId?: string } => {
+	if (typeof contextValue === 'string') {
+		return { contextLabel: contextValue };
+	}
+	if (contextValue && typeof contextValue === 'object') {
+		const { context, requestId } = contextValue as Record<string, unknown>;
+		return {
+			contextLabel: typeof context === 'string' ? context : undefined,
+			requestId: requestId != null ? String(requestId) : undefined,
+		};
+	}
+	return {};
+};
 
-		const stringifiedMeta = safeStringify(meta);
-		const formattedMeta = options.prettyPrint
-			? inspect(JSON.parse(stringifiedMeta), { colors: options.colors, depth: null })
-			: stringifiedMeta;
-
-		return (
-			color(`[${appName}] ${String(process.pid).padEnd(6)} - `) +
-			('undefined' !== typeof timestamp ? `${timestamp} ` : '') +
-			`${color(level.toUpperCase().padStart(7))} ` +
-			('undefined' !== typeof context ? `${yellow('[' + context + ']')} ` : '') +
-			(requestId ? `${'[' + requestId + ']'} ` : '') +
-			`${color(message)}` +
-			(formattedMeta && formattedMeta !== '{}' ? ` - ${formattedMeta}` : '') +
-			('undefined' !== typeof ms ? ` ${yellow(ms)}` : '')
-		);
-	});
+const formatMeta = (
+	meta: Record<string, unknown>,
+	{ colors, prettyPrint }: { colors: boolean; prettyPrint: boolean },
+): string => {
+	if (!meta || Object.keys(meta).length === 0) {
+		return '';
+	}
+	const stringifiedMeta = safeStringify(meta);
+	if (!stringifiedMeta || stringifiedMeta === '{}' || stringifiedMeta === '[]') {
+		return '';
+	}
+	if (!prettyPrint) {
+		return stringifiedMeta;
+	}
+	try {
+		return inspect(JSON.parse(stringifiedMeta), { colors, depth: null });
+	} catch {
+		return stringifiedMeta;
+	}
+};

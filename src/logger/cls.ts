@@ -3,7 +3,7 @@ import { CLS_ID, ClsService } from 'nestjs-cls';
 
 export interface ContextStorageService {
 	setContextId(contextId: string): void;
-	getContextId(): string;
+	getContextId(): string | undefined;
 	get<T>(key: string): T | undefined;
 	set<T>(key: string, value: T): void;
 }
