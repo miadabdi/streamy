@@ -135,10 +135,11 @@ services:
       - >-
         S3_CONFIG_JSON={"identities":[{"name":"admin","credentials":[{"accessKey":"${MINIO_ACCESS_KEY}","secretKey":"${MINIO_SECRET_KEY}"}],"actions":["Admin","Read","Write","List","Tagging"]},{"name":"anonymous","actions":["Read:videos","Read:hls","Read:images","Read:channelavatars","Read:videothumbnails","Read:subtitlefiles","Read:public"]}]}
     entrypoint: ['/bin/sh', '-c']
-    command: >-
-      printf '%s' "$$S3_CONFIG_JSON" > /tmp/s3.json &&
-      exec weed server -s3 -s3.port=8333 -s3.config=/tmp/s3.json
-      -dir=/data -master.volumeSizeLimitMB=1024 -volume.max=0 -ip.bind=0.0.0.0
+    command:
+      - >-
+        printf '%s' "$$S3_CONFIG_JSON" > /tmp/s3.json &&
+        exec weed server -s3 -s3.port=8333 -s3.config=/tmp/s3.json
+        -dir=/data -master.volumeSizeLimitMB=1024 -volume.max=0 -ip.bind=0.0.0.0
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:9333/cluster/status >/dev/null || exit 1']
       interval: 15s
