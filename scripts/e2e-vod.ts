@@ -41,7 +41,9 @@ async function call(
 			...(cookie && { Cookie: cookie }),
 			...headers,
 		},
-		body: raw ?? (body ? JSON.stringify(body) : undefined),
+		body: (raw ? new Uint8Array(raw) : body ? JSON.stringify(body) : undefined) as
+			| BodyInit
+			| undefined,
 	});
 	const setCookie = res.headers.getSetCookie?.() ?? [];
 	const token = setCookie.find((c) => c.startsWith('access_token='));
@@ -61,11 +63,23 @@ async function expectStatus(step: string, res: Response, status: number) {
 async function main() {
 	console.log(`E2E VOD against ${API} with ${VIDEO_PATH}`);
 
+	// the dev stack live-reloads on file changes; wait until it answers again
+	for (let i = 0; i < 60; i++) {
+		try {
+			const probe = await fetch(`${BASE_URL}/api`);
+			if (probe.status === 200) break;
+		} catch {
+			/* app restarting */
+		}
+		if (i === 59) throw new Error('API not reachable (is the stack up?)');
+		await new Promise((r) => setTimeout(r, 2000));
+	}
+
 	// 1. auth (throttle: 10 auth requests / 10 min per IP)
 	console.log('1. auth');
 	let res = await call('POST', '/auth/signin', { body: { email: EMAIL, password: PASSWORD } });
 	if (res.status === 429) throw new Error('auth throttle hit — wait 10 minutes or change IP');
-	if (res.status === 401 || res.status === 404) {
+	if (res.status === 401 || res.status === 403 || res.status === 404) {
 		const username = `e2echannel${randomBytes(3).toString('hex')}`;
 		res = await call('POST', '/auth/signup', {
 			body: {
@@ -110,7 +124,7 @@ async function main() {
 	const presignRes = await expectStatus(
 		'presigned put url',
 		await call('GET', `/video/get-presigned-put-url?id=${video.id}&path=untitled.mp4`),
-		201,
+		200,
 	);
 	const { url: presignedUrl } = (await presignRes.json()) as any;
 	const host = new URL(presignedUrl).host;

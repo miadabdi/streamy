@@ -30,6 +30,10 @@ export class MinioClientService {
 				this.configService.get('MINIO_PUBLIC_PORT') ?? this.configService.get('MINIO_PORT'),
 			),
 			useSSL: false,
+			// pinning the region keeps presigning a purely local operation; the
+			// default region probe would otherwise dial the public endpoint from
+			// inside the container, where it is unreachable
+			region: 'default',
 			accessKey: this.configService.get<string>('MINIO_ACCESS_KEY'),
 			secretKey: this.configService.get<string>('MINIO_SECRET_KEY'),
 		});

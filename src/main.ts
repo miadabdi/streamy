@@ -55,9 +55,8 @@ async function bootstrap() {
 	const { httpAdapter } = app.get(HttpAdapterHost);
 	app.useGlobalFilters(new AllExceptionsFilter(httpAdapter));
 
-	const port = configService.get<number>('PORT');
-	await app.listen(port);
-
+	// swagger must be registered before listen: routes added after
+	// app.listen never take effect
 	const config = new DocumentBuilder()
 		.setTitle('Streamy Apis')
 		.setDescription('Introducing all APIs of Streamy')
@@ -66,6 +65,9 @@ async function bootstrap() {
 		.build();
 	const document = SwaggerModule.createDocument(app, config);
 	SwaggerModule.setup('api', app, document);
+
+	const port = configService.get<number>('PORT');
+	await app.listen(port);
 
 	const bootstrapLogger = new Logger('bootstrap');
 	process.on('uncaughtException', (err) => {
