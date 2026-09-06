@@ -1,18 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import amqp, { ChannelWrapper } from 'amqp-connection-manager';
+import amqp, { AmqpConnectionManager, ChannelWrapper } from 'amqp-connection-manager';
+import * as amqplib from 'amqplib';
 import { RMQ_QUEUES_TYPE } from './queues';
 
 @Injectable()
 export class ConsumerService {
 	private logger = new Logger(ConsumerService.name);
+	private connection: AmqpConnectionManager;
 	private channelWrapper: ChannelWrapper;
+	private listeners = new Map<RMQ_QUEUES_TYPE, (content: any) => Promise<any>>();
 
 	constructor(private configService: ConfigService) {
 		const amqpConnectionString = this.configService.get<string>('RMQ_URL');
 
-		const connection = amqp.connect([amqpConnectionString]);
-		this.channelWrapper = connection.createChannel();
+		this.connection = amqp.connect([amqpConnectionString]);
+		this.channelWrapper = this.connection.createChannel({
+			setup: async (channel: amqplib.ConfirmChannel) => {
+				// re-runs on every reconnect: re-assert queues with dead-letter args
+				for (const [queue, callback] of this.listeners) {
+					await this.assertQueue(channel, queue);
+				}
+			},
+		});
 	}
 
 	/**
@@ -21,34 +31,53 @@ export class ConsumerService {
 	 * @param {(content: any) => Promise<any>} callback
 	 */
 	async listenOnQueue(queue: RMQ_QUEUES_TYPE, callback: (content: any) => Promise<any>) {
+		this.logger.log(`Setup consumer for queue ${queue}`);
+		this.listeners.set(queue, callback);
+		await this.channelWrapper.addSetup(async (channel: amqplib.ConfirmChannel) => {
+			await this.assertQueue(channel, queue);
+		});
+		// wrapper.consume re-establishes the subscription on reconnects
+		await this.channelWrapper.consume(
+			queue,
+			(message) => {
+				this.handleMessage(queue, callback, message);
+			},
+			{
+				prefetch: 10,
+			},
+		);
+		this.logger.log(`Consumer service started and listening on ${queue} for messages`);
+	}
+
+	private async assertQueue(channel: amqplib.ConfirmChannel, queue: RMQ_QUEUES_TYPE) {
+		await channel.assertQueue(queue, {
+			durable: true,
+			arguments: { 'x-dead-letter-exchange': 'dlx' },
+		});
+	}
+
+	private async handleMessage(
+		queue: RMQ_QUEUES_TYPE,
+		callback: (content: any) => Promise<any>,
+		message: amqplib.Message | null,
+	) {
+		if (!message) return;
+
 		try {
-			this.logger.log(`Setup consumer for queue ${queue}`);
-			await this.channelWrapper.consume(
-				queue,
-				async (message) => {
-					if (message) {
-						try {
-							const content = JSON.parse(message.content.toString());
-							this.logger.verbose(`Received message from ${queue}: ${message.content}`);
+			const content = JSON.parse(message.content.toString());
+			this.logger.verbose(`Received message from ${queue}: ${message.content}`);
 
-							await callback(content);
+			await callback(content);
 
-							this.channelWrapper.ack(message);
-						} catch (err) {
-							this.logger.error(`Error on consuming queue ${queue} `);
-							this.logger.error(err);
-						}
-					}
-				},
-				{
-					prefetch: 10,
-				},
-			);
-
-			this.logger.log(`Consumer service started and listening on ${queue} for messages`);
+			await this.channelWrapper.ack(message);
 		} catch (err) {
-			console.log(err);
-			this.logger.error(`Error starting the consumer on ${queue}: `, err);
+			this.logger.error(`Error on consuming queue ${queue}, dead-lettering message`);
+			this.logger.error(err);
+			await this.channelWrapper.nack(message, false, false);
 		}
+	}
+
+	isConnected(): boolean {
+		return this.connection?.isConnected() ?? false;
 	}
 }

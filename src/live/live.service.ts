@@ -45,6 +45,10 @@ export class LiveService {
 			where: and(eq(schema.videos.type, videoTypeEnum.live), eq(schema.videos.videoId, streamKey)),
 		});
 
+		if (!video) {
+			throw new NotFoundException(`Live video with stream key ${streamKey} not found`);
+		}
+
 		if (video.processingStatus != schema.VideoProccessingStatusEnum.ready_for_processing) {
 			throw new BadRequestException(
 				`Video is not in ready_for_processing state, current state: ${video.processingStatus}`,
@@ -78,13 +82,13 @@ export class LiveService {
 
 		const data = await this.videoService.getLiveByVideoId(srsOnPublishDto.stream);
 
-		this.sendLiveToProcessQueue(srsOnPublishDto.app, srsOnPublishDto.stream);
-
-		if (data) {
-			return { code: 0 };
-		} else {
-			return new NotFoundException('Key not found');
+		if (!data) {
+			throw new NotFoundException('Key not found');
 		}
+
+		await this.sendLiveToProcessQueue(srsOnPublishDto.app, srsOnPublishDto.stream);
+
+		return { code: 0 };
 	}
 
 	srsOnUnpublish(srsOnUnpublishDto: OnUnpublishDto) {

@@ -14,9 +14,17 @@ export class ProducerService {
 		const connection = amqp.connect([amqpConnectionString]);
 		this.channelWrapper = connection.createChannel({
 			setup: async (channel: Channel) => {
+				// shared dead-letter exchange catching nacked messages from all queues
+				await channel.assertExchange('dlx', 'fanout', { durable: true });
+				await channel.assertQueue('q.dead_letter', { durable: true });
+				await channel.bindQueue('q.dead_letter', 'dlx', '');
+
 				for (const queue of RMQ_QUEUES) {
 					this.logger.log(`Asserting queue ${queue}`);
-					await channel.assertQueue(queue, { durable: true });
+					await channel.assertQueue(queue, {
+						durable: true,
+						arguments: { 'x-dead-letter-exchange': 'dlx' },
+					});
 				}
 			},
 		});
