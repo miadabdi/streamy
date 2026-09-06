@@ -1,4 +1,5 @@
 export * from './create-video.dto';
+export * from './confirm-upload.dto';
 export * from './delete-video.dto';
 export * from './get-live-by-video-id.dto';
 export * from './get-video-by-id.dto';

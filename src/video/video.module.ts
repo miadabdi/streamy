@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ChannelModule } from '../channel/channel.module';
 import { DrizzleModule } from '../drizzle/drizzle.module';
 import { FileModule } from '../file/file.module';
+import { MinioClientModule } from '../minio-client/minio-client.module';
 import { PlaylistModule } from '../playlist/playlist.module';
 import { QueueModule } from '../queue/queue.module';
 import { SearchModule } from '../search/search.module';
@@ -18,6 +19,7 @@ import { VideoService } from './video.service';
 		TagModule,
 		PlaylistModule,
 		SearchModule,
+		MinioClientModule,
 	],
 	controllers: [VideoController],
 	providers: [VideoService],

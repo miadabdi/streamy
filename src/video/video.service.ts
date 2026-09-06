@@ -17,6 +17,7 @@ import * as schema from '../drizzle/schema';
 import { File, User, Video } from '../drizzle/schema';
 import { videosTableColumns } from '../drizzle/table-columns';
 import { FileService } from '../file/file.service';
+import { MinioClientService } from '../minio-client/minio-client.service';
 import { PlaylistService } from '../playlist/playlist.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
@@ -51,6 +52,7 @@ export class VideoService {
 		private tagService: TagService,
 		private playlistService: PlaylistService,
 		private videoSearchService: VideoSearchService,
+		private minioClientService: MinioClientService,
 	) {}
 
 	onModuleInit() {
@@ -97,18 +99,77 @@ export class VideoService {
 	}
 
 	/**
-	 * whenever a new video is uploaded into minio, it would fire an event,
-	 * we capture the event and update related file record and video record
-	 * @param {*} record
+	 * client confirms its direct-to-storage upload completed; verifies the
+	 * object exists and moves the video to ready_for_processing
+	 * @param {number} id id of video
+	 * @param {User} user
 	 */
-	async handleVideoUploadEvent(record: any) {
-		const bucketName = record.s3.bucket.name;
-		const filePath = record.s3.object.key;
-		const sizeInByte = record.s3.object.size;
-		const mimetype = record.s3.object.contentType;
+	async confirmUpload(id: number, user: User) {
+		const video = await this.drizzleService.db.query.videos.findFirst({
+			where: eq(schema.videos.id, id),
+			with: {
+				channel: true,
+				videoFile: true,
+			},
+		});
 
+		if (!video) {
+			throw new NotFoundException(`Video with id ${id} not found`);
+		}
+
+		if (video.channel.ownerId !== user.id) {
+			throw new ForbiddenException(`You don't own video with id ${id}`);
+		}
+
+		if (!video.videoFile) {
+			throw new BadRequestException(
+				`Video with id ${id} has no file attached; request a presigned upload url first`,
+			);
+		}
+
+		let stat;
+		try {
+			stat = await this.minioClientService.client.statObject(
+				video.videoFile.bucketName,
+				video.videoFile.path,
+			);
+		} catch (err) {
+			this.logger.warn(`confirmUpload: statObject failed for video ${id}: ${err.message}`);
+			throw new NotFoundException(
+				`File of video with id ${id} not found in object storage; upload may not have completed`,
+			);
+		}
+
+		const mimetype =
+			stat.metaData?.['content-type'] ??
+			stat.metaData?.['Content-Type'] ??
+			'application/octet-stream';
+
+		await this.markVideoFileUploaded(
+			video.videoFile.bucketName,
+			video.videoFile.path,
+			stat.size,
+			mimetype,
+		);
+
+		return { message: 'Upload confirmed successfully' };
+	}
+
+	/**
+	 * updates file record size/mimetype and moves its video to ready_for_processing
+	 * @param {string} bucketName
+	 * @param {string} filePath
+	 * @param {number} sizeInByte
+	 * @param {string} mimetype
+	 */
+	async markVideoFileUploaded(
+		bucketName: string,
+		filePath: string,
+		sizeInByte: number,
+		mimetype: string,
+	) {
 		this.logger.debug(
-			`Video upload event: bucketName: ${bucketName}, filePath: ${filePath}, sizeInByte=${sizeInByte}, mimetype=${mimetype}`,
+			`Video file uploaded: bucketName: ${bucketName}, filePath: ${filePath}, sizeInByte=${sizeInByte}, mimetype=${mimetype}`,
 		);
 
 		const fileRecord = await this.drizzleService.db.query.files.findFirst({
@@ -129,13 +190,27 @@ export class VideoService {
 				.execute();
 
 			this.logger.debug(
-				`Video upload event: Done, bucketName: ${bucketName}, filePath: ${filePath}`,
+				`Video file uploaded: Done, bucketName: ${bucketName}, filePath: ${filePath}`,
 			);
 		} else {
-			this.logger.debug(
-				`Video upload event: fileRecord not found, bucketName: ${bucketName}, filePath: ${filePath}`,
+			this.logger.warn(
+				`Video file uploaded: fileRecord not found, bucketName: ${bucketName}, filePath: ${filePath}`,
 			);
 		}
+	}
+
+	/**
+	 * whenever a new video is uploaded into minio, it would fire an event,
+	 * we capture the event and update related file record and video record
+	 * @param {*} record
+	 */
+	async handleVideoUploadEvent(record: any) {
+		await this.markVideoFileUploaded(
+			record.s3.bucket.name,
+			record.s3.object.key,
+			record.s3.object.size,
+			record.s3.object.contentType,
+		);
 	}
 
 	/**

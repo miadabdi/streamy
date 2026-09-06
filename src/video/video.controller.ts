@@ -29,6 +29,7 @@ import {
 	SendVideoToProcessQueueDto,
 	SetVideoThumbnailDto,
 	UpdateVideoDto,
+	ConfirmVideoUploadDto,
 } from './dto';
 import { GetVideoPresignedPutURLDto } from './dto/get-video-presigned-put-url.dto';
 import { GetVideosDto } from './dto/get-videos';
@@ -44,6 +45,12 @@ export class VideoController {
 		private videoService: VideoService,
 		private drizzleService: DrizzleService,
 	) {}
+
+	@HttpCode(HttpStatus.OK)
+	@Post('/confirm-upload')
+	confirmUpload(@Query() confirmVideoUploadDto: ConfirmVideoUploadDto, @GetUser() user: User) {
+		return this.videoService.confirmUpload(confirmVideoUploadDto.id, user);
+	}
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post('/send-video-to-process-queue')
