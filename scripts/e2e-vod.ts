@@ -186,7 +186,7 @@ async function main() {
 	ok('transcode done');
 
 	// 11. hls output fetchable
-	const masterRes = await fetch(`${S3_PUBLIC}/hls/${video.videoId}/master.m3u8`);
+	const masterRes = await fetch(`${S3_PUBLIC}/hls/${video.id}/master.m3u8`);
 	if (masterRes.status !== 200) throw new Error(`master.m3u8 returned ${masterRes.status}`);
 	const master = await masterRes.text();
 	if (!master.includes('#EXTM3U')) throw new Error('master.m3u8 is not a playlist');
@@ -194,12 +194,12 @@ async function main() {
 
 	const variantMatch = master.match(/manifest_360p\.m3u8/g);
 	if (!variantMatch) throw new Error('no 360p variant in master playlist');
-	const variantRes = await fetch(`${S3_PUBLIC}/hls/${video.videoId}/manifest_360p.m3u8`);
+	const variantRes = await fetch(`${S3_PUBLIC}/hls/${video.id}/manifest_360p.m3u8`);
 	if (variantRes.status !== 200) throw new Error(`manifest_360p returned ${variantRes.status}`);
 	const variant = await variantRes.text();
 	const segment = variant.match(/segment_360p\.ts/);
 	if (!segment) throw new Error('no 360p segment in variant playlist');
-	const segmentRes = await fetch(`${S3_PUBLIC}/hls/${video.videoId}/segment_360p.ts`);
+	const segmentRes = await fetch(`${S3_PUBLIC}/hls/${video.id}/segment_360p.ts`);
 	if (segmentRes.status !== 200) throw new Error(`segment_360p.ts returned ${segmentRes.status}`);
 	ok('variant + segment fetchable');
 
