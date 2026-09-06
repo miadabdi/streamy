@@ -10,8 +10,10 @@ services:
       - ELASTICSEARCH_USERNAME=${ELASTICSEARCH_USERNAME}
       - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
       - RMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rmq:5672
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
+      - MINIO_ENDPOINT=seaweedfs
+      - MINIO_PORT=8333
+      - MINIO_PUBLIC_ENDPOINT=${MINIO_PUBLIC_ENDPOINT}
+      - MINIO_PUBLIC_PORT=${MINIO_PUBLIC_PORT}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@streamy_db:5432/${POSTGRES_DB}
@@ -30,7 +32,7 @@ services:
     depends_on:
       streamy_db:
         condition: service_healthy
-      minio:
+      seaweedfs:
         condition: service_healthy
       rmq:
         condition: service_healthy
@@ -77,31 +79,34 @@ services:
       retries: 5
       start_period: 30s
 
-  minio:
-    container_name: streamy_minio
-    image: minio/minio:RELEASE.2024-04-06T05-26-02Z
-    command: server /data --console-address ":9001"
+  seaweedfs:
+    container_name: streamy_seaweedfs
+    image: chrislusf/seaweedfs:4.45
     restart: unless-stopped
     networks:
       - local
     ports:
-      - '${MINIO_PORT}:9000'
-      - '${MINIO_CONSOLE_PORT}:9001'
+      - '${MINIO_PORT}:8333'
     volumes:
-      - minio_data:/data
+      - seaweedfs_data:/data
     environment:
-      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
-      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
-      - MINIO_BROWSER_REFERRER_POLICY=no-referrer
+      - >-
+        S3_CONFIG_JSON={"identities":[{"name":"admin","credentials":[{"accessKey":"${MINIO_ACCESS_KEY}","secretKey":"${MINIO_SECRET_KEY}"}],"actions":["Admin","Read","Write","List","Tagging"]},{"name":"anonymous","actions":["Read:videos","Read:hls","Read:images","Read:channelavatars","Read:videothumbnails","Read:subtitlefiles","Read:public"]}]}
+    entrypoint: ['/bin/sh', '-c']
+    command: >-
+      printf '%s' "$$S3_CONFIG_JSON" > /tmp/s3.json &&
+      exec weed server -s3 -s3.port=8333 -s3.config=/tmp/s3.json
+      -dir=/data -master.volumeSizeLimitMB=1024 -volume.max=0 -ip.bind=0.0.0.0
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:9333/cluster/status >/dev/null || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   rmq:
     container_name: streamy_rmq
-    image: rabbitmq:3.13.1-management
+    image: rabbitmq:4.1-management
     hostname: rmq
     restart: unless-stopped
     networks:
@@ -122,7 +127,7 @@ services:
       start_period: 10s
 
   setup:
-    image: elasticsearch:8.13.0
+    image: elasticsearch:9.2.3
     volumes:
       - es_certs:/usr/share/elasticsearch/config/certs
     user: '0'
@@ -186,7 +191,7 @@ services:
     container_name: es01
     labels:
       co.elastic.logs/module: elasticsearch
-    image: elasticsearch:8.13.0
+    image: elasticsearch:9.2.3
     environment:
       - discovery.type=single-node
       - node.name=es01
@@ -228,7 +233,7 @@ services:
 
   kibana:
     container_name: kibana
-    image: kibana:8.13.0
+    image: kibana:9.2.3
     environment:
       - SERVERNAME=kibana
       - ELASTICSEARCH_URL=https://es01:9200
@@ -261,7 +266,7 @@ services:
 volumes:
   db_data:
     driver: local
-  minio_data:
+  seaweedfs_data:
     driver: local
   rmq_data:
     driver: local
