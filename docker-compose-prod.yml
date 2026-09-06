@@ -39,6 +39,37 @@ services:
       es01:
         condition: service_healthy
 
+  process_node:
+    build:
+      context: ../streamy_process_node
+      target: production
+    ports:
+      - '${PROCESS_NODE_PORT}:3001'
+    networks:
+      - local
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - MINIO_ENDPOINT=seaweedfs
+      - MINIO_PORT=8333
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - RMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASS}@rmq:5672
+      - FFMPEG_THREAD_COUNT=${FFMPEG_THREAD_COUNT}
+      - FFMPEG_NICENESS=${FFMPEG_NICENESS}
+      - FFMPEG_LIVE_NICENESS=${FFMPEG_LIVE_NICENESS}
+    depends_on:
+      rmq:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/api/v1/health/liveness']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
   streamy_db:
     image: postgres:17.6
     container_name: streamy_db
