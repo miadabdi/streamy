@@ -8,15 +8,16 @@ The Streamy Process Node is dedicated to handling long-running processes on sepa
 
 The Streamy project is responsible for handling user requests and managing various functionalities such as video creation, channels, comments, profiles, and more.
 
-There is a different project, [Streamy Process Node](https://github.com/miadabdi/streamy_process_node) responsible for running long processes.
+There is a different project, [Streamy Process Node](https://github.com/miadabdi/streamy_process_node) responsible for running long processes. It runs as the `process_node` service in this repo's docker compose files (build context `../streamy_process_node` — clone the two repos side by side).
 
 The [Streamy Process Node](https://github.com/miadabdi/streamy_process_node) takes on the responsibility of executing long-running processes. Here's how it works:
 
 Video Uploads:
 
-1. When a new video is uploaded, Streamy sends a message to the Process Node containing the video details.
-2. The Process Node downloads the video from Minio.
-3. It then processes and transcodes the video into HLS (HTTP Live Streaming) format.
+1. The client uploads the video directly to object storage (SeaweedFS S3 gateway) using a presigned PUT URL, then calls `POST /video/confirm-upload`.
+2. Confirming verifies the object exists and marks the video `ready_for_processing` (this replaces the old MinIO bucket-notification flow; SeaweedFS does not implement that API).
+3. The owner sends the video to the process queue; Streamy publishes a message to the Process Node via RabbitMQ.
+4. The Process Node downloads the video from object storage, transcodes it into HLS (HTTP Live Streaming) format and reports status back over the `q.set.video.status` queue.
 
 Live Streaming:
 
@@ -27,38 +28,47 @@ This separation of concerns ensures that user interactions remain responsive, wh
 
 ## Installation
 
-There is a docker compose file in the project, to use it you must already have docker installed.
+Docker compose runs the whole stack: the API, the process node worker, Postgres, RabbitMQ, SeaweedFS and Elasticsearch/Kibana. You must already have docker installed, and the [Streamy Process Node](https://github.com/miadabdi/streamy_process_node) repo cloned side by side (`../streamy_process_node`).
 
 ### Step 1: Configure Environment Variables
 
-1. Rename `app.env.example` to `app.env` and `.env.example` to `.env`.
-2. Fill out the .env and app.env files with the required environment variables. Descriptions for each variable are provided within the files.
-   - .env is used by the Docker Compose file.
-   - app.env is the primary environment file used by the application.
+1. Copy `.env.example` to `.env`.
+2. Fill out the .env file with the required environment variables. Descriptions for each variable are provided within the file.
 
-### Step 2: Start up dependencies
+Notable variables:
 
-Run the Docker Compose file to start up the necessary dependencies:
+- `MINIO_*` variables point the apps at the SeaweedFS S3 gateway (kept the historical names). `MINIO_ENDPOINT/PORT` is the address the apps use internally; `MINIO_PUBLIC_ENDPOINT/PORT` is the client-facing address used to sign presigned URLs and build public links.
+- `PROCESS_NODE_PORT` is the published port of the worker.
+- `FFMPEG_*` tune the worker's transcoding (thread count, niceness).
 
-```
-sudo docker compose up -d
-```
-
-### Step 3: Install Packages and Run the Application
-
-Install the necessary packages:
+### Step 2: Start the stack
 
 ```bash
-npm install
+docker compose -f docker-compose-dev.yml up -d --build
 ```
 
-Start the application:
+The dev compose runs the app with live-reload (source bind mount) and the worker the same way. `docker-compose-prod.yml` runs prebuilt images with production targets.
+
+After the first start, run migrations once (the dev compose command bypasses the entrypoint that normally runs them):
 
 ```bash
-npm start
+npm run db:run:migrate
 ```
 
-The application will be available on the port specified in the `app.env` file. You can route traffic to the app using Nginx.
+### Step 3: Verify
+
+- API: `http://localhost:3000/api` (Swagger UI)
+- Worker: `http://localhost:3001/api` (Swagger UI) and `http://localhost:3001/api/v1/health/readiness`
+- RabbitMQ console: `http://localhost:15677`
+- Kibana: `http://localhost:5601`
+
+### One-time queue deletion note
+
+Queue consumers now declare a dead-letter exchange argument (`x-dead-letter-exchange=dlx`). RabbitMQ rejects re-declaring existing queues with new arguments (406 PRECONDITION_FAILED), so after upgrading an environment that has old queues, delete them once before the first boot:
+
+```bash
+docker compose -f docker-compose-dev.yml exec rmq rabbitmqctl delete_queue q.video.process q.live.process q.set.video.status q.email.send
+```
 
 ## Details
 
@@ -66,7 +76,8 @@ This project supports video sharing (video on-demand) and live streaming functio
 
 Video on Demand
 
-- Transcoding to HLS: Newly uploaded videos are transcoded to HLS (HTTP Live Streaming) format using [FFMPEG](https://www.ffmpeg.org/). This process involves:
+- Direct-to-storage upload: clients PUT files straight to SeaweedFS with presigned URLs, then confirm via the API.
+- Transcoding to HLS: Confirmed videos are transcoded to HLS (HTTP Live Streaming) format using [FFMPEG](https://www.ffmpeg.org/). This process involves:
   - Packaging videos and subtitles uploaded by users into HLS format.
   - Generating multiple versions of the same video, including different codecs, resolutions, and bitrates.
 
@@ -79,6 +90,22 @@ Channels and User Interaction
 
 - Channels: Each user can create multiple channels, and each channel can host multiple videos and live streams.
 - Comments: Only channels can post comments on videos.
+
+## Tests
+
+Unit tests:
+
+```bash
+npm test
+```
+
+End-to-end VOD pipeline test (requires the full stack running; uploads a local video through signup → upload → transcode → release → search, including failure cases):
+
+```bash
+E2E_VIDEO_PATH=/path/to/video.mp4 npm run test:e2e:vod
+```
+
+Note the auth endpoints are throttled to 10 requests / 10 minutes per IP.
 
 ## Contributing
 
