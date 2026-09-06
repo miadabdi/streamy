@@ -26,6 +26,8 @@ export const ConfigModuleSetup = ConfigModule.forRoot({
 		SMTP_FROM: Joi.string().min(1).required(),
 		MINIO_ENDPOINT: Joi.string().min(1).required(),
 		MINIO_PORT: Joi.number().min(0).max(65535).required(),
+		MINIO_PUBLIC_ENDPOINT: Joi.string().min(1).optional(),
+		MINIO_PUBLIC_PORT: Joi.number().min(0).max(65535).optional(),
 		MINIO_ACCESS_KEY: Joi.string().min(1).required(),
 		MINIO_SECRET_KEY: Joi.string().min(1).required(),
 		RMQ_URL: Joi.string().min(1).required(),

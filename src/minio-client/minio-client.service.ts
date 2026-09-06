@@ -6,20 +6,34 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash, randomBytes } from 'crypto';
-import moment from 'moment';
+import * as Minio from 'minio';
 import { MinioService, MinioClient } from 'nestjs-minio-client';
 import { basename, dirname, join } from 'path';
 import { BUCKETS, BUCKET_NAMES_TYPE } from './minio.schema';
-import { PostPolicyResult } from 'minio';
 
 @Injectable()
 export class MinioClientService {
 	private logger = new Logger(MinioClientService.name);
 
+	/** signs presigned urls against the client-facing endpoint */
+	private readonly publicClient: Minio.Client;
+
 	constructor(
 		private readonly minio: MinioService,
 		private configService: ConfigService,
-	) {}
+	) {
+		this.publicClient = new Minio.Client({
+			endPoint:
+				this.configService.get<string>('MINIO_PUBLIC_ENDPOINT') ??
+				this.configService.get<string>('MINIO_ENDPOINT'),
+			port: Number(
+				this.configService.get('MINIO_PUBLIC_PORT') ?? this.configService.get('MINIO_PORT'),
+			),
+			useSSL: false,
+			accessKey: this.configService.get<string>('MINIO_ACCESS_KEY'),
+			secretKey: this.configService.get<string>('MINIO_SECRET_KEY'),
+		});
+	}
 
 	public get client(): MinioClient {
 		return this.minio.client;
@@ -32,56 +46,23 @@ export class MinioClientService {
 				this.logger.log(`Bucket ${bucket.name} exists`);
 			} else {
 				this.logger.log(`About to create bucket ${bucket.name}`);
-				await this.client.makeBucket(bucket.name, 'default');
-				this.logger.log(`Bucket ${bucket.name} created`);
+				// the process node creates the same buckets concurrently; tolerate the race
+				try {
+					await this.client.makeBucket(bucket.name, 'default');
+					this.logger.log(`Bucket ${bucket.name} created`);
+				} catch (err) {
+					if (await this.client.bucketExists(bucket.name)) {
+						this.logger.log(`Bucket ${bucket.name} already created concurrently`);
+					} else {
+						throw err;
+					}
+				}
 
 				this.logger.log(`About to set policy on bucket ${bucket.name}`);
 				await this.client.setBucketPolicy(bucket.name, JSON.stringify(bucket.policy));
 				this.logger.log(`Policy set on bucket ${bucket.name}`);
 			}
 		}
-	}
-
-	/**
-	 * creates a presigned post url
-	 * @param {BUCKET_NAMES_TYPE} bucketName
-	 * @param {string} fileName
-	 * @param {string[]} mimetypes
-	 * @param {number} expiryDays
-	 * @returns {PostPolicyResult}
-	 */
-	async presignedPostUrl(
-		bucketName: BUCKET_NAMES_TYPE,
-		fileName: string,
-		mimetypes: string[],
-		expiryDays: number,
-		minMB: number = 0.01,
-		maxMB: number = 10,
-	): Promise<PostPolicyResult> {
-		const bucket = BUCKETS.find((bucket) => bucket.name === bucketName);
-
-		// Construct a new postPolicy.
-		const policy = this.minio.client.newPostPolicy();
-		// Set the object name my-objectname.
-		policy.setKey(fileName);
-		// Set the bucket to my-bucketname.
-		policy.setBucket(bucket.name);
-
-		for (const mimetype of mimetypes) {
-			policy.setContentType(mimetype);
-		}
-
-		const expires = moment().add(expiryDays, 'days');
-		policy.setExpires(expires.toDate());
-
-		policy.setContentLengthRange(minMB * 1024 * 1024, maxMB * 1024 * 1024);
-		policy.setUserMetaData({
-			channel: 22,
-		});
-
-		const preSigned = await this.minio.client.presignedPostPolicy(policy);
-
-		return preSigned;
 	}
 
 	/**
@@ -105,7 +86,7 @@ export class MinioClientService {
 		const randomFileName = `${dir != '.' ? dir + '/' : ''}${random}-${name}`;
 
 		// expiry in seconds
-		const url = await this.minio.client.presignedPutObject(bucket.name, randomFileName, expiry);
+		const url = await this.publicClient.presignedPutObject(bucket.name, randomFileName, expiry);
 
 		return {
 			url,
@@ -124,7 +105,7 @@ export class MinioClientService {
 		const bucket = BUCKETS.find((bucket) => bucket.name === bucketName);
 
 		// expiry in seconds
-		const url = await this.minio.client.presignedGetObject(bucket.name, path, expiry);
+		const url = await this.publicClient.presignedGetObject(bucket.name, path, expiry);
 
 		return url;
 	}
@@ -175,8 +156,12 @@ export class MinioClientService {
 		try {
 			await this.client.putObject(bucketName, completePath, file.buffer, metaData);
 
-			const minioEndpoint = this.configService.get<string>('MINIO_ENDPOINT');
-			const minioPort = this.configService.get<string>('MINIO_PORT');
+			const minioEndpoint =
+				this.configService.get<string>('MINIO_PUBLIC_ENDPOINT') ??
+				this.configService.get<string>('MINIO_ENDPOINT');
+			const minioPort =
+				this.configService.get<string>('MINIO_PUBLIC_PORT') ??
+				this.configService.get<string>('MINIO_PORT');
 
 			return {
 				url: `${minioEndpoint}:${minioPort}/${bucketName}/${completePath}`,
