@@ -200,20 +200,6 @@ export class VideoService {
 	}
 
 	/**
-	 * whenever a new video is uploaded into minio, it would fire an event,
-	 * we capture the event and update related file record and video record
-	 * @param {*} record
-	 */
-	async handleVideoUploadEvent(record: any) {
-		await this.markVideoFileUploaded(
-			record.s3.bucket.name,
-			record.s3.object.key,
-			record.s3.object.size,
-			record.s3.object.contentType,
-		);
-	}
-
-	/**
 	 * checks if user owns the video
 	 * @param {number} id id of video
 	 * @param {User} user

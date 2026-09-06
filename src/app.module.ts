@@ -9,7 +9,6 @@ import { ConfigModuleSetup, ThrottlerModuleSetup } from './externalModules';
 import { FileModule } from './file/file.module';
 import { MailModule } from './mail/mail.module';
 import { MinioClientModule } from './minio-client/minio-client.module';
-import { MinioListenerModule } from './minio-listener/minio-listener.module';
 import { PlaylistModule } from './playlist/playlist.module';
 import { QueueModule } from './queue/queue.module';
 import { SubtitleModule } from './subtitle/subtitle.module';
@@ -36,7 +35,6 @@ import { LiveModule } from './live/live.module';
 		PlaylistModule,
 		TagModule,
 		CommentModule,
-		MinioListenerModule,
 		QueueModule,
 		ClsModule.forRoot({
 			global: true,
