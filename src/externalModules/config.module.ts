@@ -10,6 +10,7 @@ export const ConfigModuleSetup = ConfigModule.forRoot({
 	validationSchema: Joi.object({
 		DATABASE_URL: Joi.string().min(1).required(),
 		JWT_SECRET: Joi.string().min(1).required(),
+		ADMIN_EMAILS: Joi.string().optional(),
 		JWT_EXPIRES_IN: Joi.number().min(1).default(90),
 		NODE_ENV: Joi.string()
 			.valid(...Object.values(NodeEnv))

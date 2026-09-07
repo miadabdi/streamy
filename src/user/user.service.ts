@@ -1,5 +1,12 @@
-import { ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import {
+	ForbiddenException,
+	Injectable,
+	Logger,
+	NotFoundException,
+	OnModuleInit,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { eq, inArray } from 'drizzle-orm';
 import { ChannelService } from '../channel/channel.service';
 import { mapColsToReturningKeys } from '../common/helpers/map-cols-to-returning-keys';
 import { TransactionType } from '../common/types/transaction.type';
@@ -17,7 +24,53 @@ export class UserService {
 	constructor(
 		private drizzleService: DrizzleService,
 		private channelService: ChannelService,
+		private configService: ConfigService,
 	) {}
+
+	/**
+	 * promotes the emails listed in ADMIN_EMAILS to admin at boot — the
+	 * only way to bootstrap the first admin without raw sql
+	 */
+	async onModuleInit() {
+		const emails = (this.configService.get<string>('ADMIN_EMAILS') ?? '')
+			.split(',')
+			.map((email) => email.trim().toLowerCase())
+			.filter(Boolean);
+
+		if (emails.length === 0) return;
+
+		const promoted = await this.drizzleService.db
+			.update(schema.users)
+			.set({ isAdmin: true })
+			.where(inArray(schema.users.email, emails))
+			.returning({ email: schema.users.email })
+			.execute();
+
+		this.logger.log(`ADMIN_EMAILS: ${promoted.length} of ${emails.length} account(s) are admins`);
+	}
+
+	/**
+	 * grants admin to an existing account; admin-only via the controller
+	 * @param {string} email
+	 * @returns {Promise<{ message: string }>}
+	 */
+	async promoteUser(email: string): Promise<{ message: string }> {
+		const user = await this.drizzleService.db.query.users.findFirst({
+			where: eq(schema.users.email, email.toLowerCase()),
+		});
+
+		if (!user) {
+			throw new NotFoundException(`User with email ${email} not found`);
+		}
+
+		await this.drizzleService.db
+			.update(schema.users)
+			.set({ isAdmin: true })
+			.where(eq(schema.users.id, user.id))
+			.execute();
+
+		return { message: 'User promoted to admin successfully' };
+	}
 
 	/**
 	 * fetches allowed user info and returns it

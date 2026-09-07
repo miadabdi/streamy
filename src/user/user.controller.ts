@@ -10,9 +10,9 @@ import {
 } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { GetUser } from '../common/decorators';
-import { JwtAuthGuard } from '../common/guards';
+import { AdminGuard, JwtAuthGuard } from '../common/guards';
 import { User } from '../drizzle/schema';
-import { SetCurrentChannelDto, UpdateUserDto } from './dto';
+import { SetCurrentChannelDto, UpdateUserDto, PromoteUserDto } from './dto';
 import { UserService } from './user.service';
 
 @UseGuards(ThrottlerGuard)
@@ -32,6 +32,13 @@ export class UserController {
 	@Patch('/update-me')
 	updateUser(@Body() updateUserDto: UpdateUserDto, @GetUser() user: User) {
 		return this.userService.updateUser(updateUserDto, user);
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Patch('/promote')
+	@UseGuards(AdminGuard)
+	promoteUser(@Body() promoteUserDto: PromoteUserDto, @GetUser() user: User) {
+		return this.userService.promoteUser(promoteUserDto.email);
 	}
 
 	@HttpCode(HttpStatus.OK)
