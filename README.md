@@ -21,8 +21,11 @@ Video Uploads:
 
 Live Streaming:
 
-1. When a new stream hits SRS (Simple Realtime Server), it is handed over to the Process Node.
-2. The node transcodes the stream into HLS format as well using FFMPEG.
+1. When a new stream hits SRS (Simple Realtime Server, the `srs` compose service), its on_publish hook queues the Process Node and the node starts pulling the RTMP stream.
+2. The node transcodes the stream into HLS and uploads segments CONTINUOUSLY while the broadcast runs, so viewers can play `http://<s3>/hls/<videoId>/master.m3u8` live.
+3. When the stream ends (on_unpublish), the tail is flushed, the recording stays as a replay and the video is marked inactive.
+
+Note: stock SRS 6 only relays H.264 video — HEVC publishers must transcode on push (real broadcasters/OBS send H.264 by default).
 
 This separation of concerns ensures that user interactions remain responsive, while the heavy lifting of video processing is handled efficiently by dedicated nodes.
 
@@ -60,6 +63,7 @@ npm run db:run:migrate
 - API: `http://localhost:3000/api` (Swagger UI)
 - Worker: `http://localhost:3001/api` (Swagger UI) and `http://localhost:3001/api/v1/health/readiness`
 - RabbitMQ console: `http://localhost:15677`
+- RTMP ingest (SRS): `rtmp://localhost:1935/live/<stream-key>`
 - Kibana: `http://localhost:5601`
 
 ### One-time queue deletion note
@@ -103,6 +107,12 @@ End-to-end VOD pipeline test (requires the full stack running; uploads a local v
 
 ```bash
 E2E_VIDEO_PATH=/path/to/video.mp4 npm run test:e2e:vod
+```
+
+End-to-end live test (pushes a real 45s RTMP stream through SRS and asserts segments are served publicly WHILE the broadcast runs):
+
+```bash
+npm run test:e2e:live
 ```
 
 Note the auth endpoints are throttled to 10 requests / 10 minutes per IP.
