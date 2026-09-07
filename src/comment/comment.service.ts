@@ -27,13 +27,17 @@ export class CommentService {
 	async userOwnsComment(id: number, user: User) {
 		const comment = await this.drizzleService.db.query.comments.findFirst({
 			where: eq(schema.comments.id, id),
+			with: {
+				owner: true,
+			},
 		});
 
 		if (!comment) {
 			throw new NotFoundException(`Comment with id ${id} not found`);
 		}
 
-		if (comment.ownerId !== user.id) {
+		// comments.ownerId references the owning channel, not the user
+		if (comment.owner.ownerId !== user.id) {
 			throw new ForbiddenException(`You don't own comment with id ${id}`);
 		}
 	}
@@ -45,6 +49,18 @@ export class CommentService {
 	 * @returns {Comment}
 	 */
 	async createComment(createCommentDto: CreateCommentDto, user: User): Promise<Comment> {
+		const channel = await this.drizzleService.db.query.channels.findFirst({
+			where: eq(schema.channels.id, createCommentDto.ownerId),
+		});
+
+		if (!channel) {
+			throw new NotFoundException(`Channel with id ${createCommentDto.ownerId} not found`);
+		}
+
+		if (channel.ownerId !== user.id) {
+			throw new ForbiddenException(`You don't own channel with id ${createCommentDto.ownerId}`);
+		}
+
 		const video = await this.videoService.getVideoById(createCommentDto.videoId);
 		if (!video) {
 			throw new NotFoundException(`Video with id ${createCommentDto.videoId} not found`);
