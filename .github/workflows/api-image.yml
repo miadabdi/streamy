@@ -1,9 +1,9 @@
-name: Build and Push Docker Image Dev
+name: Build and Push Api Image
 
 on:
   push:
     branches:
-      - development
+      - main
   workflow_dispatch:
 
 jobs:
@@ -21,8 +21,9 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: apps/api/Dockerfile
           target: production
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/streamy_process_node:dev-latest
-            ${{ secrets.DOCKER_USERNAME }}/streamy_process_node:dev-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/streamy:latest
+            ${{ secrets.DOCKER_USERNAME }}/streamy:${{ github.sha }}

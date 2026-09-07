@@ -1,4 +1,4 @@
-name: Build and Push Docker Image Stable
+name: Build and Push Worker Image
 
 on:
   push:
@@ -21,8 +21,9 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
+          file: apps/worker/Dockerfile
           target: production
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/streamy_process_node:stable-latest
-            ${{ secrets.DOCKER_USERNAME }}/streamy_process_node:stable-${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/streamy_process_node:latest
+            ${{ secrets.DOCKER_USERNAME }}/streamy_process_node:${{ github.sha }}

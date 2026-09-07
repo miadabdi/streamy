@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   schedule:
     # nightly at 03:17 utc, off the busy minute-zero mark
-    - cron: '17 3 * * *'
+    - cron: "17 3 * * *"
 
 jobs:
   vod-pipeline:
@@ -12,12 +12,6 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-
-      # the process node compose service builds from the sibling checkout
-      - uses: actions/checkout@v4
-        with:
-          repository: miadabdi/streamy_process_node
-          path: streamy_process_node
 
       - uses: actions/setup-node@v4
         with:
@@ -62,7 +56,7 @@ jobs:
       - name: Run the vod e2e (runners have no gpu — software fallback expected)
         env:
           E2E_VIDEO_PATH: /tmp/ci-video.mp4
-          E2E_REQUIRE_HW: '0'
+          E2E_REQUIRE_HW: "0"
         run: npm run test:e2e:vod
 
       - name: Dump stack logs on failure
