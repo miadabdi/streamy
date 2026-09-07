@@ -7,10 +7,10 @@ import { UserService } from './user.service';
 
 describe('UserService admin management', () => {
 	let service: UserService;
-	let usersFindFirst: vi.Mock;
-	let updateExecute: vi.Mock;
-	let updateReturning: vi.Mock;
-	let configGet: vi.Mock;
+	let usersFindFirst: ReturnType<typeof vi.fn>;
+	let updateExecute: ReturnType<typeof vi.fn>;
+	let updateReturning: ReturnType<typeof vi.fn>;
+	let configGet: ReturnType<typeof vi.fn>;
 
 	const updateChain = () => ({
 		set: vi.fn().mockReturnValue({

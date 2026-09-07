@@ -8,7 +8,7 @@ import { LiveService } from './live.service';
 
 describe('LiveService srsOnPublish', () => {
 	let service: LiveService;
-	let getLiveByVideoId: vi.Mock;
+	let getLiveByVideoId: ReturnType<typeof vi.fn>;
 
 	const publishDto = (stream: string) =>
 		({

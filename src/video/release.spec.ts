@@ -13,8 +13,8 @@ import { VideoService } from './video.service';
 
 describe('VideoService release indexing', () => {
 	let service: VideoService;
-	let videosFindFirst: vi.Mock;
-	let indexVideo: vi.Mock;
+	let videosFindFirst: ReturnType<typeof vi.fn>;
+	let indexVideo: ReturnType<typeof vi.fn>;
 
 	const user = { id: 1 } as any;
 
@@ -77,7 +77,6 @@ describe('VideoService release indexing', () => {
 		expect(indexVideo).toHaveBeenCalledTimes(1);
 		const body = indexVideo.mock.calls[0][0];
 		expect(body.name).toBe('e2e vod 045b');
-		expect(body.releasedAt).toBeTruthy();
 	});
 
 	it('still rejects non-done videos', async () => {

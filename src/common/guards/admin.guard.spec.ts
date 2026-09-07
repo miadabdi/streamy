@@ -5,7 +5,7 @@ import { AdminGuard } from './admin.guard';
 
 describe('AdminGuard', () => {
 	let guard: AdminGuard;
-	let usersFindFirst: vi.Mock;
+	let usersFindFirst: ReturnType<typeof vi.fn>;
 
 	const context = (user: unknown) =>
 		({

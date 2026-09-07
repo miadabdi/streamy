@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest';
 import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import * as amqpNS from 'amqp-connection-manager';
@@ -27,9 +28,9 @@ const mock = (amqpNS as any).__mock;
 describe('ConsumerService', () => {
 	let service: ConsumerService;
 	let setupFn: (channel: any) => Promise<void>;
-	let assertQueue: vi.Mock;
+	let assertQueue: ReturnType<typeof vi.fn>;
 
-	const consumeHandler = () => (mock.wrapper.consume as vi.Mock).mock.calls[0][1];
+	const consumeHandler = () => (mock.wrapper.consume as Mock).mock.calls[0][1];
 
 	beforeEach(async () => {
 		vi.clearAllMocks();
@@ -43,7 +44,7 @@ describe('ConsumerService', () => {
 		}).compile();
 		service = moduleRef.get(ConsumerService);
 
-		const createChannel = mock.connection.createChannel as vi.Mock;
+		const createChannel = mock.connection.createChannel as Mock;
 		setupFn = createChannel.mock.calls[0][0].setup;
 		assertQueue = vi.fn();
 
@@ -66,7 +67,7 @@ describe('ConsumerService', () => {
 	});
 
 	it('nacks without requeue when the handler throws', async () => {
-		(mock.wrapper.consume as vi.Mock).mockClear();
+		(mock.wrapper.consume as Mock).mockClear();
 		await service.listenOnQueue('q.set.video.status', async () => {
 			throw new Error('boom');
 		});

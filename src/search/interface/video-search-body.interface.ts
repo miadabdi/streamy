@@ -1,20 +1,7 @@
 import { Video } from '../../drizzle/schema';
 
-type OptionalExceptFor<T, TRequired extends keyof T> = Partial<T> & Pick<T, TRequired>;
-
-export interface VideoSearchBody
-	extends OptionalExceptFor<
-		Pick<
-			Video,
-			| 'id'
-			| 'channelId'
-			| 'description'
-			| 'name'
-			| 'duration'
-			| 'numberOfDislikes'
-			| 'numberOfLikes'
-			| 'numberOfVisits'
-			| 'releasedAt'
-		>,
-		'id'
-	> {}
+/**
+ * the search index only serves name/description matching + id hydration —
+ * counters and relations are read from postgres, so they are not indexed
+ */
+export interface VideoSearchBody extends Pick<Video, 'id' | 'name' | 'description'> {}

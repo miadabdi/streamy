@@ -12,9 +12,9 @@ import { VideoService } from './video.service';
 
 describe('VideoService search', () => {
 	let service: VideoService;
-	let search: vi.Mock;
-	let findMany: vi.Mock;
-	let selectFromWhereExecute: vi.Mock;
+	let search: ReturnType<typeof vi.fn>;
+	let findMany: ReturnType<typeof vi.fn>;
+	let selectFromWhereExecute: ReturnType<typeof vi.fn>;
 
 	const user = { id: 1, currentChannelId: 3 } as any;
 	const dto = (overrides: Record<string, unknown> = {}) =>

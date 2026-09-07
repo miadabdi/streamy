@@ -6,9 +6,9 @@ import { CommentService } from './comment.service';
 
 describe('CommentService ownership', () => {
 	let service: CommentService;
-	let commentsFindFirst: vi.Mock;
-	let channelsFindFirst: vi.Mock;
-	let insertExecute: vi.Mock;
+	let commentsFindFirst: ReturnType<typeof vi.fn>;
+	let channelsFindFirst: ReturnType<typeof vi.fn>;
+	let insertExecute: ReturnType<typeof vi.fn>;
 
 	const user = { id: 5 } as any;
 

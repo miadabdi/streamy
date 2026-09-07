@@ -59,14 +59,8 @@ export default class VideoSearchService {
 			id: video.id.toString(),
 			document: {
 				id: video.id,
-				channelId: video.channelId,
-				description: video.description,
-				duration: video.duration,
 				name: video.name,
-				numberOfDislikes: video.numberOfDislikes,
-				numberOfLikes: video.numberOfLikes,
-				numberOfVisits: video.numberOfVisits,
-				releasedAt: video.releasedAt,
+				description: video.description,
 			},
 		});
 

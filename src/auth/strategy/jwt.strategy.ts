@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { eq } from 'drizzle-orm';
@@ -32,7 +32,22 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY_NAME) {
 			where: eq(schema.users.id, payload.userId),
 		});
 
-		return user;
+		if (!user) {
+			throw new UnauthorizedException();
+		}
+
+		// a password change/reset revokes tokens issued before it
+		if (
+			user.passwordChangedAt &&
+			payload.iat &&
+			payload.iat * 1000 < user.passwordChangedAt.getTime()
+		) {
+			throw new UnauthorizedException('Session expired, sign in again');
+		}
+
+		// the request user never carries secrets
+		const { password, passwordResetToken, ...safeUser } = user;
+		return safeUser as User;
 	}
 
 	/**

@@ -8,8 +8,8 @@ import { LiveService } from './live.service';
 
 describe('LiveService srsOnUnpublish', () => {
 	let service: LiveService;
-	let getLiveByVideoId: vi.Mock;
-	let execute: vi.Mock;
+	let getLiveByVideoId: ReturnType<typeof vi.fn>;
+	let execute: ReturnType<typeof vi.fn>;
 
 	const dto = (stream: string) =>
 		({

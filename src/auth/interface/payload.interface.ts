@@ -4,4 +4,6 @@
 export interface Payload {
 	email: string;
 	userId: number;
+	/** issued-at, decoded automatically by passport-jwt */
+	iat?: number;
 }

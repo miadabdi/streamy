@@ -13,11 +13,11 @@ import { VideoService } from './video.service';
 
 describe('VideoService confirmUpload', () => {
 	let service: VideoService;
-	let videosFindFirst: vi.Mock;
-	let filesFindFirst: vi.Mock;
-	let update: vi.Mock;
+	let videosFindFirst: ReturnType<typeof vi.fn>;
+	let filesFindFirst: ReturnType<typeof vi.fn>;
+	let update: ReturnType<typeof vi.fn>;
 	let setCalls: Array<{ table: unknown; setArg: Record<string, unknown> }>;
-	let statObject: vi.Mock;
+	let statObject: ReturnType<typeof vi.fn>;
 
 	const user = { id: 1, email: 'owner@example.com' } as any;
 	const ownedVideo = (overrides: Record<string, unknown> = {}) => ({

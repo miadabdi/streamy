@@ -493,15 +493,9 @@ export class VideoService {
 		}
 
 		await this.videoSearchService.indexVideo({
-			channelId: video.channelId,
-			description: video.description,
-			duration: video.duration,
 			id: video.id,
 			name: video.name,
-			numberOfDislikes: video.numberOfDislikes,
-			numberOfLikes: video.numberOfLikes,
-			numberOfVisits: video.numberOfVisits,
-			releasedAt: video.releasedAt,
+			description: video.description,
 		});
 
 		return video;
@@ -561,15 +555,9 @@ export class VideoService {
 		const updatedVideo = updatedVideos[0];
 
 		await this.videoSearchService.indexVideo({
-			channelId: updatedVideo.channelId,
-			description: updatedVideo.description,
-			duration: updatedVideo.duration,
 			id: updatedVideo.id,
 			name: updatedVideo.name,
-			numberOfDislikes: updatedVideo.numberOfDislikes,
-			numberOfLikes: updatedVideo.numberOfLikes,
-			numberOfVisits: updatedVideo.numberOfVisits,
-			releasedAt: updatedVideo.releasedAt,
+			description: updatedVideo.description,
 		});
 
 		return updatedVideo;
@@ -612,8 +600,6 @@ export class VideoService {
 			})
 			.where(eq(schema.videos.id, watchedVideoDto.videoId))
 			.execute();
-
-		await this.updateIndexVideo(watchedVideoDto.videoId, tx);
 
 		return {
 			message: 'Operation done successfully.',
@@ -738,8 +724,6 @@ export class VideoService {
 				.where(eq(schema.videos.id, likeDislikeVideoDto.videoId))
 				.execute();
 		}
-
-		await this.updateIndexVideo(likeDislikeVideoDto.videoId, tx);
 
 		return {
 			message: 'Operation done successfully.',
@@ -894,14 +878,8 @@ export class VideoService {
 
 		await this.videoSearchService.indexVideo({
 			id: video.id,
-			channelId: video.channelId,
-			description: video.description,
-			duration: video.duration,
 			name: video.name,
-			numberOfDislikes: video.numberOfDislikes,
-			numberOfLikes: video.numberOfLikes,
-			numberOfVisits: video.numberOfVisits,
-			releasedAt: video.releasedAt,
+			description: video.description,
 		});
 	}
 }
