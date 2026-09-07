@@ -31,7 +31,8 @@
 		"requeue:dead-letter": "tsx scripts/requeue-dead-letter.ts",
 		"test:watch": "vitest",
 		"test:cov": "vitest run --coverage",
-		"prepare": "husky"
+		"prepare": "husky",
+		"test:db": "vitest run --config vitest.db.config.ts"
 	},
 	"dependencies": {
 		"@elastic/elasticsearch": "^8.19.2",
