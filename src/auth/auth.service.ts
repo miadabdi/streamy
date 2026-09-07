@@ -224,6 +224,10 @@ export class AuthService {
 			throw new ForbiddenException('Token is incorrect');
 		}
 
+		if (!user.passwordResetExpiresAt || user.passwordResetExpiresAt.getTime() < Date.now()) {
+			throw new ForbiddenException('Reset token expired');
+		}
+
 		const hash = await this.hash(resetPasswordDto.password);
 
 		await this.drizzleService.db
