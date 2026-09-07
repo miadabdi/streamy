@@ -40,9 +40,7 @@ services:
         condition: service_healthy
 
   process_node:
-    build:
-      context: ../streamy_process_node
-      target: production
+    image: miadabdi/streamy_process_node:dev-latest
     ports:
       - '${PROCESS_NODE_PORT}:3001'
     networks:

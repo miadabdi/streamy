@@ -30,11 +30,12 @@ services:
       - THROTTLE_TTL=${THROTTLE_TTL}
       - THROTTLE_LIMIT=${THROTTLE_LIMIT}
       - COMPRESSION_THRESHOLD=${COMPRESSION_THRESHOLD}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT}
-      - SMTP_USERNAME=${SMTP_USERNAME}
-      - SMTP_PASSWORD=${SMTP_PASSWORD}
-      - SMTP_FROM=${SMTP_FROM}
+      # dev mail is captured by mailpit instead of hitting a real provider
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_USERNAME=mailpit
+      - SMTP_PASSWORD=mailpit
+      - SMTP_FROM=streamy@localhost
     depends_on:
       streamy_db:
         condition: service_healthy
@@ -86,6 +87,15 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+
+  mailpit:
+    container_name: streamy_mailpit
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    networks:
+      - local
+    ports:
+      - '8025:8025'
 
   srs:
     container_name: streamy_srs
