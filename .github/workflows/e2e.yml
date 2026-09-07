@@ -1,0 +1,74 @@
+name: E2E
+
+on:
+  workflow_dispatch:
+  schedule:
+    # nightly at 03:17 utc, off the busy minute-zero mark
+    - cron: '17 3 * * *'
+
+jobs:
+  vod-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      # the process node compose service builds from the sibling checkout
+      - uses: actions/checkout@v4
+        with:
+          repository: miadabdi/streamy_process_node
+          path: streamy_process_node
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Raise vm.max_map_count for elasticsearch
+        run: sudo sysctl -w vm.max_map_count=262144
+
+      - name: Generate .env
+        run: |
+          cp .env.example .env
+          sed -i 's/^ELASTICSEARCH_PASSWORD=$/ELASTICSEARCH_PASSWORD=ci-es-password/' .env
+          sed -i 's/^KIBANA_PASSWORD=$/KIBANA_PASSWORD=ci-kibana-password/' .env
+          sed -i 's/^RABBITMQ_PASS=$/RABBITMQ_PASS=ci-rmq-password/' .env
+          sed -i 's/^POSTGRES_PASSWORD=$/POSTGRES_PASSWORD=ci-pg-password/' .env
+          sed -i 's/^MINIO_ACCESS_KEY=$/MINIO_ACCESS_KEY=ci-access/' .env
+          sed -i 's/^MINIO_SECRET_KEY=$/MINIO_SECRET_KEY=ci-secret/' .env
+          sed -i 's/^JWT_SECRET=secret/JWT_SECRET=ci-jwt-secret/' .env
+          sed -i 's/^SMTP_HOST=$/SMTP_HOST=mailpit/' .env
+          sed -i 's/^SMTP_USERNAME=$/SMTP_USERNAME=ci/' .env
+          sed -i 's/^SMTP_PASSWORD=$/SMTP_PASSWORD=ci/' .env
+          sed -i 's/^SMTP_FROM=$/SMTP_FROM=streamy@ci/' .env
+
+      - name: Bring up the stack
+        run: >
+          docker compose -f docker-compose-dev.yml up -d --build
+          app process_node streamy_db rmq seaweedfs setup es01 mailpit
+
+      - name: Install api deps and migrate
+        run: |
+          npm ci
+          until curl -sf http://localhost:3000/api >/dev/null; do sleep 5; done
+          npm run db:run:migrate
+
+      - name: Generate a 60s test video (github runners ship ffmpeg)
+        run: >
+          ffmpeg -y -f lavfi -i testsrc2=duration=60:size=1280x720:rate=30
+          -f lavfi -i sine=frequency=440:duration=60
+          -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest /tmp/ci-video.mp4
+
+      - name: Run the vod e2e (runners have no gpu — software fallback expected)
+        env:
+          E2E_VIDEO_PATH: /tmp/ci-video.mp4
+          E2E_REQUIRE_HW: '0'
+        run: npm run test:e2e:vod
+
+      - name: Dump stack logs on failure
+        if: failure()
+        run: docker compose -f docker-compose-dev.yml logs --tail 100
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose-dev.yml down -v --remove-orphans

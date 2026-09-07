@@ -32,7 +32,8 @@
 		"test:watch": "vitest",
 		"test:cov": "vitest run --coverage",
 		"prepare": "husky",
-		"test:db": "vitest run --config vitest.db.config.ts"
+		"test:db": "vitest run --config vitest.db.config.ts",
+		"verify": "npm run lint && npm run build && npm test"
 	},
 	"dependencies": {
 		"@elastic/elasticsearch": "^8.19.2",
