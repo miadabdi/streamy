@@ -91,8 +91,29 @@ export class LiveService {
 		return { code: 0 };
 	}
 
-	srsOnUnpublish(srsOnUnpublishDto: OnUnpublishDto) {
-		console.dir(srsOnUnpublishDto, { depth: null });
+	/**
+	 * stream ended: mark the live video inactive so it stops matching
+	 * future stream keys; the hls event playlist stays available as a replay
+	 * @param {OnUnpublishDto} srsOnUnpublishDto
+	 * @returns {{ code: number }}
+	 */
+	async srsOnUnpublish(srsOnUnpublishDto: OnUnpublishDto) {
+		if (srsOnUnpublishDto.app != 'live') {
+			throw new ForbiddenException('Only live app is allowed');
+		}
+
+		const video = await this.videoService.getLiveByVideoId(srsOnUnpublishDto.stream);
+
+		if (!video) {
+			throw new NotFoundException('Key not found');
+		}
+
+		await this.drizzleService.db
+			.update(schema.videos)
+			.set({ isActive: false })
+			.where(eq(schema.videos.id, video.id))
+			.execute();
+
 		return { code: 0 };
 	}
 
