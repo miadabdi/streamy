@@ -27,6 +27,7 @@
     "lint": "eslint \"{src,apps,libs,scripts}/**/*.ts\" --fix",
     "test": "jest",
     "test:e2e:vod": "tsx scripts/e2e-vod.ts",
+		"test:e2e:live": "tsx scripts/e2e-live.ts",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "prepare": "husky"
