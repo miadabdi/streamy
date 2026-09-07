@@ -14,6 +14,8 @@ This is a video-sharing platform.
 - [ ] implement google oauth
 - [ ] use templates for emails
 
+- [ ] nestjs 12 upgrade blocked: packages are esm-only which jest 30 cannot load, @nestjs/schematics@12 requires typescript >= 6 which ts-jest does not support, and ts 7 is the native compiler without js tooling support yet
+
 ### Done ✓
 
 - [x] setup smtp mail sender
