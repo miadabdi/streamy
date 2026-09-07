@@ -2,7 +2,7 @@
 # Prepare Stage
 ###################
 
-FROM node:22.14.0-bookworm-slim AS prepare
+FROM node:24-trixie-slim AS prepare
 
 # Install procps (for ps command) and curl
 RUN apt-get update && apt-get install -y procps curl && rm -rf /var/lib/apt/lists/*
