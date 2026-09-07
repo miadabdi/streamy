@@ -52,6 +52,10 @@ services:
     command: npm run start:debug
     ports:
       - '${PROCESS_NODE_PORT}:3001'
+    # intel/amd gpu for vaapi hardware transcoding; remove these two lines
+    # on hosts without /dev/dri — the worker falls back to software encoding
+    devices:
+      - /dev/dri:/dev/dri
     networks:
       - local
     volumes:
@@ -147,7 +151,7 @@ services:
       - seaweedfs_data:/data
     environment:
       - >-
-        S3_CONFIG_JSON={"identities":[{"name":"admin","credentials":[{"accessKey":"${MINIO_ACCESS_KEY}","secretKey":"${MINIO_SECRET_KEY}"}],"actions":["Admin","Read","Write","List","Tagging"]},{"name":"anonymous","actions":["Read:videos","Read:hls","Read:images","Read:channelavatars","Read:videothumbnails","Read:subtitlefiles","Read:public"]}]}
+        S3_CONFIG_JSON={"identities":[{"name":"admin","credentials":[{"accessKey":"${MINIO_ACCESS_KEY}","secretKey":"${MINIO_SECRET_KEY}"}],"actions":["Admin","Read","Write","List","Tagging"]},{"name":"anonymous","actions":["Read:hls","Read:images","Read:channelavatars","Read:videothumbnails","Read:subtitlefiles","Read:public"]}]}
     entrypoint: ['/bin/sh', '-c']
     command:
       - >-
