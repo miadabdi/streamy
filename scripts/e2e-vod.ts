@@ -191,6 +191,19 @@ async function main() {
 		201,
 	);
 
+	// 9.5 hardware-encode regression check: if vaapi silently broke, the
+	// worker falls back to slow libx264 and nothing complains — unless we do
+	const readiness = await (
+		await fetch(`${process.env.E2E_WORKER_URL ?? 'http://localhost:3001'}/api/v1/health/readiness`)
+	).json();
+	console.log(`    worker encoder: ${readiness.encoder}`);
+	if ((process.env.E2E_REQUIRE_HW ?? '1') === '1' && readiness.encoder === 'libx264') {
+		throw new Error(
+			'worker transcoded with libx264 — hardware encoding regressed (set E2E_REQUIRE_HW=0 on machines without a gpu)',
+		);
+	}
+	ok(`transcoder encoder: ${readiness.encoder}`);
+
 	// 10. poll status
 	console.log('10. waiting for transcode');
 	let lastStatus = '';
