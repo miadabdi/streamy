@@ -19,7 +19,10 @@ const env = Object.fromEntries(
 		.map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]),
 );
 
-const RMQ_URL = env.RMQ_URL ?? 'amqp://localhost:5672';
+// expand ${VAR} references the way dotenv would
+const expand = (value: string) => value.replace(/\$\{(\w+)\}/g, (_, name) => env[name] ?? '');
+
+const RMQ_URL = expand(env.RMQ_URL ?? 'amqp://localhost:5672');
 
 async function main() {
 	const connection = await amqplib.connect(RMQ_URL);

@@ -44,6 +44,21 @@ export class MinioClientService {
 	}
 
 	async onModuleInit() {
+		// storage can lag behind its healthcheck right after a stack recreate;
+		// a boot-time blip should not kill the app
+		for (let attempt = 1; attempt <= 3; attempt++) {
+			try {
+				await this.bootstrapBuckets();
+				return;
+			} catch (err) {
+				this.logger.warn(`bucket bootstrap attempt ${attempt} failed: ${err.message}`);
+				if (attempt === 3) throw err;
+				await new Promise((resolve) => setTimeout(resolve, 10000));
+			}
+		}
+	}
+
+	private async bootstrapBuckets() {
 		for (const bucket of BUCKETS) {
 			// creating and configuring buckets
 			if (await this.client.bucketExists(bucket.name)) {

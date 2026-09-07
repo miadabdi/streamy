@@ -157,6 +157,34 @@ async function main() {
 		await call('POST', `/video/confirm-upload?id=${video.id}`),
 		200,
 	);
+
+	// 8.5 upload a subtitle so the webvtt packaging path is exercised too
+	const srt = [
+		'1',
+		'00:00:00,000 --> 00:00:02,000',
+		'hello from the e2e subtitle',
+		'',
+		'2',
+		'00:00:02,000 --> 00:00:06,000',
+		'second cue',
+		'',
+	].join('\n');
+	const subtitleForm = new FormData();
+	subtitleForm.append('file', new Blob([srt], { type: 'application/x-subrip' }), 'subs.srt');
+	subtitleForm.append('langRFC5646', 'en');
+	subtitleForm.append('videoId', String(video.id));
+	const subtitleRes = await fetch(`${API}/subtitle`, {
+		method: 'POST',
+		headers: { Cookie: cookie },
+		body: subtitleForm,
+	});
+	if (subtitleRes.status !== 201) {
+		throw new Error(
+			`FAIL subtitle upload: expected 201, got ${subtitleRes.status}: ${(await subtitleRes.text()).slice(0, 300)}`,
+		);
+	}
+	ok('subtitle uploaded');
+
 	await expectStatus(
 		'send-to-process-queue',
 		await call('POST', `/video/send-video-to-process-queue?id=${video.id}`),
@@ -202,6 +230,14 @@ async function main() {
 	const segmentRes = await fetch(`${S3_PUBLIC}/hls/${video.id}/segment_360p.ts`);
 	if (segmentRes.status !== 200) throw new Error(`segment_360p.ts returned ${segmentRes.status}`);
 	ok('variant + segment fetchable');
+
+	// subtitle packaging: webvtt playlist exists and the master references it
+	const subPlaylist = await fetch(`${S3_PUBLIC}/hls/${video.id}/sub_vtt_en.m3u8`);
+	if (subPlaylist.status !== 200) throw new Error(`sub_vtt_en.m3u8 returned ${subPlaylist.status}`);
+	if (!master.includes('sub_vtt_en') && !master.includes('sgroup')) {
+		throw new Error('master.m3u8 does not reference the subtitle group');
+	}
+	ok('subtitle playlist packaged into the hls output');
 
 	// 12. release + search
 	await expectStatus(

@@ -142,7 +142,9 @@ services:
         exec weed server -s3 -s3.port=8333 -s3.config=/tmp/s3.json
         -dir=/data -master.volumeSizeLimitMB=1024 -volume.max=0 -ip.bind=0.0.0.0
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://localhost:9333/cluster/status >/dev/null || exit 1']
+      # probe the s3 gateway itself (what dependents dial); busybox wget
+      # exits 8 on http error responses — a 403 still proves the server is up
+      test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:8333/; [ $? -ne 4 ]']
       interval: 15s
       timeout: 5s
       retries: 10
