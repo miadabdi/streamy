@@ -80,6 +80,7 @@ services:
       - local
     ports:
       - '1935:1935'
+    command: ['./objs/srs', '-c', 'conf/srs.conf']
     volumes:
       - ./docker/srs/srs.conf:/usr/local/srs/conf/srs.conf:ro
 

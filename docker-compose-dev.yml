@@ -71,17 +71,6 @@ services:
       - FFMPEG_LIVE_NICENESS=${FFMPEG_LIVE_NICENESS}
       - SRS_RTMP_HOST=srs
       - LIVE_UPLOAD_INTERVAL=${LIVE_UPLOAD_INTERVAL}
-
-  srs:
-    container_name: streamy_srs
-    image: ossrs/srs:6
-    restart: unless-stopped
-    networks:
-      - local
-    ports:
-      - '1935:1935'
-    volumes:
-      - ./docker/srs/srs.conf:/usr/local/srs/conf/srs.conf:ro
     depends_on:
       rmq:
         condition: service_healthy
@@ -93,6 +82,18 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+
+  srs:
+    container_name: streamy_srs
+    image: ossrs/srs:6
+    restart: unless-stopped
+    networks:
+      - local
+    ports:
+      - '1935:1935'
+    command: ['./objs/srs', '-c', 'conf/srs.conf']
+    volumes:
+      - ./docker/srs/srs.conf:/usr/local/srs/conf/srs.conf:ro
 
   streamy_db:
     image: postgres:17.6
