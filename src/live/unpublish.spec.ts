@@ -8,8 +8,8 @@ import { LiveService } from './live.service';
 
 describe('LiveService srsOnUnpublish', () => {
 	let service: LiveService;
-	let getLiveByVideoId: jest.Mock;
-	let execute: jest.Mock;
+	let getLiveByVideoId: vi.Mock;
+	let execute: vi.Mock;
 
 	const dto = (stream: string) =>
 		({
@@ -28,12 +28,12 @@ describe('LiveService srsOnUnpublish', () => {
 		}) as any;
 
 	beforeEach(async () => {
-		getLiveByVideoId = jest.fn();
-		execute = jest.fn().mockResolvedValue(undefined);
+		getLiveByVideoId = vi.fn();
+		execute = vi.fn().mockResolvedValue(undefined);
 
-		const update = jest.fn().mockReturnValue({
-			set: jest.fn().mockReturnValue({
-				where: jest.fn().mockReturnValue({ execute }),
+		const update = vi.fn().mockReturnValue({
+			set: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({ execute }),
 			}),
 		});
 
@@ -44,9 +44,9 @@ describe('LiveService srsOnUnpublish', () => {
 				{ provide: VideoService, useValue: { getLiveByVideoId } },
 				{
 					provide: DrizzleService,
-					useValue: { db: { query: { videos: { findFirst: jest.fn() } }, update } },
+					useValue: { db: { query: { videos: { findFirst: vi.fn() } }, update } },
 				},
-				{ provide: ProducerService, useValue: { addToQueue: jest.fn() } },
+				{ provide: ProducerService, useValue: { addToQueue: vi.fn() } },
 			],
 		}).compile();
 		service = moduleRef.get(LiveService);

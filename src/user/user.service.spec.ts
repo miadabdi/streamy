@@ -7,27 +7,27 @@ import { UserService } from './user.service';
 
 describe('UserService admin management', () => {
 	let service: UserService;
-	let usersFindFirst: jest.Mock;
-	let updateExecute: jest.Mock;
-	let updateReturning: jest.Mock;
-	let configGet: jest.Mock;
+	let usersFindFirst: vi.Mock;
+	let updateExecute: vi.Mock;
+	let updateReturning: vi.Mock;
+	let configGet: vi.Mock;
 
 	const updateChain = () => ({
-		set: jest.fn().mockReturnValue({
-			where: jest.fn().mockReturnValue({
-				returning: jest.fn().mockReturnValue({ execute: updateReturning }),
+		set: vi.fn().mockReturnValue({
+			where: vi.fn().mockReturnValue({
+				returning: vi.fn().mockReturnValue({ execute: updateReturning }),
 				execute: updateExecute,
 			}),
 		}),
 	});
 
 	beforeEach(async () => {
-		usersFindFirst = jest.fn();
-		updateExecute = jest.fn().mockResolvedValue(undefined);
-		updateReturning = jest.fn().mockResolvedValue([{ email: 'admin@x.test' }]);
-		configGet = jest.fn().mockReturnValue('');
+		usersFindFirst = vi.fn();
+		updateExecute = vi.fn().mockResolvedValue(undefined);
+		updateReturning = vi.fn().mockResolvedValue([{ email: 'admin@x.test' }]);
+		configGet = vi.fn().mockReturnValue('');
 
-		const update = jest.fn().mockReturnValue(updateChain());
+		const update = vi.fn().mockReturnValue(updateChain());
 
 		const moduleRef = await Test.createTestingModule({
 			providers: [

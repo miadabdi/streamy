@@ -13,8 +13,8 @@ import { VideoService } from './video.service';
 
 describe('VideoService release indexing', () => {
 	let service: VideoService;
-	let videosFindFirst: jest.Mock;
-	let indexVideo: jest.Mock;
+	let videosFindFirst: vi.Mock;
+	let indexVideo: vi.Mock;
 
 	const user = { id: 1 } as any;
 
@@ -33,14 +33,14 @@ describe('VideoService release indexing', () => {
 	});
 
 	beforeEach(async () => {
-		videosFindFirst = jest.fn().mockResolvedValue(doneVideo());
-		indexVideo = jest.fn().mockResolvedValue({});
+		videosFindFirst = vi.fn().mockResolvedValue(doneVideo());
+		indexVideo = vi.fn().mockResolvedValue({});
 
-		const update = jest.fn().mockReturnValue({
-			set: jest.fn().mockReturnValue({
-				where: jest.fn().mockReturnValue({
-					returning: jest.fn().mockReturnValue({
-						execute: jest.fn().mockResolvedValue([doneVideo()]),
+		const update = vi.fn().mockReturnValue({
+			set: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({
+					returning: vi.fn().mockReturnValue({
+						execute: vi.fn().mockResolvedValue([doneVideo()]),
 					}),
 				}),
 			}),

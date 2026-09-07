@@ -5,7 +5,7 @@ import { AdminGuard } from './admin.guard';
 
 describe('AdminGuard', () => {
 	let guard: AdminGuard;
-	let usersFindFirst: jest.Mock;
+	let usersFindFirst: vi.Mock;
 
 	const context = (user: unknown) =>
 		({
@@ -19,7 +19,7 @@ describe('AdminGuard', () => {
 		}) as unknown as ExecutionContext;
 
 	beforeEach(async () => {
-		usersFindFirst = jest.fn();
+		usersFindFirst = vi.fn();
 
 		const moduleRef = await Test.createTestingModule({
 			providers: [

@@ -10,7 +10,7 @@ class MockResponse implements Partial<Response> {
 		'Set-Cookie': [],
 	};
 
-	cookie = jest.fn().mockImplementation((name: string, value: string, options: CookieOptions) => {
+	cookie = vi.fn().mockImplementation((name: string, value: string, options: CookieOptions) => {
 		if (!this.headers['Set-Cookie']) this.headers['Set-Cookie'] = [];
 
 		this.headers['Set-Cookie'].push({ name, value });
@@ -43,7 +43,7 @@ describe('AuthController', () => {
 		})
 			.overrideProvider(ThrottlerGuard)
 			.useValue({
-				canActivate: jest.fn(() => true),
+				canActivate: vi.fn(() => true),
 			})
 			.compile();
 
@@ -54,7 +54,7 @@ describe('AuthController', () => {
 	describe('signout', () => {
 		it('should return an empty access token', async () => {
 			// const result = 'hashed';
-			// jest.spyOn(authService, 'hash').mockImplementation(() => Promise.resolve(result));
+			// vi.spyOn(authService, 'hash').mockImplementation(() => Promise.resolve(result));
 
 			const response = new MockResponse();
 			await authController.signOut(response as any);

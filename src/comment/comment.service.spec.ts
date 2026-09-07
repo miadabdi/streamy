@@ -6,20 +6,20 @@ import { CommentService } from './comment.service';
 
 describe('CommentService ownership', () => {
 	let service: CommentService;
-	let commentsFindFirst: jest.Mock;
-	let channelsFindFirst: jest.Mock;
-	let insertExecute: jest.Mock;
+	let commentsFindFirst: vi.Mock;
+	let channelsFindFirst: vi.Mock;
+	let insertExecute: vi.Mock;
 
 	const user = { id: 5 } as any;
 
 	beforeEach(async () => {
-		commentsFindFirst = jest.fn();
-		channelsFindFirst = jest.fn();
-		insertExecute = jest.fn().mockResolvedValue([{ id: 1 }]);
+		commentsFindFirst = vi.fn();
+		channelsFindFirst = vi.fn();
+		insertExecute = vi.fn().mockResolvedValue([{ id: 1 }]);
 
-		const insert = jest.fn().mockReturnValue({
-			values: jest.fn().mockReturnValue({
-				returning: jest.fn().mockReturnValue({ execute: insertExecute }),
+		const insert = vi.fn().mockReturnValue({
+			values: vi.fn().mockReturnValue({
+				returning: vi.fn().mockReturnValue({ execute: insertExecute }),
 			}),
 		});
 
@@ -40,7 +40,7 @@ describe('CommentService ownership', () => {
 				},
 				{
 					provide: VideoService,
-					useValue: { getVideoById: jest.fn().mockResolvedValue({ id: 2 }) },
+					useValue: { getVideoById: vi.fn().mockResolvedValue({ id: 2 }) },
 				},
 			],
 		}).compile();

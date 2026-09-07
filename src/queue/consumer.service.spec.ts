@@ -4,20 +4,20 @@ import * as amqpNS from 'amqp-connection-manager';
 import amqp from 'amqp-connection-manager';
 import { ConsumerService } from './consumer.service';
 
-jest.mock('amqp-connection-manager', () => {
+vi.mock('amqp-connection-manager', () => {
 	const wrapper = {
-		addSetup: jest.fn(),
-		consume: jest.fn((_queue: string, handler: any) => Promise.resolve({ consumerTag: 't' })),
-		ack: jest.fn(),
-		nack: jest.fn(),
+		addSetup: vi.fn(),
+		consume: vi.fn((_queue: string, handler: any) => Promise.resolve({ consumerTag: 't' })),
+		ack: vi.fn(),
+		nack: vi.fn(),
 	};
 	const connection = {
-		createChannel: jest.fn(() => wrapper),
-		isConnected: jest.fn().mockReturnValue(true),
+		createChannel: vi.fn(() => wrapper),
+		isConnected: vi.fn().mockReturnValue(true),
 	};
 	return {
 		__esModule: true,
-		default: { connect: jest.fn(() => connection) },
+		default: { connect: vi.fn(() => connection) },
 		__mock: { wrapper, connection },
 	};
 });
@@ -27,12 +27,12 @@ const mock = (amqpNS as any).__mock;
 describe('ConsumerService', () => {
 	let service: ConsumerService;
 	let setupFn: (channel: any) => Promise<void>;
-	let assertQueue: jest.Mock;
+	let assertQueue: vi.Mock;
 
-	const consumeHandler = () => (mock.wrapper.consume as jest.Mock).mock.calls[0][1];
+	const consumeHandler = () => (mock.wrapper.consume as vi.Mock).mock.calls[0][1];
 
 	beforeEach(async () => {
-		jest.clearAllMocks();
+		vi.clearAllMocks();
 		mock.connection.isConnected.mockReturnValue(true);
 
 		const moduleRef = await Test.createTestingModule({
@@ -43,9 +43,9 @@ describe('ConsumerService', () => {
 		}).compile();
 		service = moduleRef.get(ConsumerService);
 
-		const createChannel = mock.connection.createChannel as jest.Mock;
+		const createChannel = mock.connection.createChannel as vi.Mock;
 		setupFn = createChannel.mock.calls[0][0].setup;
-		assertQueue = jest.fn();
+		assertQueue = vi.fn();
 
 		await service.listenOnQueue('q.set.video.status', async () => {});
 		await setupFn({ assertQueue });
@@ -66,7 +66,7 @@ describe('ConsumerService', () => {
 	});
 
 	it('nacks without requeue when the handler throws', async () => {
-		(mock.wrapper.consume as jest.Mock).mockClear();
+		(mock.wrapper.consume as vi.Mock).mockClear();
 		await service.listenOnQueue('q.set.video.status', async () => {
 			throw new Error('boom');
 		});

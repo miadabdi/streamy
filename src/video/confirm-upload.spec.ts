@@ -13,11 +13,11 @@ import { VideoService } from './video.service';
 
 describe('VideoService confirmUpload', () => {
 	let service: VideoService;
-	let videosFindFirst: jest.Mock;
-	let filesFindFirst: jest.Mock;
-	let update: jest.Mock;
+	let videosFindFirst: vi.Mock;
+	let filesFindFirst: vi.Mock;
+	let update: vi.Mock;
 	let setCalls: Array<{ table: unknown; setArg: Record<string, unknown> }>;
-	let statObject: jest.Mock;
+	let statObject: vi.Mock;
 
 	const user = { id: 1, email: 'owner@example.com' } as any;
 	const ownedVideo = (overrides: Record<string, unknown> = {}) => ({
@@ -28,22 +28,22 @@ describe('VideoService confirmUpload', () => {
 	});
 
 	const makeUpdateChain = () =>
-		jest.fn().mockImplementation((table: unknown) => {
-			const set = jest.fn().mockImplementation((setArg: Record<string, unknown>) => {
+		vi.fn().mockImplementation((table: unknown) => {
+			const set = vi.fn().mockImplementation((setArg: Record<string, unknown>) => {
 				setCalls.push({ table, setArg });
 				return {
-					where: jest.fn().mockReturnValue({ execute: jest.fn().mockResolvedValue(undefined) }),
+					where: vi.fn().mockReturnValue({ execute: vi.fn().mockResolvedValue(undefined) }),
 				};
 			});
 			return { set };
 		});
 
 	beforeEach(async () => {
-		videosFindFirst = jest.fn();
-		filesFindFirst = jest.fn();
+		videosFindFirst = vi.fn();
+		filesFindFirst = vi.fn();
 		setCalls = [];
 		update = makeUpdateChain();
-		statObject = jest.fn();
+		statObject = vi.fn();
 
 		const moduleRef = await Test.createTestingModule({
 			providers: [

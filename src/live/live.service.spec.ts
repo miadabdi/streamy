@@ -8,7 +8,7 @@ import { LiveService } from './live.service';
 
 describe('LiveService srsOnPublish', () => {
 	let service: LiveService;
-	let getLiveByVideoId: jest.Mock;
+	let getLiveByVideoId: vi.Mock;
 
 	const publishDto = (stream: string) =>
 		({
@@ -27,7 +27,7 @@ describe('LiveService srsOnPublish', () => {
 		}) as any;
 
 	beforeEach(async () => {
-		getLiveByVideoId = jest.fn();
+		getLiveByVideoId = vi.fn();
 
 		const moduleRef = await Test.createTestingModule({
 			providers: [
@@ -36,9 +36,9 @@ describe('LiveService srsOnPublish', () => {
 				{ provide: VideoService, useValue: { getLiveByVideoId } },
 				{
 					provide: DrizzleService,
-					useValue: { db: { query: { videos: { findFirst: jest.fn() } }, update: jest.fn() } },
+					useValue: { db: { query: { videos: { findFirst: vi.fn() } }, update: vi.fn() } },
 				},
-				{ provide: ProducerService, useValue: { addToQueue: jest.fn() } },
+				{ provide: ProducerService, useValue: { addToQueue: vi.fn() } },
 			],
 		}).compile();
 		service = moduleRef.get(LiveService);

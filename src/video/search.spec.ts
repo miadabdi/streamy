@@ -12,9 +12,9 @@ import { VideoService } from './video.service';
 
 describe('VideoService search', () => {
 	let service: VideoService;
-	let search: jest.Mock;
-	let findMany: jest.Mock;
-	let selectFromWhereExecute: jest.Mock;
+	let search: vi.Mock;
+	let findMany: vi.Mock;
+	let selectFromWhereExecute: vi.Mock;
 
 	const user = { id: 1, currentChannelId: 3 } as any;
 	const dto = (overrides: Record<string, unknown> = {}) =>
@@ -28,13 +28,13 @@ describe('VideoService search', () => {
 		}) as any;
 
 	beforeEach(async () => {
-		search = jest.fn().mockResolvedValue([{ id: 11 }, { id: 22 }]);
-		findMany = jest.fn().mockResolvedValue([{ id: 11 }, { id: 22 }]);
-		selectFromWhereExecute = jest.fn().mockResolvedValue([]);
+		search = vi.fn().mockResolvedValue([{ id: 11 }, { id: 22 }]);
+		findMany = vi.fn().mockResolvedValue([{ id: 11 }, { id: 22 }]);
+		selectFromWhereExecute = vi.fn().mockResolvedValue([]);
 
-		const select = jest.fn().mockReturnValue({
-			from: jest.fn().mockReturnValue({
-				where: jest.fn().mockReturnValue({ execute: selectFromWhereExecute }),
+		const select = vi.fn().mockReturnValue({
+			from: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({ execute: selectFromWhereExecute }),
 			}),
 		});
 
