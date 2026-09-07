@@ -1,13 +1,14 @@
 #!/bin/sh
 set -e
 
+# paths are workspace-relative; everything runs from the repo root
 if [ "$NODE_ENV" = "production" ]; then
-    node ./dist/src/drizzle/migrate.js
+    node ./apps/api/dist/src/drizzle/migrate.js
 elif [ "$NODE_ENV" = "development" ]; then
-    if [ -f ./src/drizzle/migrate.ts ]; then
-        npm run db:run:migrate
+    if [ -f ./apps/api/src/drizzle/migrate.ts ]; then
+        npm run db:run:migrate -w apps/api
     else
-        node ./dist/src/drizzle/migrate.js
+        node ./apps/api/dist/src/drizzle/migrate.js
     fi
 fi
 

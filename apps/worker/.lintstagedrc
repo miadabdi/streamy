@@ -1,4 +1,0 @@
-{
-	"*.ts": ["prettier --write -l", "eslint"],
-	"*.{js,jsx,css,less,scss,sass,json,md,yml}": "prettier --ignore-unknown"
-}

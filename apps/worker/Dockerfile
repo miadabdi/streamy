@@ -34,6 +34,7 @@ RUN curl -fsSL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz | tar
 
 ###################
 # Prepare Stage
+# build context is the repo root (for the workspace manifest + packages)
 ###################
 
 FROM node:24-trixie-slim AS prepare
@@ -54,8 +55,11 @@ ENV FFMPEG_PATH=/usr/local/bin/ffmpeg \
 RUN mkdir -p /home/node/app/node_modules
 WORKDIR /home/node/app
 
-# Copy dependency manifests (no chown yet)
-COPY package*.json ./
+# Copy workspace manifests (all of them: npm validates the whole tree)
+COPY package.json package-lock.json .npmrc ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/worker/package.json ./apps/worker/
+COPY packages/queues ./packages/queues
 
 ###################
 # Development Stage
@@ -63,20 +67,16 @@ COPY package*.json ./
 
 FROM prepare AS development
 
-# Vendored @miadabdi/streamy-queues tarball needed by npm install
-COPY vendor ./vendor
-
-# Install all dependencies (including devDependencies)
-# Run as root to avoid permission issues with mounted volumes
-RUN npm install
+# Install the worker workspace (links @miadabdi/streamy-queues)
+RUN npm ci --workspace apps/worker
 
 ENV NODE_ENV=development
 
-# Copy all source files
-COPY . .
+# Copy all worker source files
+COPY apps/worker ./apps/worker
 
 # Build the application
-RUN npm run build
+RUN npm run build -w apps/worker
 
 # Expose application and debug ports
 EXPOSE 3001
@@ -98,17 +98,15 @@ RUN chown -R node:node /home/node/app
 # Switch to node user for production
 USER node
 
-# Copy built application and package files from development stage
-COPY --chown=node:node --from=development /home/node/app/dist ./dist
-COPY --chown=node:node --from=development /home/node/app/package*.json ./
-# vendored @miadabdi/streamy-queues tarball needed by npm ci
-COPY --chown=node:node --from=development /home/node/app/vendor ./vendor
+# Copy built application from development stage
+COPY --chown=node:node --from=development /home/node/app/apps/worker/dist ./apps/worker/dist
+COPY --chown=node:node --from=development /home/node/app/apps/worker/package.json ./apps/worker/
 
 # Install only production dependencies
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --workspace apps/worker && npm cache clean --force
 
 # Expose application port
 EXPOSE 3001
 
 # Default command (no entrypoint: the worker has no migrations to run)
-CMD ["node", "dist/main"]
+CMD ["node", "apps/worker/dist/main"]

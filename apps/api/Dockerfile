@@ -1,5 +1,6 @@
 ###################
 # Prepare Stage
+# build context is the repo root (for the workspace manifest + packages)
 ###################
 
 FROM node:24-trixie-slim AS prepare
@@ -11,8 +12,11 @@ RUN apt-get update && apt-get install -y procps curl && rm -rf /var/lib/apt/list
 RUN mkdir -p /home/node/app/node_modules
 WORKDIR /home/node/app
 
-# Copy dependency manifests (no chown yet)
-COPY package*.json ./
+# Copy workspace manifests (all of them: npm validates the whole tree)
+COPY package.json package-lock.json .npmrc ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/worker/package.json ./apps/worker/
+COPY packages/queues ./packages/queues
 
 ###################
 # Development Stage
@@ -20,20 +24,19 @@ COPY package*.json ./
 
 FROM prepare AS development
 
-# Install all dependencies (including devDependencies)
-# Run as root to avoid permission issues with mounted volumes
-RUN npm install
+# Install the api workspace (links @miadabdi/streamy-queues)
+RUN npm ci --workspace apps/api
 
 ENV NODE_ENV=development
 
-# Copy all source files and scripts
-COPY . .
+# Copy all api source files
+COPY apps/api ./apps/api
 
 # Ensure entrypoint is executable
-RUN chmod +x entrypoint.sh
+RUN chmod +x apps/api/entrypoint.sh
 
 # Build the application
-RUN npm run build
+RUN npm run build -w apps/api
 
 # Expose application and debug ports
 EXPOSE 3000
@@ -56,20 +59,19 @@ RUN chown -R node:node /home/node/app
 USER node
 
 # Copy built application, package files, entrypoint, and drizzle migrations from development stage
-COPY --chown=node:node --from=development /home/node/app/dist ./dist
-COPY --chown=node:node --from=development /home/node/app/package*.json ./
-COPY --chown=node:node --from=development /home/node/app/packages ./packages
-COPY --chown=node:node --from=development /home/node/app/entrypoint.sh ./entrypoint.sh
-COPY --chown=node:node --from=development /home/node/app/drizzle ./drizzle
+COPY --chown=node:node --from=development /home/node/app/apps/api/dist ./apps/api/dist
+COPY --chown=node:node --from=development /home/node/app/apps/api/package.json ./apps/api/
+COPY --chown=node:node --from=development /home/node/app/apps/api/entrypoint.sh ./apps/api/entrypoint.sh
+COPY --chown=node:node --from=development /home/node/app/apps/api/drizzle ./apps/api/drizzle
 
 # Install only production dependencies
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --workspace apps/api && npm cache clean --force
 
 # Expose application port
 EXPOSE 3000
 
 # Set entrypoint script
-ENTRYPOINT [ "./entrypoint.sh" ]
+ENTRYPOINT [ "./apps/api/entrypoint.sh" ]
 
 # Default command
-CMD ["node", "dist/src/main"]
+CMD ["node", "apps/api/dist/src/main"]

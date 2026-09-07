@@ -1,6 +1,9 @@
 services:
   app:
-    image: miadabdi/streamy:dev-latest
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
     ports:
       - ${PORT}:3000
     networks:
@@ -40,9 +43,12 @@ services:
         condition: service_healthy
 
   process_node:
-    image: miadabdi/streamy_process_node:dev-latest
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+      target: production
     ports:
-      - '${PROCESS_NODE_PORT}:3001'
+      - "${PROCESS_NODE_PORT}:3001"
     networks:
       - local
     environment:
@@ -64,7 +70,8 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:3001/api/v1/health/liveness']
+      test:
+        ["CMD", "curl", "-f", "http://localhost:3001/api/v1/health/liveness"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -77,8 +84,8 @@ services:
     networks:
       - local
     ports:
-      - '1935:1935'
-    command: ['./objs/srs', '-c', 'conf/srs.conf']
+      - "1935:1935"
+    command: ["./objs/srs", "-c", "conf/srs.conf"]
     volumes:
       - ./docker/srs/srs.conf:/usr/local/srs/conf/srs.conf:ro
 
@@ -91,13 +98,13 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - '${POSTGRES_PORT}:5432'
+      - "${POSTGRES_PORT}:5432"
     networks:
       - local
     volumes:
       - db_data:/var/lib/postgresql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready', '-d', 'streamy']
+      test: ["CMD-SHELL", "pg_isready", "-d", "streamy"]
       interval: 30s
       timeout: 60s
       retries: 5
@@ -112,11 +119,11 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     ports:
-      - '${POSTGRES_TEST_PORT}:5432'
+      - "${POSTGRES_TEST_PORT}:5432"
     networks:
       - local
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready', '-d', 'streamy']
+      test: ["CMD-SHELL", "pg_isready", "-d", "streamy"]
       interval: 30s
       timeout: 60s
       retries: 5
@@ -129,13 +136,13 @@ services:
     networks:
       - local
     ports:
-      - '${MINIO_PORT}:8333'
+      - "${MINIO_PORT}:8333"
     volumes:
       - seaweedfs_data:/data
     environment:
       - >-
         S3_CONFIG_JSON={"identities":[{"name":"admin","credentials":[{"accessKey":"${MINIO_ACCESS_KEY}","secretKey":"${MINIO_SECRET_KEY}"}],"actions":["Admin","Read","Write","List","Tagging"]},{"name":"anonymous","actions":["Read:hls","Read:images","Read:channelavatars","Read:videothumbnails","Read:subtitlefiles","Read:public"]}]}
-    entrypoint: ['/bin/sh', '-c']
+    entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
         printf '%s' "$$S3_CONFIG_JSON" > /tmp/s3.json &&
@@ -144,7 +151,8 @@ services:
     healthcheck:
       # probe the s3 gateway itself (what dependents dial); busybox wget
       # exits 8 on http error responses — a 403 still proves the server is up
-      test: ['CMD-SHELL', 'wget -qO /dev/null http://localhost:8333/; [ $? -ne 4 ]']
+      test:
+        ["CMD-SHELL", "wget -qO /dev/null http://localhost:8333/; [ $? -ne 4 ]"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -158,8 +166,8 @@ services:
     networks:
       - local
     ports:
-      - '${RABBITMQ_PORT}:5672' # rmq port
-      - '${RABBITMQ_CONSOLE_PORT}:15672' # management panel port
+      - "${RABBITMQ_PORT}:5672" # rmq port
+      - "${RABBITMQ_CONSOLE_PORT}:15672" # management panel port
     volumes:
       - rmq_data:/var/lib/rabbitmq
     environment:
@@ -176,7 +184,7 @@ services:
     image: elasticsearch:9.2.3
     volumes:
       - es_certs:/usr/share/elasticsearch/config/certs
-    user: '0'
+    user: "0"
     networks:
       - local
     command: >
@@ -225,7 +233,7 @@ services:
         echo "All done!";
       '
     healthcheck:
-      test: ['CMD-SHELL', '[ -f config/certs/es01/es01.crt ]']
+      test: ["CMD-SHELL", "[ -f config/certs/es01/es01.crt ]"]
       interval: 1s
       timeout: 5s
       retries: 120
@@ -253,7 +261,7 @@ services:
       - xpack.security.transport.ssl.certificate=certs/es01/es01.crt
       - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
       - xpack.security.transport.ssl.verification_mode=certificate
-      - 'ES_JAVA_OPTS=-Xms1024m -Xmx1024m'
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
     ports:
       - ${ELASTICSEARCH_PORT}:9200
       - 9300:9300
@@ -270,7 +278,7 @@ services:
     healthcheck:
       test:
         [
-          'CMD-SHELL',
+          "CMD-SHELL",
           "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'",
         ]
       interval: 10s
@@ -301,7 +309,11 @@ services:
       - kb_data:/usr/share/kibana/data
       - es_certs:/usr/share/kibana/config/certs
     healthcheck:
-      test: ['CMD-SHELL', "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'",
+        ]
       interval: 10s
       timeout: 10s
       retries: 120

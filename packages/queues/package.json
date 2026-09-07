@@ -1,0 +1,12 @@
+{
+  "name": "@miadabdi/streamy-queues",
+  "version": "0.0.2",
+  "description": "shared rabbitmq queue names for the streamy platform",
+  "license": "GPL-3.0-only",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts"
+  ]
+}

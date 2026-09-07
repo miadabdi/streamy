@@ -9,11 +9,11 @@
  * Usage: npm run requeue:dead-letter   (requires the stack running)
  */
 
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import * as amqplib from 'amqplib';
 
 const env = Object.fromEntries(
-	readFileSync('.env', 'utf8')
+	readFileSync(existsSync('.env') ? '.env' : '../../.env', 'utf8')
 		.split('\n')
 		.filter((l) => l.includes('=') && !l.trim().startsWith('#'))
 		.map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]),

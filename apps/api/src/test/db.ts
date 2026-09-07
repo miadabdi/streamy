@@ -1,6 +1,6 @@
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { readFileSync } from 'fs';
+import { existsSync as exists, readFileSync } from 'fs';
 import { Pool } from 'pg';
 import * as schema from '../drizzle/schema';
 
@@ -11,7 +11,7 @@ import * as schema from '../drizzle/schema';
  */
 
 const env = Object.fromEntries(
-	readFileSync('.env', 'utf8')
+	readFileSync(exists('.env') ? '.env' : '../../.env', 'utf8')
 		.split('\n')
 		.filter((l) => l.includes('=') && !l.trim().startsWith('#'))
 		.map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]),

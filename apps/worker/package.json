@@ -19,12 +19,11 @@
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"test:cov": "vitest run --coverage",
-		"prepare": "husky",
 		"verify": "npm run lint && npm run build && npm test"
 	},
 	"dependencies": {
 		"@miadabdi/m3u8-parser": "^7.5.1",
-		"@miadabdi/streamy-queues": "file:vendor/miadabdi-streamy-queues-0.0.2.tgz",
+		"@miadabdi/streamy-queues": "*",
 		"@nestjs/common": "^11.2.3",
 		"@nestjs/config": "^4.0.4",
 		"@nestjs/core": "^11.2.3",
@@ -46,8 +45,6 @@
 		"winston-daily-rotate-file": "^5.0.0"
 	},
 	"devDependencies": {
-		"@commitlint/cli": "^21.2.2",
-		"@commitlint/config-conventional": "^21.2.2",
 		"@nestjs/cli": "^11.0.24",
 		"@nestjs/schematics": "^11.1.0",
 		"@nestjs/testing": "^11.2.3",
@@ -61,8 +58,6 @@
 		"eslint": "^9.36.0",
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-prettier": "^5.5.4",
-		"husky": "^9.1.7",
-		"lint-staged": "^16.2.0",
 		"prettier": "^3.6.2",
 		"typescript": "~5.9.3",
 		"vite": "^8.2.2",

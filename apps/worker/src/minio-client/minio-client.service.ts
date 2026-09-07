@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { MinioService } from 'nestjs-minio-client';
+import { MinioClient, MinioService } from 'nestjs-minio-client';
 import { BUCKETS } from '../common/constants';
 
 @Injectable()
@@ -8,7 +8,7 @@ export class MinioClientService {
 
 	constructor(private readonly minio: MinioService) {}
 
-	public get client() {
+	public get client(): MinioClient {
 		return this.minio.client;
 	}
 

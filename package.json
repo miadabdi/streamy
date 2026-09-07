@@ -1,18 +1,28 @@
 {
-	"name": "streamy-monorepo",
-	"version": "0.0.1",
-	"private": true,
-	"license": "GPL-3.0-only",
-	"workspaces": ["apps/*", "packages/*"],
-	"scripts": {
-		"build": "npm run build -w apps/api && npm run build -w apps/worker",
-		"test": "npm run test -w apps/api -w apps/worker",
-		"verify:api": "npm run verify -w apps/api",
-		"verify:worker": "npm run verify -w apps/worker",
-		"test:db": "npm run test:db -w apps/api",
-		"test:e2e:vod": "npm run test:e2e:vod -w apps/api",
-		"test:e2e:live": "npm run test:e2e:live -w apps/api",
-		"requeue:dead-letter": "npm run requeue:dead-letter -w apps/api",
-		"db:run:migrate": "npm run db:run:migrate -w apps/api"
-	}
+  "name": "streamy-monorepo",
+  "version": "0.0.1",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w apps/api && npm run build -w apps/worker",
+    "test": "npm run test -w apps/api -w apps/worker",
+    "verify:api": "npm run verify -w apps/api",
+    "verify:worker": "npm run verify -w apps/worker",
+    "test:db": "npm run test:db -w apps/api",
+    "test:e2e:vod": "npm run test:e2e:vod -w apps/api",
+    "test:e2e:live": "npm run test:e2e:live -w apps/api",
+    "requeue:dead-letter": "npm run requeue:dead-letter -w apps/api",
+    "db:run:migrate": "npm run db:run:migrate -w apps/api",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.0"
+  }
 }
