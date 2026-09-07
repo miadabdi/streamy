@@ -440,10 +440,9 @@ export class VideoService {
 
 		const updatedVideo = updatedVideos[0];
 
-		await this.videoSearchService.indexVideo({
-			id: updatedVideo.id,
-			releasedAt: releaseDate,
-		});
+		// reindex the full document: a partial body would REPLACE the es doc
+		// and clobber the searchable name/description
+		await this.updateIndexVideo(updatedVideo.id);
 
 		return {
 			message: 'Video released successfully',
