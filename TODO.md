@@ -27,3 +27,8 @@ This is a video-sharing platform.
 - [x] tag create/delete require admin
 - [x] release reindexes the full es document (partial body used to clobber the searchable name)
 - [x] shared queue-name package (@miadabdi/streamy-queues) shared with the process node
+- [x] hardware-first transcoding with software fallback (vaapi/nvenc/qsv probe)
+- [x] raw uploads no longer anonymously readable (Read:videos dropped)
+- [x] admin bootstrap via ADMIN_EMAILS + PATCH /user/promote
+- [x] dead-letter depth in worker readiness + requeue:dead-letter script
+- [x] dev mail captured by mailpit

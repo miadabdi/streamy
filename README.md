@@ -42,7 +42,9 @@ Notable variables:
 
 - `MINIO_*` variables point the apps at the SeaweedFS S3 gateway (kept the historical names). `MINIO_ENDPOINT/PORT` is the address the apps use internally; `MINIO_PUBLIC_ENDPOINT/PORT` is the client-facing address used to sign presigned URLs and build public links.
 - `PROCESS_NODE_PORT` is the published port of the worker.
-- `FFMPEG_*` tune the worker's transcoding (thread count, niceness).
+- `FFMPEG_*` tune the worker's transcoding (thread count, niceness); `FFMPEG_ENCODER` forces an encoder (`software` or a specific hardware one) — by default the worker probes `h264_vaapi`, `h264_nvenc` and `h264_qsv` with real mini-encodes and uses the first that works, falling back to libx264.
+- `ADMIN_EMAILS` (comma-separated) is granted admin at boot — the first admin has to come from somewhere.
+- dev mail is captured by Mailpit at `http://localhost:8025`.
 
 ### Step 2: Start the stack
 
@@ -63,7 +65,10 @@ npm run db:run:migrate
 - API: `http://localhost:3000/api` (Swagger UI)
 - Worker: `http://localhost:3001/api` (Swagger UI) and `http://localhost:3001/api/v1/health/readiness`
 - RabbitMQ console: `http://localhost:15677`
+- Mailpit (dev mail): `http://localhost:8025`
 - RTMP ingest (SRS): `rtmp://localhost:1935/live/<stream-key>`
+
+Failed queue messages land on `q.dead_letter` (surfaced as `deadLetters` in the worker readiness endpoint); replay them with `npm run requeue:dead-letter`.
 - Kibana: `http://localhost:5601`
 
 ### One-time queue deletion note
