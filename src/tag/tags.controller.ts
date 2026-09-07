@@ -10,7 +10,7 @@ import {
 	UseGuards,
 } from '@nestjs/common';
 import { GetUser } from '../common/decorators';
-import { JwtAuthGuard } from '../common/guards';
+import { AdminGuard, JwtAuthGuard } from '../common/guards';
 import { User } from '../drizzle/schema';
 import { AddTagsToVideoDto, CreateTagDto, DeleteTagDto, GetTagByIdDto } from './dto';
 import { TagService } from './tags.service';
@@ -22,6 +22,7 @@ export class TagController {
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post()
+	@UseGuards(AdminGuard)
 	createTag(@Body() createTagDto: CreateTagDto, @GetUser() user: User) {
 		return this.tagService.createTag(createTagDto, user);
 	}
@@ -46,6 +47,7 @@ export class TagController {
 
 	@HttpCode(HttpStatus.OK)
 	@Delete()
+	@UseGuards(AdminGuard)
 	deleteTag(@Query() deleteTagDto: DeleteTagDto, @GetUser() user: User) {
 		return this.tagService.deleteTag(deleteTagDto, user);
 	}
