@@ -74,8 +74,36 @@ export class VideoService {
 
 		if (videoIds.length == 0) return [];
 
-		const videos = await this.drizzleService.db.query.videos.findMany({
-			where: and(inArray(schema.videos.id, videoIds)),
+		const andArr = [
+			inArray(schema.videos.id, videoIds),
+			eq(schema.videos.isReleased, true),
+			eq(schema.videos.type, searchVideosDto.type),
+		];
+
+		if (searchVideosDto.channelId) {
+			andArr.push(eq(schema.videos.channelId, searchVideosDto.channelId));
+		}
+
+		if (searchVideosDto.onlySubbed) {
+			const subbed = await this.drizzleService.db
+				.select()
+				.from(schema.subscriptions)
+				.where(eq(schema.subscriptions.followerId, user.currentChannelId))
+				.execute();
+
+			const subbedChannelIds = subbed.map((sub) => sub.followeeId);
+
+			if (subbedChannelIds.length == 0) {
+				return [];
+			}
+
+			andArr.push(inArray(schema.videos.channelId, subbedChannelIds));
+		}
+
+		return this.drizzleService.db.query.videos.findMany({
+			where: and(...andArr),
+			limit: searchVideosDto.limit,
+			offset: searchVideosDto.offset,
 			orderBy: [desc(schema.videos.releasedAt), desc(schema.videos.createdAt)],
 			with: {
 				channel: true,
@@ -83,8 +111,6 @@ export class VideoService {
 				videoFile: true,
 			},
 		});
-
-		return videos;
 	}
 
 	/**
