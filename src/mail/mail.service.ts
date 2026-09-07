@@ -92,7 +92,7 @@ export class MailService {
 	 * @param token forgot password token
 	 * @returns {SentMessageInfo}
 	 */
-	sendForgotPassword(to: string, token: string): Promise<SentMessageInfo> {
+	sendForgotPassword(to: string, token: string): Promise<void> {
 		this.logger.log(`Sending forgot email to ${to}`);
 
 		const subject = 'Streamy - Reset Password';
@@ -116,7 +116,7 @@ export class MailService {
 	 * @param {string} email email of the user which its password changed
 	 * @returns {SentMessageInfo}
 	 */
-	sendPasswordChanged(to: string, email: string): Promise<SentMessageInfo> {
+	sendPasswordChanged(to: string, email: string): Promise<void> {
 		this.logger.log(`Sending password changed email to ${to}`);
 
 		const subject = 'Streamy - Password got changed';
