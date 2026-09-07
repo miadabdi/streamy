@@ -58,6 +58,7 @@ USER node
 # Copy built application, package files, entrypoint, and drizzle migrations from development stage
 COPY --chown=node:node --from=development /home/node/app/dist ./dist
 COPY --chown=node:node --from=development /home/node/app/package*.json ./
+COPY --chown=node:node --from=development /home/node/app/packages ./packages
 COPY --chown=node:node --from=development /home/node/app/entrypoint.sh ./entrypoint.sh
 COPY --chown=node:node --from=development /home/node/app/drizzle ./drizzle
 

@@ -1,7 +1,7 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import amqp, { Channel, ChannelWrapper } from 'amqp-connection-manager';
-import { RMQ_QUEUES, RMQ_QUEUES_TYPE } from './queues';
+import { DEAD_LETTER_QUEUE, DLX_EXCHANGE, RMQ_QUEUES, RMQ_QUEUES_TYPE } from './queues';
 
 @Injectable()
 export class ProducerService {
@@ -15,15 +15,15 @@ export class ProducerService {
 		this.channelWrapper = connection.createChannel({
 			setup: async (channel: Channel) => {
 				// shared dead-letter exchange catching nacked messages from all queues
-				await channel.assertExchange('dlx', 'fanout', { durable: true });
-				await channel.assertQueue('q.dead_letter', { durable: true });
-				await channel.bindQueue('q.dead_letter', 'dlx', '');
+				await channel.assertExchange(DLX_EXCHANGE, 'fanout', { durable: true });
+				await channel.assertQueue(DEAD_LETTER_QUEUE, { durable: true });
+				await channel.bindQueue(DEAD_LETTER_QUEUE, DLX_EXCHANGE, '');
 
 				for (const queue of RMQ_QUEUES) {
 					this.logger.log(`Asserting queue ${queue}`);
 					await channel.assertQueue(queue, {
 						durable: true,
-						arguments: { 'x-dead-letter-exchange': 'dlx' },
+						arguments: { 'x-dead-letter-exchange': DLX_EXCHANGE },
 					});
 				}
 			},
