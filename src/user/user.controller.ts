@@ -44,7 +44,7 @@ export class UserController {
 	@HttpCode(HttpStatus.OK)
 	@Patch('/set-current-channel')
 	async setCurrentChannel(
-		@Query() setCurrentChannelDto: SetCurrentChannelDto,
+		@Body() setCurrentChannelDto: SetCurrentChannelDto,
 		@GetUser() user: User,
 	) {
 		return this.userService.setCurrentChannel(setCurrentChannelDto, user);

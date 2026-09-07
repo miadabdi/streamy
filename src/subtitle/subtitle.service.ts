@@ -69,13 +69,13 @@ export class SubtitleService {
 			user,
 		);
 
-		createSubtitleDto.fileId = fileRecord.id;
-
 		const { ...returningKeys } = subtitlesTableColumns;
 		const subtitle = await this.drizzleService.db
 			.insert(schema.subtitles)
 			.values({
-				...createSubtitleDto,
+				videoId: createSubtitleDto.videoId,
+				langRFC5646: createSubtitleDto.langRFC5646,
+				fileId: fileRecord.id,
 			})
 			.returning(returningKeys)
 			.execute();

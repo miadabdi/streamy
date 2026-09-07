@@ -9,6 +9,4 @@ export class CreateSubtitleDto {
 	@IsInt()
 	@Type(() => Number)
 	videoId: number;
-
-	fileId: number;
 }

@@ -48,14 +48,14 @@ export class VideoController {
 
 	@HttpCode(HttpStatus.OK)
 	@Post('/confirm-upload')
-	confirmUpload(@Query() confirmVideoUploadDto: ConfirmVideoUploadDto, @GetUser() user: User) {
+	confirmUpload(@Body() confirmVideoUploadDto: ConfirmVideoUploadDto, @GetUser() user: User) {
 		return this.videoService.confirmUpload(confirmVideoUploadDto.id, user);
 	}
 
 	@HttpCode(HttpStatus.CREATED)
 	@Post('/send-video-to-process-queue')
 	sendVideoInProcessQueue(
-		@Query() sendVideoInProcessQueueDto: SendVideoToProcessQueueDto,
+		@Body() sendVideoInProcessQueueDto: SendVideoToProcessQueueDto,
 		@GetUser() user: User,
 	) {
 		return this.videoService.sendVideoInProcessQueue(sendVideoInProcessQueueDto, user);

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Response } from 'express';
 import { JWT_COOKIE_NAME } from '../common/constants';
@@ -36,7 +36,7 @@ export class AuthController {
 	}
 
 	@HttpCode(HttpStatus.OK)
-	@Get('/signout')
+	@Post('/signout')
 	async signOut(@Res({ passthrough: true }) response: Response) {
 		response.cookie(JWT_COOKIE_NAME, '', { expires: new Date() });
 	}

@@ -136,7 +136,7 @@ async function main() {
 	// 5. FAILURE A: confirm before upload
 	await expectStatus(
 		'confirm-upload before PUT rejected',
-		await call('POST', `/video/confirm-upload?id=${video.id}`),
+		await call('POST', '/video/confirm-upload', { body: { id: video.id } }),
 		404,
 	);
 
@@ -147,14 +147,14 @@ async function main() {
 	// 7. FAILURE B: queue before confirm
 	await expectStatus(
 		'send-to-process before confirm rejected',
-		await call('POST', `/video/send-video-to-process-queue?id=${video.id}`),
+		await call('POST', '/video/send-video-to-process-queue', { body: { id: video.id } }),
 		400,
 	);
 
 	// 8-9. confirm + queue
 	await expectStatus(
 		'confirm-upload after PUT',
-		await call('POST', `/video/confirm-upload?id=${video.id}`),
+		await call('POST', '/video/confirm-upload', { body: { id: video.id } }),
 		200,
 	);
 
@@ -187,7 +187,7 @@ async function main() {
 
 	await expectStatus(
 		'send-to-process-queue',
-		await call('POST', `/video/send-video-to-process-queue?id=${video.id}`),
+		await call('POST', '/video/send-video-to-process-queue', { body: { id: video.id } }),
 		201,
 	);
 
