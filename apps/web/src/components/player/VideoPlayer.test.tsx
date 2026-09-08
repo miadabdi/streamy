@@ -246,6 +246,28 @@ describe('keyboard control', () => {
 		expect((container.querySelector('video') as HTMLVideoElement).currentTime).toBe(0);
 	});
 
+	it('digit keys do not seek in live mode (percent of a live window is meaningless)', () => {
+		const { container } = mount({ mode: 'live', subtitles: [] });
+		const video = container.querySelector('video') as HTMLVideoElement;
+		video.currentTime = 120;
+
+		fireEvent.keyDown(container.querySelector('.player') as HTMLElement, { key: '5' });
+
+		expect(video.currentTime).toBe(120);
+	});
+
+	it('q pressed before levels load does not auto-open the menu when they arrive', () => {
+		mount({ subtitles: [] });
+		fireEvent.keyDown(screen.getByRole('button', { name: 'Play' }).closest('.player')!, {
+			key: 'q',
+		});
+
+		emitManifest([{ height: 720, bitrate: 2_800_000 }]);
+
+		expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+		expect(screen.getByRole('button', { name: 'Quality' })).toBeInTheDocument();
+	});
+
 	it('c toggles captions between off and the first track', () => {
 		mount({ subtitles: [] });
 		emitManifest([], [{ id: 0, lang: 'en' }]);
@@ -299,17 +321,19 @@ describe('modes', () => {
 // ── subtitles ──────────────────────────────────────────────────────────────
 
 describe('subtitles', () => {
-	it('renders native tracks for API subtitles, deduped by language against manifest tracks', async () => {
+	it('dedupes by language with manifest tracks winning — they carry the cues', async () => {
 		const user = userEvent.setup();
-		const { container } = mount({ subtitles });
+		const { container } = mount({ subtitles }); // API: en, de
 		emitManifest([], [
 			{ id: 0, lang: 'en' },
 			{ id: 1, lang: 'sv' },
 		]);
 
+		// 'en' collides → the manifest track owns it; only the API-only 'de'
+		// still renders a native track.
 		const tracks = container.querySelectorAll('track');
-		expect(tracks).toHaveLength(2);
-		expect(Array.from(tracks).map((t) => t.getAttribute('srcLang'))).toEqual(['en', 'de']);
+		expect(tracks).toHaveLength(1);
+		expect(Array.from(tracks).map((t) => t.getAttribute('srcLang'))).toEqual(['de']);
 
 		await user.click(screen.getByRole('button', { name: 'Subtitles' }));
 		const menu = await screen.findByRole('menu');
@@ -318,13 +342,17 @@ describe('subtitles', () => {
 			within(menu)
 				.getAllByRole('menuitemradio')
 				.map((el) => el.textContent),
-		).toEqual(['Off', 'Englishen', 'Germande', 'Swedishsv']);
+		).toEqual(['Off', 'Englishen', 'Swedishsv', 'Germande']);
 
-		// A manifest track maps to its hls index; an API-only track turns hls off.
-		await user.click(within(screen.getByRole('menu')).getAllByRole('menuitemradio')[3]); // Swedish
+		// Collision language selects the hls index (cues stay on); a
+		// manifest-only and an API-only language behave as before.
+		await user.click(within(screen.getByRole('menu')).getAllByRole('menuitemradio')[1]); // English
+		await waitFor(() => expect(hls().subtitleTrack).toBe(0));
+		await user.click(screen.getByRole('button', { name: 'Subtitles' }));
+		await user.click(within(screen.getByRole('menu')).getAllByRole('menuitemradio')[2]); // Swedish
 		await waitFor(() => expect(hls().subtitleTrack).toBe(1));
 		await user.click(screen.getByRole('button', { name: 'Subtitles' }));
-		await user.click(within(screen.getByRole('menu')).getAllByRole('menuitemradio')[2]); // German
+		await user.click(within(screen.getByRole('menu')).getAllByRole('menuitemradio')[3]); // German
 		await waitFor(() => expect(hls().subtitleTrack).toBe(-1));
 		await user.click(screen.getByRole('button', { name: 'Subtitles' }));
 		await user.click(within(screen.getByRole('menu')).getAllByRole('menuitemradio')[0]); // Off

@@ -83,7 +83,12 @@ export function VideoPlayer({
 	const [selectedSub, setSelectedSub] = useState<string | null>(null);
 	const [qualityOpen, setQualityOpen] = useState(false);
 	const [subtitlesOpen, setSubtitlesOpen] = useState(false);
-	const [announcement, setAnnouncement] = useState('');
+	// n re-keys the live-region node so identical text (e.g. "Paused" twice)
+	// still reads as new content to screen readers.
+	const [announcement, setAnnouncement] = useState<{ text: string; n: number }>({
+		text: '',
+		n: 0,
+	});
 
 	const videoRef = useRef<HTMLVideoElement | null>(null);
 	const rootRef = useRef<HTMLDivElement | null>(null);
@@ -167,19 +172,12 @@ export function VideoPlayer({
 		};
 	}, []);
 
-	// ── subtitle options: API rows merged with manifest tracks, deduped by lang
+	// ── subtitle options: manifest tracks merged with API rows, deduped by lang
 	const subOptions = useMemo<SubtitleOption[]>(() => {
+		// Manifest tracks win collisions: they are the only entries carrying
+		// cues (the worker muxes every uploaded subtitle into the master
+		// playlist); API rows fill languages the manifest lacks.
 		const byLang = new Map<string, SubtitleOption>();
-		for (const s of apiSubtitles) {
-			const lang = s.langRFC5646.toLowerCase();
-			if (byLang.has(lang)) continue;
-			byLang.set(lang, {
-				key: `api:${s.id}`,
-				label: languageLabel(s.langRFC5646),
-				lang: s.langRFC5646,
-				hlsIndex: null,
-			});
-		}
 		for (const t of hlsSubTracks) {
 			const lang = t.lang.toLowerCase();
 			if (byLang.has(lang)) continue;
@@ -188,6 +186,16 @@ export function VideoPlayer({
 				label: t.name || languageLabel(t.lang),
 				lang: t.lang,
 				hlsIndex: t.id,
+			});
+		}
+		for (const s of apiSubtitles) {
+			const lang = s.langRFC5646.toLowerCase();
+			if (byLang.has(lang)) continue;
+			byLang.set(lang, {
+				key: `api:${s.id}`,
+				label: languageLabel(s.langRFC5646),
+				lang: s.langRFC5646,
+				hlsIndex: null,
 			});
 		}
 		return [...byLang.values()];
@@ -199,7 +207,10 @@ export function VideoPlayer({
 	// arrives via the manifest in both hls.js and Safari-native modes.
 	const nativeTracks = subOptions.filter((o) => o.hlsIndex === null);
 
-	const announce = (message: string) => setAnnouncement(message);
+	const isLive = mode === 'live';
+
+	const announce = (message: string) =>
+		setAnnouncement((previous) => ({ text: message, n: previous.n + 1 }));
 
 	const commands: PlayerCommands = {
 		togglePlay() {
@@ -223,7 +234,10 @@ export function VideoPlayer({
 		seekToRatio(ratio) {
 			const video = videoRef.current;
 			if (!video) return;
-			video.currentTime = (Number.isFinite(video.duration) ? video.duration : 0) * ratio;
+			// percent-seek is meaningless against a live window — a digit would
+			// otherwise hurl the viewer back to the DVR window start
+			if (isLive || !Number.isFinite(video.duration) || video.duration <= 0) return;
+			video.currentTime = video.duration * ratio;
 			announce(`Seeked to ${formatTime(video.currentTime)}`);
 		},
 		nudgeVolume(delta) {
@@ -260,6 +274,9 @@ export function VideoPlayer({
 			selectSubtitle(showing ? null : (subOptions[0] ?? null));
 		},
 		openQualityMenu() {
+			// no levels → no menu mounted; opening "later" when levels arrive
+			// would auto-pop it without a fresh key press
+			if (levels.length === 0) return;
 			qualityTriggerRef.current?.focus();
 			setQualityOpen(true);
 		},
@@ -308,8 +325,6 @@ export function VideoPlayer({
 	function onKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
 		handlePlayerKey(event.nativeEvent, commands);
 	}
-
-	const isLive = mode === 'live';
 
 	return (
 		<>
@@ -397,7 +412,7 @@ export function VideoPlayer({
 				</div>
 
 				<span aria-live="polite" style={visuallyHidden}>
-					{announcement}
+					<span key={announcement.n}>{announcement.text}</span>
 				</span>
 			</div>
 
