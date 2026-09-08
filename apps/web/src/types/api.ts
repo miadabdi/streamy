@@ -93,6 +93,14 @@ export type Video = {
 	videoFileId: number | null;
 };
 
+// GET /video and /video/search items: the video with its embedded relations
+// (video.service.ts queries with channel/thumbnailFile/videoFile).
+export type VideoListItem = Video & {
+	channel: Channel | null;
+	thumbnailFile: ApiFile | null;
+	videoFile: ApiFile | null;
+};
+
 export type Comment = {
 	id: number;
 	createdAt: Date | null;

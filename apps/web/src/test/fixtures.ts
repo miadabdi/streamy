@@ -1,7 +1,7 @@
 // Shapes live in src/types/api.ts (single source of truth, mirrors schema.ts).
-import type { Channel, Me, User, Video } from '../types/api';
+import type { ApiFile, Channel, Me, User, Video, VideoListItem } from '../types/api';
 
-export type { Channel, Me, User, Video };
+export type { ApiFile, Channel, Me, User, Video, VideoListItem };
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
@@ -81,6 +81,31 @@ export function makeVideo(overrides: Partial<Video> = {}): Video {
 		thumbnailFileId: null,
 		processingStatus: 'done',
 		videoFileId: null,
+		...overrides,
+	};
+}
+
+/** GET /video and /video/search item: video with its embedded relations. */
+export function makeVideoListItem(overrides: Partial<VideoListItem> = {}): VideoListItem {
+	return {
+		...makeVideo(),
+		channel: makeChannel(),
+		thumbnailFile: null,
+		videoFile: null,
+		...overrides,
+	};
+}
+
+export function makeFile(overrides: Partial<ApiFile> = {}): ApiFile {
+	return {
+		id: 901,
+		createdAt: baseDate,
+		updatedAt: baseDate,
+		bucketName: 'videothumbnails',
+		path: 'thumb.webp',
+		mimetype: 'image/webp',
+		sizeInByte: 1234,
+		userId: 1,
 		...overrides,
 	};
 }
