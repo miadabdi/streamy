@@ -41,7 +41,7 @@ describe('Browse screen', () => {
 
 		expect(screen.getByText('Released videos on this instance')).toBeInTheDocument();
 		const rack = cardTitled(await screen.findByText('Rebuilding the rack'));
-		expect(rack).toHaveAttribute('href', '/watch/vod-rack');
+		expect(rack).toHaveAttribute('href', '/watch/1');
 		expect(within(rack).getByText('Night Watch')).toBeInTheDocument();
 		expect(within(rack).getByText('1,204 views')).toBeInTheDocument();
 		expect(within(rack).getByText('38 likes')).toBeInTheDocument();

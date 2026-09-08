@@ -17,6 +17,14 @@ export function useMe() {
 	return useQuery({ queryKey: ['me'], queryFn: fetchMe });
 }
 
+/**
+ * The channel the viewer acts as (engagement DTOs are channel-addressed:
+ * likerChannelId, watcherChannelId, comment ownerId, followerId).
+ */
+export function myChannelId(me: Me): number | undefined {
+	return me.currentChannelId ?? me.channels[0]?.id;
+}
+
 export function useSignIn() {
 	const queryClient = useQueryClient();
 	return useMutation({

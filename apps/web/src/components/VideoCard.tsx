@@ -1,15 +1,7 @@
 import { Link } from 'react-router';
+import { channelInitials, startedAgo } from '../lib/format';
 import type { VideoListItem } from '../types/api';
 import { Thumb } from './Thumb';
-
-function channelInitials(name: string | null | undefined): string {
-	const words = (name ?? '?')
-		.split(/[^a-zA-Z0-9]+|(?<=[a-z0-9])(?=[A-Z])/)
-		.filter(Boolean);
-	return (
-		(words.length >= 2 ? words[0][0] + words[1][0] : (name ?? '?').slice(0, 2)).toUpperCase()
-	);
-}
 
 function formatDuration(totalSeconds: number): string {
 	const s = totalSeconds % 60;
@@ -19,23 +11,14 @@ function formatDuration(totalSeconds: number): string {
 	return h > 0 ? `${h}:${mm}:${String(s).padStart(2, '0')}` : `${mm}:${String(s).padStart(2, '0')}`;
 }
 
-// Live cards drop the duration and view count: the API reports neither for a
-// stream in progress, so elapsed time is the honest number (video.html).
-// JSON transport carries the createdAt Date as an ISO string.
-function startedAgo(from: Date | string | null): string {
-	const started = from != null ? new Date(from).getTime() : 0;
-	const minutes = Math.max(1, Math.floor((Date.now() - started) / 60_000));
-	return minutes < 60
-		? `started ${minutes} min ago`
-		: `started ${Math.floor(minutes / 60)} h ago`;
-}
-
 export function VideoCard({ video }: { video: VideoListItem }) {
 	const live = video.type === 'live';
 	const initials = channelInitials(video.channel?.name);
 
+	// numeric id: the public GET /video/by-id keys on it (the string videoId
+	// route was never resolvable anonymously — by-video-id is auth-gated)
 	return (
-		<Link className="vcard" to={`/watch/${video.videoId ?? video.id}`}>
+		<Link className="vcard" to={`/watch/${video.id}`}>
 			<div className="vcard-thumb">
 				<Thumb
 					seed={video.videoId ?? String(video.id)}

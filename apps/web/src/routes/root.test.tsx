@@ -26,7 +26,9 @@ describe('app shell', () => {
 
 		expect(screen.queryByRole('link', { name: 'Home' })).not.toBeInTheDocument();
 		expect(screen.queryByText('current channel')).not.toBeInTheDocument();
-		expect(screen.getByRole('heading', { name: 'Watch' })).toBeInTheDocument();
+		// slug route param: unresolvable by the numeric-only public endpoint →
+		// the 404 card, which still proves the Watch route rendered
+		expect(screen.getByText('No such video.')).toBeInTheDocument();
 	});
 
 	it('marks viewer pages roomy and studio pages dense', () => {

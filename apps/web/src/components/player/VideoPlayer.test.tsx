@@ -365,3 +365,27 @@ describe('subtitles', () => {
 		await waitFor(() => expect(container.querySelectorAll('track')).toHaveLength(2));
 	});
 });
+
+// ── watched beacon callback ────────────────────────────────────────────────
+
+describe('onWatched callback', () => {
+	it('fires once when playback crosses 30s, not before and not twice', () => {
+		const onWatched = vi.fn();
+		const { container } = mount({ subtitles: [], onWatched });
+		const video = container.querySelector('video') as HTMLVideoElement;
+
+		const tick = (seconds: number) => {
+			video.currentTime = seconds;
+			fireEvent(video, new Event('timeupdate'));
+		};
+
+		tick(10);
+		tick(29.9);
+		expect(onWatched).not.toHaveBeenCalled();
+
+		tick(30);
+		tick(31);
+		tick(45);
+		expect(onWatched).toHaveBeenCalledTimes(1);
+	});
+});

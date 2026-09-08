@@ -1,7 +1,33 @@
 // Shapes live in src/types/api.ts (single source of truth, mirrors schema.ts).
-import type { ApiFile, Channel, Me, Subtitle, User, Video, VideoListItem } from '../types/api';
+import type {
+	ApiFile,
+	Channel,
+	ChannelWithAvatar,
+	Comment,
+	Me,
+	Subtitle,
+	Tag,
+	User,
+	Video,
+	VideoListItem,
+	WatchComment,
+	WatchVideo,
+} from '../types/api';
 
-export type { ApiFile, Channel, Me, Subtitle, User, Video, VideoListItem };
+export type {
+	ApiFile,
+	Channel,
+	ChannelWithAvatar,
+	Comment,
+	Me,
+	Subtitle,
+	Tag,
+	User,
+	Video,
+	VideoListItem,
+	WatchComment,
+	WatchVideo,
+};
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
@@ -120,6 +146,55 @@ export function makeFile(overrides: Partial<ApiFile> = {}): ApiFile {
 		mimetype: 'image/webp',
 		sizeInByte: 1234,
 		userId: 1,
+		...overrides,
+	};
+}
+
+export function makeTag(overrides: Partial<Tag> = {}): Tag {
+	return {
+		id: 1,
+		createdAt: baseDate,
+		updatedAt: baseDate,
+		isActive: true,
+		deletedAt: null,
+		title: 'ffmpeg',
+		...overrides,
+	};
+}
+
+export function makeComment(overrides: Partial<WatchComment> = {}): WatchComment {
+	return {
+		id: 1,
+		// fresh timestamps keep relative-time assertions ("2 days ago") stable
+		createdAt: new Date(Date.now() - 2 * 86_400_000),
+		updatedAt: new Date(Date.now() - 86_400_000),
+		isActive: true,
+		deletedAt: null,
+		isEdited: false,
+		videoId: 1,
+		ownerId: 1, // makeMe's first channel id → "own comment" by default
+		replyTo: null,
+		content: 'A comment',
+		owner: null,
+		...overrides,
+	};
+}
+
+/** GET /video/by-id shape: the video with every embedded relation. */
+export function makeWatchVideo(overrides: Partial<WatchVideo> = {}): WatchVideo {
+	return {
+		...makeVideo(),
+		// someone else's channel by default (owner id 1 = the seeded viewer),
+		// so the Subscribe button renders
+		channel: {
+			...makeChannel({ id: 2, ownerId: 2, username: 'nightwatch', name: 'Night Watch' }),
+			avatar: null,
+		},
+		thumbnailFile: null,
+		videoFile: null,
+		subtitles: [],
+		videosToTags: [{ tag: makeTag() }],
+		comments: [],
 		...overrides,
 	};
 }

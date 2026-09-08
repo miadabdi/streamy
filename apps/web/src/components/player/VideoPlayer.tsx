@@ -57,6 +57,9 @@ function languageLabel(lang: string): string {
 
 type HlsSubtitleTrack = { id: number; lang: string; name?: string };
 
+/** POST /video/watched beacon threshold: playback position that counts as watched. */
+const WATCHED_AFTER_S = 30;
+
 /**
  * The centerpiece surface (Nocturne/templates/watch/Watch.dc.html): hls.js
  * playback with quality/subtitle menus, full keyboard control and a live
@@ -66,11 +69,15 @@ export function VideoPlayer({
 	videoId,
 	mode = 'vod',
 	subtitles,
+	onWatched,
 }: {
 	videoId: number;
 	mode?: PlayerMode;
 	/** Pass fetched rows to skip GET /subtitle/by-video-id. */
 	subtitles?: Subtitle[];
+	/** Fires once per video after WATCHED_AFTER_S of playback position (vod:
+	 *  currentTime, live: DVR-window elapsed). Seeking past it also fires. */
+	onWatched?: () => void;
 }) {
 	const [playing, setPlaying] = useState(false);
 	const [current, setCurrent] = useState(0);
@@ -94,6 +101,14 @@ export function VideoPlayer({
 	const rootRef = useRef<HTMLDivElement | null>(null);
 	const hlsRef = useRef<Hls | null>(null);
 	const qualityTriggerRef = useRef<HTMLButtonElement | null>(null);
+	// the media-element effect is mount-scoped, so the beacon callback reaches
+	// it through a ref instead of a stale first-render closure
+	const watchedFiredRef = useRef(false);
+	const onWatchedRef = useRef(onWatched);
+
+	useEffect(() => {
+		onWatchedRef.current = onWatched;
+	});
 
 	const { data: fetched } = useQuery({
 		queryKey: ['subtitles', videoId],
@@ -106,6 +121,7 @@ export function VideoPlayer({
 	useEffect(() => {
 		const video = videoRef.current;
 		if (!video) return;
+		watchedFiredRef.current = false; // fresh video → the beacon may fire again
 		const src = `${storageBase()}/hls/${videoId}/master.m3u8`;
 		// StrictMode double-mount: `disposed` guards setState from the destroyed
 		// instance's late events; the cleanup destroys it (plan risk #6).
@@ -153,7 +169,12 @@ export function VideoPlayer({
 		const onTime = () => {
 			setCurrent(video.currentTime);
 			const seekable = video.seekable;
-			setElapsed(video.currentTime - (seekable.length > 0 ? seekable.start(0) : 0));
+			const position = video.currentTime - (seekable.length > 0 ? seekable.start(0) : 0);
+			setElapsed(position);
+			if (!watchedFiredRef.current && position >= WATCHED_AFTER_S) {
+				watchedFiredRef.current = true;
+				onWatchedRef.current?.();
+			}
 		};
 		const onDuration = () => setDuration(Number.isFinite(video.duration) ? video.duration : 0);
 		const onPlay = () => setPlaying(true);

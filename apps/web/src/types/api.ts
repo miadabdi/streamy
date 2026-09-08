@@ -151,3 +151,20 @@ export type Tag = {
 	deletedAt: Date | null;
 	title: string;
 };
+
+export type ChannelWithAvatar = Channel & { avatar: ApiFile | null };
+
+export type WatchComment = Comment & {
+	// embedded by GET /video/by-id (owner is the commenter's channel)
+	owner: ChannelWithAvatar | null;
+};
+
+/** GET /video/by-id and /video/by-video-id: the video with every embedded relation. */
+export type WatchVideo = Video & {
+	channel: ChannelWithAvatar | null;
+	thumbnailFile: ApiFile | null;
+	videoFile: ApiFile | null;
+	subtitles: Subtitle[];
+	videosToTags: { tag: Tag | null }[];
+	comments: WatchComment[];
+};
