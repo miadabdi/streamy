@@ -13,6 +13,25 @@ export function PlayIcon(props: IconProps) {
 	);
 }
 
+// The play button's other state — filled bars to match the filled play glyph.
+export function PauseIcon(props: IconProps) {
+	return (
+		<svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+			<rect x="7.5" y="5" width="3" height="14" rx="0.5" />
+			<rect x="13.5" y="5" width="3" height="14" rx="0.5" />
+		</svg>
+	);
+}
+
+// Transcribed from Nocturne/templates/watch/Watch.dc.html (fullscreen player-btn).
+export function FullscreenIcon(props: IconProps) {
+	return (
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} {...props}>
+			<path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5" />
+		</svg>
+	);
+}
+
 export function LiveIcon(props: IconProps) {
 	return (
 		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} {...props}>

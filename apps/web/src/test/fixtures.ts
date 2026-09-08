@@ -1,7 +1,7 @@
 // Shapes live in src/types/api.ts (single source of truth, mirrors schema.ts).
-import type { ApiFile, Channel, Me, User, Video, VideoListItem } from '../types/api';
+import type { ApiFile, Channel, Me, Subtitle, User, Video, VideoListItem } from '../types/api';
 
-export type { ApiFile, Channel, Me, User, Video, VideoListItem };
+export type { ApiFile, Channel, Me, Subtitle, User, Video, VideoListItem };
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
@@ -92,6 +92,20 @@ export function makeVideoListItem(overrides: Partial<VideoListItem> = {}): Video
 		channel: makeChannel(),
 		thumbnailFile: null,
 		videoFile: null,
+		...overrides,
+	};
+}
+
+export function makeSubtitle(overrides: Partial<Subtitle> = {}): Subtitle {
+	return {
+		id: 1,
+		createdAt: baseDate,
+		updatedAt: baseDate,
+		isActive: true,
+		deletedAt: null,
+		langRFC5646: 'en',
+		videoId: 1,
+		fileId: 801,
 		...overrides,
 	};
 }

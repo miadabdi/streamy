@@ -7,9 +7,11 @@ import {
 	ElapsedIcon,
 	EncoderIcon,
 	FailedIcon,
+	FullscreenIcon,
 	LiveIcon,
 	LikeIcon,
 	OkIcon,
+	PauseIcon,
 	PlayIcon,
 	ProcessingIcon,
 	QualityIcon,
@@ -26,6 +28,8 @@ import {
 
 const icons = [
 	PlayIcon,
+	PauseIcon,
+	FullscreenIcon,
 	LiveIcon,
 	VodIcon,
 	UploadIcon,

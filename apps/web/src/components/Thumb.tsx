@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { storageBase } from '../lib/env';
 import type { ApiFile } from '../types/api';
 
 // Thumbnails are an optional upload, so the fallback is the default state, not
@@ -22,8 +23,9 @@ export function Thumb({
 	file: ApiFile | null;
 }) {
 	if (file) {
-		// Files are reached same-origin through the /storage proxy (vite.config.ts).
-		return <img src={`/storage/${file.bucketName}/${file.path}`} alt="" loading="lazy" />;
+		return (
+			<img src={`${storageBase()}/${file.bucketName}/${file.path}`} alt="" loading="lazy" />
+		);
 	}
 	return (
 		<div className="vcard-fallback" style={{ '--seed': hueSeed(seed) } as CSSProperties}>
