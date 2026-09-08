@@ -1,0 +1,46 @@
+<!-- @dsCard group="Foundations" name="Color" subtitle="Role colors and the tonal ramps (mono scheme — one accent voice)" viewport="640x560" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Streamy — Color</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+/* Demo scaffolding only — everything visual comes from ../styles.css. */
+.demo { max-width: 620px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+.demo-head {
+  font-family: var(--font-body); font-size: 11px; font-weight: inherit;
+  letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.55;
+  margin: var(--space-6) 0 var(--space-3);
+}
+.demo-head:first-child { margin-top: 0; }
+.row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.stack { display: grid; gap: var(--space-3); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.note { font-size: 12px; opacity: 0.6; max-width: 60ch; }
+code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.92em; }
+.swatches { display: flex; gap: var(--space-2); }
+.swc { flex: 1; }
+.sw { height: 32px; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--color-text) 18%, transparent); }
+.swl { font-size: 10px; opacity: 0.5; margin-top: 4px; }
+.rrow { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-2) 0; }
+.rlabel { flex: none; width: 64px; font-size: 10px; letter-spacing: 0.08em; opacity: 0.45; }
+.ramp { display: flex; gap: 6px; flex: 1; }
+.ramp .sw { flex: 1; height: 22px; }
+</style>
+</head>
+<body>
+<main class="demo">
+<div class="demo-head">Roles</div>
+  <div class="swatches"><div class="swc"><div class="sw" style="background: var(--color-bg)"></div><div class="swl">bg</div></div><div class="swc"><div class="sw" style="background: var(--color-surface)"></div><div class="swl">surface</div></div><div class="swc"><div class="sw" style="background: var(--color-text)"></div><div class="swl">text</div></div><div class="swc"><div class="sw" style="background: var(--color-accent)"></div><div class="swl">accent</div></div><div class="swc"><div class="sw" style="background: var(--color-ok)"></div><div class="swl">ok</div></div><div class="swc"><div class="sw" style="background: var(--color-warn)"></div><div class="swl">warn</div></div></div>
+  <div class="demo-head">Tonal ramps — 100 (light) to 900 (dark)</div>
+  <div class="rrow"><span class="rlabel">Neutral</span><div class="ramp"><div class="sw" title="100" style="background: var(--color-neutral-100)"></div><div class="sw" title="200" style="background: var(--color-neutral-200)"></div><div class="sw" title="300" style="background: var(--color-neutral-300)"></div><div class="sw" title="400" style="background: var(--color-neutral-400)"></div><div class="sw" title="500" style="background: var(--color-neutral-500)"></div><div class="sw" title="600" style="background: var(--color-neutral-600)"></div><div class="sw" title="700" style="background: var(--color-neutral-700)"></div><div class="sw" title="800" style="background: var(--color-neutral-800)"></div><div class="sw" title="900" style="background: var(--color-neutral-900)"></div></div></div>
+  <div class="rrow"><span class="rlabel">Accent</span><div class="ramp"><div class="sw" title="100" style="background: var(--color-accent-100)"></div><div class="sw" title="200" style="background: var(--color-accent-200)"></div><div class="sw" title="300" style="background: var(--color-accent-300)"></div><div class="sw" title="400" style="background: var(--color-accent-400)"></div><div class="sw" title="500" style="background: var(--color-accent-500)"></div><div class="sw" title="600" style="background: var(--color-accent-600)"></div><div class="sw" title="700" style="background: var(--color-accent-700)"></div><div class="sw" title="800" style="background: var(--color-accent-800)"></div><div class="sw" title="900" style="background: var(--color-accent-900)"></div></div></div>
+  
+  <div class="demo-head">Usage</div>
+  <p class="note">The accent means &ldquo;attention here, now&rdquo;: live, the primary action, focus, failure. Green and amber are health colors only — green says a thing worked, amber says a machine is working or waiting. Everything else is neutral. On this dark ground the ground-side of each ramp is the dark end: dark steps (700–900) make tinted fills, hovers and subtle borders; 500 is each role&rsquo;s base; light steps (100–300) carry text on those tints. In your own pages reach for a ramp step before reaching for <code>color-mix()</code> (the component layer uses <code>color-mix()</code> internally for its hover tints).</p>
+</main>
+</body>
+</html>

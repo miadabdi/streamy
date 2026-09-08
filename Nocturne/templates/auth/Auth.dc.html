@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Auth" description="All four auth screens in one file: sign in, sign up (which also creates the first channel), forgot password and reset password with its emailed token." -->
+<helmet>
+<title>Streamy — Sign in</title>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;min-height:100%;background:#0b0c0f;color:#e8e9ec}</style>
+</helmet>
+<div style="min-height:100vh;display:grid;place-items:center;padding:40px 20px">
+<div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+<a class="wordmark" href="#">Streamy</a>
+<p class="mono" style="margin:0;font-size:11px;color:var(--color-muted)">{{ instanceLine }}</p>
+</div>
+<sc-if value="{{ isSignIn }}" hint-placeholder-val="{{ true }}">
+<div class="card" style="gap:16px;padding:22px">
+<div><h1 style="margin:0;font-size:20px">Sign in</h1><p style="margin:4px 0 0;font-size:13px;color:var(--color-muted)">Welcome back.</p></div>
+<div class="field"><label for="a-email">Email</label><input class="input" id="a-email" type="email" placeholder="you@home.lan" /></div>
+<div class="field"><label for="a-pass">Password</label><input class="input" id="a-pass" type="password" placeholder="••••••••" /><p class="field-hint"><a href="#">Forgot your password?</a></p></div>
+<button class="btn btn-primary btn-block" type="button">Sign in</button>
+<p style="margin:0;font-size:12.5px;color:var(--color-muted)">No account on this instance? <a href="#">Sign up</a></p>
+</div>
+</sc-if>
+<sc-if value="{{ isSignUp }}" hint-placeholder-val="{{ false }}">
+<div class="card" style="gap:16px;padding:22px">
+<div><h1 style="margin:0;font-size:20px">Create your account</h1><p style="margin:4px 0 0;font-size:13px;color:var(--color-muted)">Signing up also creates your first channel — you can add more later.</p></div>
+<div class="field"><label for="u-email">Email</label><input class="input" id="u-email" type="email" placeholder="you@home.lan" /></div>
+<div class="field"><label for="u-pass">Password</label><input class="input" id="u-pass" type="password" placeholder="••••••••" /><p class="field-hint">At least 8 characters.</p></div>
+<hr class="hr" style="margin:2px 0" />
+<h6 style="margin:0">Your first channel</h6>
+<div class="field"><label for="u-username">Channel username</label><input class="input" id="u-username" placeholder="nightwatch" /><p class="field-hint mono">3–100 characters · a–z, 0–9, dot, dash, underscore · unique on this instance</p></div>
+<div class="field"><label for="u-display">Display name</label><input class="input" id="u-display" placeholder="Night Watch" /></div>
+<div class="field"><label for="u-desc">Description</label><textarea class="input" id="u-desc" placeholder="What this channel is for."></textarea></div>
+<button class="btn btn-primary btn-block" type="button">Create account &amp; channel</button>
+<p style="margin:0;font-size:12.5px;color:var(--color-muted)">Already have one? <a href="#">Sign in</a></p>
+</div>
+</sc-if>
+<sc-if value="{{ isForgot }}" hint-placeholder-val="{{ false }}">
+<div class="card" style="gap:16px;padding:22px">
+<div><h1 style="margin:0;font-size:20px">Forgot password</h1><p style="margin:4px 0 0;font-size:13px;color:var(--color-muted)">We&rsquo;ll email a reset link. It works once and expires.</p></div>
+<div class="field"><label for="f-email">Email</label><input class="input" id="f-email" type="email" placeholder="you@home.lan" /></div>
+<button class="btn btn-primary btn-block" type="button">Send reset link</button>
+<div class="toast toast-ok" style="width:100%;background:transparent;box-shadow:none;padding:0"><div><div class="toast-note">If that address has an account here, the link is on its way. Check the instance&rsquo;s mail logs if nothing arrives.</div></div></div>
+<p style="margin:0;font-size:12.5px;color:var(--color-muted)"><a href="#">Back to sign in</a></p>
+</div>
+</sc-if>
+<sc-if value="{{ isReset }}" hint-placeholder-val="{{ false }}">
+<div class="card" style="gap:16px;padding:22px">
+<div><h1 style="margin:0;font-size:20px">Set a new password</h1><p style="margin:4px 0 0;font-size:13px;color:var(--color-muted)">The token came from the link in your email.</p></div>
+<div class="field"><label for="r-email">Email</label><input class="input" id="r-email" type="email" value="mia@home.lan" /></div>
+<div class="field"><label for="r-token">Reset token</label><input class="input mono" id="r-token" value="a3f91c8a2e7b40d5" /><p class="field-hint">Prefilled from the link. Paste it manually if you opened this page directly.</p></div>
+<div class="field"><label for="r-pass">New password</label><input class="input" id="r-pass" type="password" placeholder="••••••••" /></div>
+<button class="btn btn-primary btn-block" type="button">Change password &amp; sign in</button>
+<p style="margin:0;font-size:12.5px;color:var(--color-muted)">Link expired? <a href="#">Request a new one</a></p>
+</div>
+</sc-if>
+<p class="mono" style="margin:0;font-size:10.5px;color:var(--color-muted);text-align:center">a self-hosted streamy instance · accounts are created by whoever runs it</p>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sign in&quot;,&quot;sign up&quot;,&quot;forgot password&quot;,&quot;reset password&quot;],&quot;default&quot;:&quot;sign in&quot;,&quot;tsType&quot;:&quot;'sign in' | 'sign up' | 'forgot password' | 'reset password'&quot;,&quot;section&quot;:&quot;Screen&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.props.screen ?? 'sign in';
+    const lines = {
+      'sign in': 'stream.home.lan',
+      'sign up': 'stream.home.lan · new account',
+      'forgot password': 'stream.home.lan · password reset',
+      'reset password': 'stream.home.lan · password reset',
+    };
+    return {
+      isSignIn: s === 'sign in',
+      isSignUp: s === 'sign up',
+      isForgot: s === 'forgot password',
+      isReset: s === 'reset password',
+      instanceLine: lines[s] || 'stream.home.lan',
+    };
+  }
+}
+</script>
+</body>
+</html>

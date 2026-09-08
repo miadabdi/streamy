@@ -1,0 +1,40 @@
+{
+  "name": "Streamy",
+  "palette": {
+    "hue": 22,
+    "band": "dark",
+    "scheme": "mono",
+    "sat": 0.21,
+    "pin": {
+      "bg": "#0b0c0f",
+      "surface": "#14161a",
+      "accent": "#ff4a32"
+    },
+    "bg": "#0b0c0f",
+    "surface": "#14161a",
+    "raised": "#1c1f24",
+    "text": "#e8e9ec",
+    "muted": "#a3a7b2",
+    "accent": "#ff4a32",
+    "semantic": {
+      "ok": "#3fb981",
+      "warn": "#d9a03a",
+      "fail": "#ff4a32"
+    }
+  },
+  "themes": ["dark", "light"],
+  "fonts": {
+    "heading": { "family": "Archivo", "class": "grotesque", "weights": [400, 500, 600, 700] },
+    "body": { "family": "Archivo", "class": "grotesque", "weights": [400, 500, 600, 700] },
+    "mono": { "family": "JetBrains Mono", "weights": [400, 500, 700] },
+    "headingWeight": 600
+  },
+  "density": 0.7,
+  "densityRoomy": 1,
+  "radius": 6,
+  "layoutStyle": "left",
+  "imageTreatment": "none",
+  "iconSet": "phosphor + streamy geometric set",
+  "buttonStyle": "solid",
+  "interop": "shadcn/ui variable aliases in styles.css"
+}

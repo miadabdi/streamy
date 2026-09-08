@@ -1,0 +1,74 @@
+<!-- @dsCard group="Components" name="Ops & studio parts" subtitle="Health tiles, masked stream key, ffmpeg log drawer, wizard steps, dropzone, empty state, toasts" viewport="700x900" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Streamy — Ops &amp; studio parts</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+.demo { max-width: 660px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+.demo-head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-muted); margin: var(--space-8) 0 var(--space-3); }
+.demo-head:first-child { margin-top: 0; }
+.note { font-size: 12px; color: var(--color-muted); max-width: 62ch; }
+.row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.stack { display: grid; gap: var(--space-3); }
+code { font-family: var(--font-mono); font-size: 0.92em; }
+</style>
+</head>
+<body>
+<main class="demo">
+<div class="demo-head">Worker health — from the readiness endpoint</div>
+<div class="g4">
+  <div class="stat stat-ok"><div class="stat-label"><span>Message queue</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.5 10 17.5 19.5 7"/></svg></div><div class="stat-value">Up</div><div class="stat-note">rabbitmq · 2 consumers</div></div>
+  <div class="stat stat-ok"><div class="stat-label"><span>Storage</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.5 10 17.5 19.5 7"/></svg></div><div class="stat-value">Up</div><div class="stat-note">minio · bucket reachable</div></div>
+  <div class="stat stat-bad"><div class="stat-label"><span>Dead letters</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 7l10 10M17 7 7 17"/></svg></div><div class="stat-value">3</div><div class="stat-note">oldest 4h ago</div></div>
+  <div class="stat"><div class="stat-label"><span>Encoder</span></div><div class="stat-value" style="font-size: 17px">vaapi</div><div class="row" style="gap: 6px"><span class="stat-flag stat-flag-hw">Hardware</span></div></div>
+</div>
+<div class="g2" style="margin-top: var(--space-3)">
+  <div class="stat"><div class="stat-label"><span>Encoder</span></div><div class="stat-value" style="font-size: 17px">libx264</div><div class="row" style="gap: 6px"><span class="stat-flag stat-flag-sw">Software fallback</span></div><div class="stat-note">no /dev/dri device passed through</div></div>
+  <div class="stat"><div class="stat-label"><span>Active job</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3.5 2"/></svg></div><div class="stat-value" style="font-size: 17px">v_8Kd2pQxr</div><div class="stat-note">720p variant · 06:12 elapsed</div></div>
+</div>
+<p class="note" style="margin-top: var(--space-3)">Hardware encoding gets the green flag; software gets amber and says why it fell back. Both are honest states — the operator can act on one of them. An idle instance shows <em>No active job</em> in muted ink rather than a zeroed-out tile.</p>
+<div class="demo-head">Stream key — masked by default</div>
+<div class="stack" style="max-width: 420px">
+  <div class="field"><label for="rtmp">RTMP ingest URL</label><div class="secret"><code id="rtmp">rtmp://stream.home.lan/live</code><button class="btn btn-ghost btn-sm" type="button">Copy</button></div></div>
+  <div class="field"><label for="key">Stream key</label><div class="secret" data-masked="true"><code id="key">••••••••••••••••••</code><button class="btn btn-ghost btn-sm" type="button">Reveal</button><button class="btn btn-ghost btn-sm" type="button">Copy</button></div><p class="field-hint">Treat it like a password. Anyone with this key can broadcast to your channel.</p></div>
+</div>
+<div class="demo-head">ffmpeg log drawer — failed_in_processing</div>
+<div class="log" style="max-height: 168px">frame= 1428 fps= 61 q=28.0 size=   14336kB time=00:00:59.52 bitrate=1972.4kbits/s
+<span class="dim">[hls @ 0x55f1c2] Opening 'v_8Kd2pQxr/720p_0012.ts' for writing</span>
+<span class="err">[libx264 @ 0x55f1e8] invalid width x height (-2x720)</span>
+<span class="err">Error while filtering: Invalid argument</span>
+<span class="dim">Conversion failed!</span>
+exit status 1</div>
+<p class="note" style="margin-top: var(--space-3)">Raw and unedited, monospace, selectable, with error lines in the accent. No friendly rewrite — the operator is the audience and the stack trace is the useful thing.</p>
+<div class="demo-head">Wizard steps</div>
+<ol class="steps">
+  <li data-done="true"><span class="n">1</span>Metadata</li>
+  <li aria-current="step"><span class="n">2</span>File</li>
+  <li><span class="n">3</span>Confirm</li>
+  <li><span class="n">4</span>Queue</li>
+</ol>
+<div class="demo-head">Dropzone &amp; upload progress</div>
+<div class="stack" style="max-width: 460px">
+  <div class="dropzone"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 4v11M7.5 8.5 12 4l4.5 4.5M4 20h16"/></svg><div style="font-size: 13px; color: var(--color-text)">Drop your video here, or <a href="#">choose a file</a></div><div class="stat-note">mp4, mkv or mov · uploaded straight to storage</div></div>
+  <div class="card" style="gap: var(--space-3)"><div class="row" style="justify-content: space-between"><span style="font-size: 13px">closet-rack-rebuild.mp4</span><span class="mono" style="font-size: 11px; color: var(--color-muted)">62% · 1.4 GB</span></div><div class="progress"><i style="width: 62%"></i></div></div>
+</div>
+<div class="demo-head">Empty state</div>
+<div class="empty">
+  <svg class="empty-mark" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3 9.5h18M3 14.5h18M8 5v14M16 5v14"/></svg>
+  <h4>Nothing here yet</h4>
+  <p>This instance is fresh. Upload a video and it will show up here once processing finishes and you release it.</p>
+  <button class="btn btn-primary" type="button">Upload your first video</button>
+</div>
+<div class="demo-head">Toasts</div>
+<div class="stack" style="max-width: 380px">
+  <div class="toast toast-ok"><div><div class="toast-title">Released</div><div class="toast-note">&ldquo;ffmpeg flags I actually use&rdquo; is public now.</div></div></div>
+  <div class="toast toast-err"><div><div class="toast-title">Queue failed</div><div class="toast-note">Confirm the upload before queueing it for processing. (400)</div></div></div>
+</div>
+</main>
+</body>
+</html>

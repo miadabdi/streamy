@@ -1,0 +1,49 @@
+<!-- @dsCard group="Components" name="Navigation" subtitle="A header bar over a left page opening" viewport="640x420" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Streamy — Navigation</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+/* Demo scaffolding only — everything visual comes from ../styles.css. */
+.demo { max-width: 620px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+.demo-head {
+  font-family: var(--font-body); font-size: 11px; font-weight: inherit;
+  letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.55;
+  margin: var(--space-6) 0 var(--space-3);
+}
+.demo-head:first-child { margin-top: 0; }
+.row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.stack { display: grid; gap: var(--space-3); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.note { font-size: 12px; opacity: 0.6; max-width: 60ch; }
+code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.92em; }
+.demo { max-width: none; padding: 0; }
+.page { padding: var(--space-6) var(--space-4) var(--space-8); max-width: 620px; margin: 0 auto; }
+.hero h1 { margin-bottom: var(--space-3); }
+
+</style>
+</head>
+<body>
+<main class="demo">
+<nav class="nav">
+    <span class="nav-brand">Streamy</span>
+    <a href="#" aria-current="page">Overview</a>
+    <a href="#">Components</a>
+    <a href="#">Tokens</a>
+    <button type="button" class="btn btn-primary">Get started</button>
+  </nav>
+  <div class="page hero">
+    <h1>Everything inherits the theme</h1>
+    <p>The header, this opening, the buttons and the copy are ordinary HTML styled only by styles.css — change the tokens and all of it follows.</p>
+    <div class="row">
+      <button type="button" class="btn btn-primary">Primary action</button>
+      <button type="button" class="btn btn-ghost">Secondary</button>
+    </div>
+  </div>
+</main>
+</body>
+</html>

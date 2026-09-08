@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Channel page" description="A channel's public page: 400×400 avatar, description, subscriber count, subscribe button, and its released video grid. Includes the not-yet-uploaded empty state." -->
+<helmet>
+<title>Streamy — Channel</title>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;min-height:100%;background:#0b0c0f;color:#e8e9ec}</style>
+</helmet>
+<div class="app">
+<aside class="app-side">
+<div class="app-brand"><a class="wordmark" href="#">Streamy</a></div>
+<nav class="sidenav" style="flex:1">
+<div class="sidenav-head">Watch</div>
+<a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="5" width="18" height="14" rx="1.5"></rect><path d="M3 9.5h18M3 14.5h18M8 5v14M16 5v14"></path></svg>Browse</a>
+<a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 7h11M4 12h11M4 17h7"></path><circle cx="19" cy="17" r="2"></circle></svg>Playlists</a>
+<div class="sidenav-head">Subscriptions</div>
+<a href="#" aria-current="page"><span class="avatar avatar-sm">NW</span><span class="name">nightwatch</span><span class="livedot" title="Live now"></span></a>
+<a href="#"><span class="avatar avatar-sm">KB</span><span class="name">kbench</span></a>
+<a href="#"><span class="avatar avatar-sm">SC</span><span class="name">selfhost.cafe</span></a>
+<a href="#"><span class="avatar avatar-sm">LW</span><span class="name">longwave</span></a>
+<div class="sidenav-head">Instance</div>
+<a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="6" y="6" width="12" height="12" rx="1"></rect><path d="M9.5 3v3M14.5 3v3M9.5 18v3M14.5 18v3M3 9.5h3M3 14.5h3M18 9.5h3M18 14.5h3"></path></svg>Ops console</a>
+<a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="12" cy="9" r="3.5"></circle><path d="M5 19.5a7 7 0 0 1 14 0"></path></svg>Settings</a>
+</nav>
+<div class="app-channel">
+<div style="display:flex;align-items:center;gap:9px">
+<span class="avatar avatar-sm">KB</span>
+<div style="min-width:0"><div style="font-size:12px;font-weight:600;line-height:1.2">kbench</div><div class="mono" style="font-size:10px;color:var(--color-muted);white-space:nowrap">current channel</div></div>
+</div>
+<button class="btn btn-secondary btn-sm btn-block" type="button">Switch channel</button>
+</div>
+</aside>
+<div class="app-col">
+<header class="topbar" style="gap:16px">
+<label class="searchbar" style="flex:1;max-width:460px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>
+<input type="search" placeholder="Search videos" aria-label="Search videos" />
+</label>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<button class="btn btn-secondary" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 4v11M7.5 8.5 12 4l4.5 4.5M4 20h16"></path></svg>Upload</button>
+<span class="avatar">KB</span>
+</div>
+</header>
+<main class="app-page" data-density="roomy">
+<section style="display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap">
+<span class="avatar avatar-lg" style="box-shadow:inset 0 0 0 1px var(--color-divider-strong)">NW</span>
+<div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<h1 style="margin:0;font-size:26px">nightwatch</h1>
+<span class="pill pill-live">Live now</span>
+</div>
+<div class="mono" style="font-size:11px;color:var(--color-muted)">@nightwatch · 184 subscribers · 9 videos</div>
+<p style="margin:4px 0 0;max-width:62ch;color:var(--color-muted)">A closet full of second-hand hardware and the transcoding it does overnight. Long takes, no editing, occasional fan noise.</p>
+<div style="display:flex;gap:8px;margin-top:6px">
+<button class="btn btn-primary" type="button">Subscribe</button>
+<button class="btn btn-secondary" type="button">Watch the live stream</button>
+</div>
+</div>
+</section>
+<nav class="tabs" role="tablist">
+<button type="button" role="tab" aria-selected="true">Videos</button>
+<button type="button" role="tab" aria-selected="false">Live &amp; replays</button>
+<button type="button" role="tab" aria-selected="false">Playlists</button>
+<button type="button" role="tab" aria-selected="false">About</button>
+</nav>
+<sc-if value="{{ hasVideos }}" hint-placeholder-val="{{ true }}">
+<section style="display:flex;flex-direction:column;gap:28px">
+<div class="vgrid">
+<a class="vcard" href="#">
+<div class="vcard-thumb"><div class="vcard-fallback" style="--seed:340"><span>NW</span></div><span class="vcard-flag pill pill-live">Live</span></div>
+<div class="vcard-row"><div class="vcard-body"><div class="vcard-title">Transcoding queue, live from the closet</div><div class="vcard-meta"><span>started 41 min ago</span></div></div></div>
+</a>
+<a class="vcard" href="#">
+<div class="vcard-thumb"><div class="vcard-fallback" style="--seed:265"><span>NW</span></div><span class="vcard-dur">18:42</span></div>
+<div class="vcard-row"><div class="vcard-body"><div class="vcard-title">Rebuilding the rack: 40TB in one afternoon</div><div class="vcard-meta"><span>1,204 views</span><span class="sep">·</span><span>released 12 Aug</span></div></div></div>
+</a>
+<a class="vcard" href="#">
+<div class="vcard-thumb"><div class="vcard-fallback" style="--seed:300"><span>NW</span></div><span class="vcard-dur">9:58</span></div>
+<div class="vcard-row"><div class="vcard-body"><div class="vcard-title">Why my first upload failed four times</div><div class="vcard-meta"><span>824 views</span><span class="sep">·</span><span>released 4 Aug</span></div></div></div>
+</a>
+<a class="vcard" href="#">
+<div class="vcard-thumb"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#1c1f24 0 8px,#14161a 8px 16px);display:grid;place-items:center"><span class="mono" style="font-size:10px;letter-spacing:.06em;color:var(--color-neutral-500)">thumbnail 1280×720</span></div><span class="vcard-dur">52:44</span></div>
+<div class="vcard-row"><div class="vcard-body"><div class="vcard-title">Overnight queue, kept as a replay</div><div class="vcard-meta"><span>2,150 views</span><span class="sep">·</span><span>streamed 6 Sep</span></div></div></div>
+</a>
+<a class="vcard" href="#">
+<div class="vcard-thumb"><div class="vcard-fallback" style="--seed:210"><span>NW</span></div><span class="vcard-dur">6:12</span></div>
+<div class="vcard-row"><div class="vcard-body"><div class="vcard-title">Cheap UPS, tested properly</div><div class="vcard-meta"><span>1,977 views</span><span class="sep">·</span><span>released 28 Jul</span></div></div></div>
+</a>
+<a class="vcard" href="#">
+<div class="vcard-thumb"><div class="vcard-fallback" style="--seed:96"><span>NW</span></div><span class="vcard-dur">21:38</span></div>
+<div class="vcard-row"><div class="vcard-body"><div class="vcard-title">Wiring the closet for airflow, finally</div><div class="vcard-meta"><span>963 views</span><span class="sep">·</span><span>released 19 Jul</span></div></div></div>
+</a>
+</div>
+<button class="btn btn-secondary" type="button" style="align-self:center">Load more</button>
+</section>
+</sc-if>
+<sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+<div class="empty">
+<svg class="empty-mark" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="9" r="3.5"></circle><path d="M5 19.5a7 7 0 0 1 14 0"></path></svg>
+<h4 style="margin:0">nightwatch hasn&rsquo;t released anything yet</h4>
+<p>Subscribe and the channel&rsquo;s first video will show up in your subscribed filter on Browse.</p>
+<button class="btn btn-primary" type="button">Subscribe</button>
+</div>
+</sc-if>
+</main>
+</div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;populated&quot;,&quot;empty&quot;],&quot;default&quot;:&quot;populated&quot;,&quot;tsType&quot;:&quot;'populated' | 'empty'&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const empty = (this.props.state ?? 'populated') === 'empty';
+    return { hasVideos: !empty, isEmpty: empty };
+  }
+}
+</script>
+</body>
+</html>

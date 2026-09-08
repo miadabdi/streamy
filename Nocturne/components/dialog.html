@@ -1,0 +1,46 @@
+<!-- @dsCard group="Components" name="Dialog" subtitle="A modal surface at the top elevation, shown here inside a static frame" viewport="640x460" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Streamy — Dialog</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+/* Demo scaffolding only — everything visual comes from ../styles.css. */
+.demo { max-width: 620px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+.demo-head {
+  font-family: var(--font-body); font-size: 11px; font-weight: inherit;
+  letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.55;
+  margin: var(--space-6) 0 var(--space-3);
+}
+.demo-head:first-child { margin-top: 0; }
+.row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.stack { display: grid; gap: var(--space-3); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.note { font-size: 12px; opacity: 0.6; max-width: 60ch; }
+code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.92em; }
+.dialog-demo { position: relative; height: 380px; overflow: hidden; border-radius: var(--radius-md); border: 1px solid var(--color-divider); }
+.dialog-demo .dialog-backdrop { position: absolute; }
+</style>
+</head>
+<body>
+<main class="demo">
+<div class="demo-head">Dialog</div>
+  <div class="dialog-demo">
+    <div class="dialog-backdrop">
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="ds-dialog-title">
+        <div class="dialog-title" id="ds-dialog-title">Publish this page?</div>
+        <div class="dialog-body">It goes live at its current URL. You can unpublish at any time and nothing else on the site changes.</div>
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-secondary">Cancel</button>
+          <button type="button" class="btn btn-primary">Publish</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="note">The backdrop is <code>.dialog-backdrop</code> (fixed, a neutral-900 scrim) and the surface is <code>.dialog</code> at <code>--shadow-lg</code>. This page pins it inside a frame so the card can show it; in a real page the backdrop covers the viewport.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!-- @dsCard group="Foundations" name="Typography" subtitle="Inter over Inter — a fixed scale; density moves spacing, not sizes" viewport="640x640" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Streamy — Typography</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+/* Demo scaffolding only — everything visual comes from ../styles.css. */
+.demo { max-width: 620px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+.demo-head {
+  font-family: var(--font-body); font-size: 11px; font-weight: inherit;
+  letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.55;
+  margin: var(--space-6) 0 var(--space-3);
+}
+.demo-head:first-child { margin-top: 0; }
+.row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.stack { display: grid; gap: var(--space-3); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+.note { font-size: 12px; opacity: 0.6; max-width: 60ch; }
+code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.92em; }
+.trow { display: flex; align-items: baseline; gap: var(--space-3); margin: calc(var(--space-2) * 0.6) 0; }
+.trow > * { margin: 0; }
+.tlabel { flex: none; width: 64px; font-size: 10px; letter-spacing: 0.08em; opacity: 0.45; white-space: nowrap; }
+.p-1 { font-size: 17px; } .p-2 { font-size: 15px; } .p-3 { font-size: 13px; }
+</style>
+</head>
+<body>
+<main class="demo">
+<div class="demo-head">Headings — Inter</div>
+  <div class="trow"><span class="tlabel">H1 · 42</span><h1>A design system in Inter</h1></div>
+  <div class="trow"><span class="tlabel">H2 · 32</span><h2>A design system in Inter</h2></div>
+  <div class="trow"><span class="tlabel">H3 · 25</span><h3>A design system in Inter</h3></div>
+  <div class="trow"><span class="tlabel">H4 · 20</span><h4>A design system in Inter</h4></div>
+  <div class="trow"><span class="tlabel">H5 · 16</span><h5>A design system in Inter</h5></div>
+  <div class="trow"><span class="tlabel">H6 · 13</span><h6>A design system in Inter</h6></div>
+  <div class="demo-head">Body — Inter</div>
+  <div class="trow"><span class="tlabel">P1 · 17</span><p class="p-1">Design tokens describe a look once and let every page inherit it.</p></div>
+  <div class="trow"><span class="tlabel">P2 · 15</span><p class="p-2">The quick brown fox jumps over the lazy dog — body copy at the reading size, where the pairing either sings or doesn't.</p></div>
+  <div class="trow"><span class="tlabel">P3 · 13</span><p class="p-3 text-muted">Captions, metadata and footnotes live down here, one notch quieter than the body.</p></div>
+  <div class="demo-head">Usage</div>
+  <p class="note">Headings take <code>var(--font-heading)</code> at <code>var(--font-heading-weight)</code> automatically; body copy inherits <code>var(--font-body)</code>. Never name a font family directly.</p>
+</main>
+</body>
+</html>

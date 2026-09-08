@@ -1,0 +1,45 @@
+<!-- @dsCard group="Foundations" name="Thumbnails & avatars" subtitle="Sizes, aspect ratios and the two fallbacks that carry most of the app" viewport="640x560" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Streamy — Thumbnails &amp; avatars</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+.demo { max-width: 620px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+.demo-head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-muted); margin: var(--space-8) 0 var(--space-3); }
+.demo-head:first-child { margin-top: 0; }
+.note { font-size: 12px; color: var(--color-muted); max-width: 62ch; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+.row { display: flex; align-items: flex-end; gap: var(--space-4); }
+.hatch { position: absolute; inset: 0; background: repeating-linear-gradient(135deg, #1c1f24 0 8px, #14161a 8px 16px); display: grid; place-items: center; }
+.hatch span { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--color-neutral-500); }
+code { font-family: var(--font-mono); font-size: 0.92em; }
+</style>
+</head>
+<body>
+<main class="demo">
+<div class="demo-head">Thumbnail — 16:9, stored at 1280×720</div>
+<div class="g3">
+  <figure><div class="vcard-thumb"><div class="hatch"><span>uploaded</span></div></div><figcaption>An upload. Any aspect is accepted and re-encoded to 1280×720; the card crops with <code>object-fit: cover</code>.</figcaption></figure>
+  <figure><div class="vcard-thumb"><div class="vcard-fallback" style="--seed: 265"><span>NW</span></div></div><figcaption>No upload — the derived fallback. Hue from <code>--seed</code>, initials from the channel.</figcaption></figure>
+  <figure><div class="vcard-thumb"><div class="vcard-fallback" style="--seed: 22"><span>KB</span></div></div><figcaption>A different seed keeps neighbouring cards distinguishable in a grid.</figcaption></figure>
+</div>
+<p class="note" style="margin-top: var(--space-3)">Derive the seed from a stable hash of the video ID, not from its position in a list, so a card looks the same on every visit. The fallback is a designed state, not a broken one: no camera glyph, no &ldquo;image missing&rdquo;, nothing that reads as an error.</p>
+<div class="demo-head">Avatar — square source, 400×400, circular crop</div>
+<div class="row">
+  <span class="avatar avatar-lg">NW</span>
+  <span class="avatar">KB</span>
+  <span class="avatar avatar-sm">SC</span>
+  <div class="note" style="align-self: center">Initials are the first letters of the channel&rsquo;s display name, monospace, on a neutral ground — never tinted per channel, so avatars never compete with the accent.</div>
+</div>
+<div class="demo-head">Video surface</div>
+<div class="player">
+  <div class="hatch" style="background: repeating-linear-gradient(135deg, #0d0e11 0 10px, #08090b 10px 20px)"><span>video · 16:9</span></div>
+  <div class="player-bar"><button class="player-btn" type="button" aria-label="Play"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="9,6 19,12 9,18"/></svg></button><span class="player-time">12:04</span><div class="player-scrub"><i style="width: 38%"></i></div><span class="player-time">18:42</span></div>
+</div>
+<p class="note" style="margin-top: var(--space-3)">The player ground is darker than the page (<code>#050607</code>) so the frame edge is visible without a border. Nothing overlays the video except the control bar and, when live, the LIVE pill — no watermarks, no logo bug.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<!-- @template name="Watch" description="The centerpiece: HLS player with quality and subtitle menus, like/dislike, subscribe, tags, description and threaded comments. Switches between vod, live and ended-replay." -->
+<helmet>
+<title>Streamy — Watch</title>
+<script src="./ds-base.js"></script>
+<style>html,body{margin:0;min-height:100%;background:#0b0c0f;color:#e8e9ec}</style>
+</helmet>
+<div class="app-col" data-density="roomy" style="min-height:100vh">
+<header class="topbar" style="gap:16px">
+<a class="wordmark" href="#">Streamy</a>
+<label class="searchbar" style="flex:1;max-width:420px;margin-left:12px">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4.5 4.5"></path></svg>
+<input type="search" placeholder="Search videos" aria-label="Search videos" />
+</label>
+<div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+<button class="btn btn-secondary" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 4v11M7.5 8.5 12 4l4.5 4.5M4 20h16"></path></svg>Upload</button>
+<span class="avatar">NW</span>
+</div>
+</header>
+<main style="width:100%;max-width:1020px;margin:0 auto;padding:24px 24px 72px;display:flex;flex-direction:column;gap:20px">
+<div class="player">
+<div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#0d0e11 0 10px,#08090b 10px 20px);display:grid;place-items:center"><span class="mono" style="font-size:11px;color:var(--color-neutral-500)">hls.js · master.m3u8</span></div>
+<sc-if value="{{ isLive }}" hint-placeholder-val="{{ false }}">
+<span class="pill pill-live" style="position:absolute;left:12px;top:12px">Live</span>
+</sc-if>
+<sc-if value="{{ showQualityMenu }}" hint-placeholder-val="{{ true }}">
+<div class="menu" style="position:absolute;right:12px;bottom:56px">
+<div class="menu-head">Quality</div>
+<button class="menu-item" type="button" aria-checked="true" role="menuitemradio">Auto<span class="k">1080p</span></button>
+<button class="menu-item" type="button" aria-checked="false" role="menuitemradio">1080p<span class="k">5.0 Mb/s</span></button>
+<button class="menu-item" type="button" aria-checked="false" role="menuitemradio">720p<span class="k">2.8 Mb/s</span></button>
+<button class="menu-item" type="button" aria-checked="false" role="menuitemradio">360p<span class="k">0.8 Mb/s</span></button>
+</div>
+</sc-if>
+<div class="player-bar">
+<button class="player-btn" type="button" aria-label="Play"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="9,6 19,12 9,18"></polygon></svg></button>
+<span class="player-time">{{ elapsedLabel }}</span>
+<div class="player-scrub"><i style="width:38%"></i></div>
+<span class="player-time">{{ durationLabel }}</span>
+<button class="player-btn" type="button" aria-label="Subtitles"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><rect x="3" y="5" width="18" height="14" rx="1.5"></rect><path d="M10.5 10.5a2.5 2.5 0 1 0 0 3M17.5 10.5a2.5 2.5 0 1 0 0 3"></path></svg></button>
+<button class="player-btn" type="button" aria-label="Quality" aria-expanded="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M6 18v-4M11 18v-8M16 18v-11"></path></svg></button>
+<button class="player-btn" type="button" aria-label="Fullscreen"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 9V4h5M20 15v5h-5M20 9V4h-5M4 15v5h5"></path></svg></button>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px">
+<h1 style="margin:0;font-size:22px;line-height:1.25">Transcoding queue, live from the closet</h1>
+<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+<div class="vcard-meta" style="font-size:12px">{{ statLine }}</div>
+<div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+<button class="btn btn-secondary btn-sm" type="button" aria-pressed="true" style="color:var(--color-accent);border-color:var(--color-accent-700)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 19V5M6.5 10.5 12 5l5.5 5.5"></path></svg>81</button>
+<button class="btn btn-secondary btn-sm" type="button" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M12 5v14M17.5 13.5 12 19l-5.5-5.5"></path></svg>2</button>
+</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--color-divider);border-bottom:1px solid var(--color-divider)">
+<span class="avatar" style="width:40px;height:40px;font-size:13px">NW</span>
+<div style="min-width:0;flex:1">
+<a href="#" style="display:block;font-size:14px;font-weight:600;color:var(--color-text);text-decoration:none">nightwatch</a>
+<div class="mono" style="font-size:11px;color:var(--color-muted)">184 subscribers</div>
+</div>
+<button class="btn btn-primary" type="button">Subscribe</button>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px">
+<a class="tag" href="#">selfhosted</a><a class="tag" href="#">ffmpeg</a><a class="tag" href="#">hardware</a><a class="tag" href="#">homelab</a>
+</div>
+<div class="card" style="gap:6px">
+<div class="card-kicker">Description</div>
+<p class="card-body" style="color:var(--color-text)">Sitting with the queue while eleven uploads work through the encoder. Notes on what the worker prints, why the 1080p variant lands last, and the one flag that halved my transcode time.</p>
+<button class="btn btn-ghost btn-sm" type="button" style="align-self:flex-start;padding-inline:0">Show more</button>
+</div>
+<sc-if value="{{ isEndedReplay }}" hint-placeholder-val="{{ false }}">
+<div class="toast" style="width:100%;background:var(--color-surface)"><div><div class="toast-title">This stream has ended</div><div class="toast-note">The replay is on the same URL — nothing to re-share.</div></div></div>
+</sc-if>
+<section style="display:flex;flex-direction:column;gap:18px;margin-top:6px">
+<h6 style="margin:0">12 comments</h6>
+<div class="comment">
+<span class="avatar avatar-sm">NW</span>
+<div class="comment-body" style="flex:1 1 0">
+<input class="input" placeholder="Add a comment" aria-label="Add a comment" />
+<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px"><button class="btn btn-ghost btn-sm" type="button">Cancel</button><button class="btn btn-primary btn-sm" type="button">Comment</button></div>
+</div>
+</div>
+<div class="comment">
+<span class="avatar avatar-sm">KB</span>
+<div class="comment-body" style="flex:1 1 0">
+<div class="comment-head"><span class="comment-who">kbench</span><span class="comment-when">2 days ago</span><span class="comment-edited">edited</span></div>
+<p class="comment-text">The vaapi flag ordering matters more than the docs suggest — I had to put <code class="mono">-hwaccel</code> before the input or it silently fell back to libx264.</p>
+<div class="comment-actions"><button class="btn btn-ghost btn-sm" type="button" style="padding-inline:0">Reply</button><button class="btn btn-ghost btn-sm" type="button" style="padding-inline:0">Edit</button></div>
+</div>
+</div>
+<div class="comment-replies">
+<div class="comment">
+<span class="avatar avatar-sm">NW</span>
+<div class="comment-body" style="flex:1 1 0">
+<div class="comment-head"><span class="comment-who">nightwatch</span><span class="comment-when">2 days ago</span></div>
+<p class="comment-text">That was exactly my four failed uploads. Worth a line in the readme.</p>
+<div class="comment-actions"><button class="btn btn-ghost btn-sm" type="button" style="padding-inline:0">Reply</button></div>
+</div>
+</div>
+</div>
+<div class="comment">
+<span class="avatar avatar-sm">SC</span>
+<div class="comment-body" style="flex:1 1 0">
+<div class="comment-head"><span class="comment-who">selfhost.cafe</span><span class="comment-when">5 days ago</span></div>
+<p class="comment-text">Watching the queue drain is unreasonably calming. Thanks for leaving the logs on screen.</p>
+<div class="comment-actions"><button class="btn btn-ghost btn-sm" type="button" style="padding-inline:0">Reply</button></div>
+</div>
+</div>
+<button class="btn btn-secondary" type="button" style="align-self:center">Load more comments</button>
+</section>
+</main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;vod&quot;,&quot;live&quot;,&quot;replay&quot;],&quot;default&quot;:&quot;live&quot;,&quot;tsType&quot;:&quot;'vod' | 'live' | 'replay'&quot;,&quot;section&quot;:&quot;Video&quot;},&quot;showQualityMenu&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Player&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const mode = this.props.mode ?? 'vod';
+    const isLive = mode === 'live';
+    const isEndedReplay = mode === 'replay';
+    return {
+      isLive, isEndedReplay,
+      showQualityMenu: this.props.showQualityMenu ?? true,
+      elapsedLabel: isLive ? '41:12' : '12:04',
+      durationLabel: isLive ? 'LIVE' : '18:42',
+      statLine: isLive
+        ? 'Live · started 41 min ago · viewer count not reported by the API'
+        : (isEndedReplay ? '2,150 views · streamed 6 Sep · replay' : '1,204 views · released 12 Aug'),
+    };
+  }
+}
+</script>
+</body>
+</html>

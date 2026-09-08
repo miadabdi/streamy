@@ -1,0 +1,75 @@
+<!-- @dsCard group="Components" name="Video card & status" subtitle="Grid, list and live cards; the thumbnail fallback; the seven status pills" viewport="700x680" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Streamy — Video card &amp; status</title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+.demo { max-width: 660px; margin: 0 auto; padding: var(--space-6) var(--space-4) var(--space-8); }
+.demo-head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-muted); margin: var(--space-8) 0 var(--space-3); }
+.demo-head:first-child { margin-top: 0; }
+.note { font-size: 12px; color: var(--color-muted); max-width: 62ch; }
+.row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.g3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+.hatch { position: absolute; inset: 0; background: repeating-linear-gradient(135deg, #1c1f24 0 8px, #14161a 8px 16px); display: grid; place-items: center; }
+.hatch i { font-style: normal; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; color: var(--color-neutral-500); }
+</style>
+</head>
+<body>
+<main class="demo" data-density="roomy">
+<div class="demo-head">Grid card — no thumbnail (the common case)</div>
+<div class="g3">
+  <a class="vcard" href="#">
+    <div class="vcard-thumb"><div class="vcard-fallback" style="--seed: 265"><span>NW</span></div><span class="vcard-dur">18:42</span></div>
+    <div class="vcard-row"><span class="avatar avatar-sm">NW</span><div class="vcard-body"><div class="vcard-title">Rebuilding the rack: 40TB, one afternoon</div><div class="vcard-channel">nightwatch</div><div class="vcard-meta"><span>1,204 views</span><span class="sep">·</span><span>38 likes</span></div></div></div>
+  </a>
+  <a class="vcard" href="#">
+    <div class="vcard-thumb"><div class="vcard-fallback" style="--seed: 22"><span>KB</span></div><span class="vcard-dur">4:07</span></div>
+    <div class="vcard-row"><span class="avatar avatar-sm">KB</span><div class="vcard-body"><div class="vcard-title">ffmpeg flags I actually use</div><div class="vcard-channel">kbench</div><div class="vcard-meta"><span>612 views</span><span class="sep">·</span><span>21 likes</span></div></div></div>
+  </a>
+  <a class="vcard" href="#">
+    <div class="vcard-thumb"><div class="hatch"><i>thumbnail 1280×720</i></div><span class="vcard-dur">1:02:15</span></div>
+    <div class="vcard-row"><span class="avatar avatar-sm">SC</span><div class="vcard-body"><div class="vcard-title">Long walk through the docker compose file</div><div class="vcard-channel">selfhost.cafe</div><div class="vcard-meta"><span>9,880 views</span><span class="sep">·</span><span>240 likes</span></div></div></div>
+  </a>
+</div>
+<p class="note" style="margin-top: var(--space-3)">Thumbnails are an optional upload, so the fallback is the default state, not the error state: a two-stop ground derived from the video&rsquo;s own hue seed (<code class="mono">--seed</code>, any 0–360) with the channel&rsquo;s initials. Set the seed from a stable hash of the video ID so a card looks the same on every visit.</p>
+<div class="demo-head">Live card</div>
+<div class="g3">
+  <a class="vcard" href="#">
+    <div class="vcard-thumb"><div class="vcard-fallback" style="--seed: 340"><span>NW</span></div><span class="vcard-flag pill pill-live">Live</span></div>
+    <div class="vcard-row"><span class="avatar avatar-sm">NW</span><div class="vcard-body"><div class="vcard-title">Transcoding queue, live from the closet</div><div class="vcard-channel">nightwatch</div><div class="vcard-meta"><span>started 41 min ago</span></div></div></div>
+  </a>
+</div>
+<p class="note" style="margin-top: var(--space-3)">A live card drops the duration and the view count and carries the LIVE pill top-left. Concurrent viewers are not something the API reports, so nothing here claims to know them — elapsed time is honest and available.</p>
+<div class="demo-head">List card — studio rows, playlists, search</div>
+<a class="vcard vcard-list" href="#" style="margin-bottom: var(--space-3)">
+  <div class="vcard-thumb"><div class="vcard-fallback" style="--seed: 190"><span>KB</span></div><span class="vcard-dur">4:07</span></div>
+  <div class="vcard-body"><div class="vcard-title">ffmpeg flags I actually use</div><div class="vcard-channel"><span class="avatar avatar-sm">KB</span>kbench</div><div class="vcard-meta"><span>612 views</span><span class="sep">·</span><span>21 likes</span><span class="sep">·</span><span>released 12 Aug</span></div></div>
+</a>
+<div class="demo-head">Status pills — the video lifecycle, then release</div>
+<div class="row">
+  <span class="pill pill-upload">Ready for upload</span>
+  <span class="pill pill-upload">Ready for processing</span>
+  <span class="pill pill-queue">Waiting in queue</span>
+  <span class="pill pill-processing">Processing</span>
+  <span class="pill pill-done">Done</span>
+  <span class="pill pill-failed">Failed</span>
+</div>
+<div class="row" style="margin-top: var(--space-3)">
+  <span class="pill pill-released">Released</span>
+  <span class="pill pill-live">Live</span>
+</div>
+<p class="note" style="margin-top: var(--space-3)">Six lifecycle states plus two publication states. <code class="mono">done</code> is green but not public — a released video carries the outlined pill, and everything unreleased is only ever visible inside the studio. Amber means &ldquo;a machine is working or waiting&rdquo;; the accent means &ldquo;attention now&rdquo;, which is why live and failed share it.</p>
+<div class="demo-head">Avatar — initials fallback</div>
+<div class="row">
+  <span class="avatar avatar-sm">NW</span><span class="avatar">KB</span><span class="avatar avatar-lg">SC</span>
+</div>
+<div class="demo-head">Tags</div>
+<div class="row">
+  <a class="tag" href="#">selfhosted</a><a class="tag" href="#">ffmpeg</a><a class="tag" href="#">hardware</a><span class="tag tag-accent">live</span><span class="tag tag-outline">+ add tag</span>
+</div>
+</main>
+</body>
+</html>
