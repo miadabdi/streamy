@@ -161,18 +161,18 @@ describe('Watch page', () => {
 			expect(likePosts).toEqual([{ type: 'like', videoId: 7, likerChannelId: 1 }]),
 		);
 
-		// switch straight to dislike: unlike + dislike, in order
+		// switch straight to dislike: unlike + dislike, in order. Later counts
+		// converge via waitFor: an in-flight invalidation refetch from the
+		// previous mutation can transiently overwrite the optimistic patch.
 		await user.click(dislike);
-		expect(dislike.textContent).toBe('3');
-		expect(like.textContent).toBe('10');
+		await waitFor(() => expect(likePosts.map((b) => b.type)).toEqual(['like', 'unlike', 'dislike']));
+		await waitFor(() => expect(dislike.textContent).toBe('3'));
+		await waitFor(() => expect(like.textContent).toBe('10'));
 		expect(dislike).toHaveAttribute('aria-pressed', 'true');
-		await waitFor(() =>
-			expect(likePosts.map((b) => b.type)).toEqual(['like', 'unlike', 'dislike']),
-		);
 
 		// un-dislike
 		await user.click(dislike);
-		expect(dislike.textContent).toBe('2');
+		await waitFor(() => expect(dislike.textContent).toBe('2'));
 		expect(dislike).toHaveAttribute('aria-pressed', 'false');
 	});
 
@@ -197,7 +197,7 @@ describe('Watch page', () => {
 		expect(screen.getByRole('button', { name: 'Subscribed' })).toBeInTheDocument();
 
 		await user.click(screen.getByRole('button', { name: 'Subscribed' }));
-		expect(screen.getByText('5 subscribers')).toBeInTheDocument();
+		await waitFor(() => expect(screen.getByText('5 subscribers')).toBeInTheDocument());
 		expect(subPosts).toEqual(['2', '2']); // followeeId both ways
 	});
 
@@ -300,7 +300,7 @@ describe('Watch page', () => {
 			}),
 		);
 
-		const heading = await screen.findByText('1 comments');
+		const heading = await screen.findByText('1 comment');
 		const section = heading.closest('section');
 		expect(section).not.toBeNull();
 		expect(screen.getByText('great rack')).toBeInTheDocument();

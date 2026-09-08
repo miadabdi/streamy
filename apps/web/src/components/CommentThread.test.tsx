@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -194,5 +194,77 @@ describe('CommentThread', () => {
 			'href',
 			'/signin',
 		);
+	});
+
+	it('keeps the typed text and reports failure when the POST fails', async () => {
+		const user = userEvent.setup();
+		mount([]);
+		server.use(
+			http.post('/api/v1/comment', () => new HttpResponse(null, { status: 500 })),
+		);
+
+		await user.type(screen.getByLabelText('Add a comment'), 'please survive');
+		await user.click(screen.getByRole('button', { name: 'Comment' }));
+
+		const composer = screen.getByLabelText('Add a comment') as HTMLInputElement;
+		await waitFor(() => expect(composer.value).toBe('please survive')); // not discarded
+		expect(
+			await screen.findAllByText(/not saved/i).then((els) => els.length > 0),
+		).toBe(true); // sonner feedback (store is global across tests)
+	});
+
+	it('blocks over-length content client-side, matching the 1024 server max', async () => {
+		const user = userEvent.setup();
+		mount([]);
+
+		await user.type(screen.getByLabelText('Add a comment'), 'a'.repeat(1030));
+		const composer = screen.getByLabelText('Add a comment') as HTMLInputElement;
+		expect(composer.value.length).toBe(1024); // the maxLength attr caps typing
+		expect(screen.getByRole('button', { name: 'Comment' })).toBeEnabled(); // 1024 is valid
+
+		// the mirrored valid-check guards values that bypass the input (fireEvent
+		// does not respect maxLength)
+		fireEvent.change(composer, { target: { value: 'a'.repeat(1030) } });
+		expect(composer.value.length).toBe(1030);
+		expect(screen.getByRole('button', { name: 'Comment' })).toBeDisabled();
+	});
+
+	it('keeps the edit form and its text when the PATCH fails', async () => {
+		const user = userEvent.setup();
+		mount([makeComment({ id: 10, ownerId: 1, content: 'original text' })]);
+		server.use(
+			http.patch('/api/v1/comment', () => new HttpResponse(null, { status: 500 })),
+		);
+
+		await user.click(within(rowOf('original text')).getByRole('button', { name: 'Edit' }));
+		const input = screen.getByLabelText('Edit comment') as HTMLInputElement;
+		await user.clear(input);
+		await user.type(input, 'revised text');
+		await user.click(screen.getByRole('button', { name: 'Save' }));
+
+		await waitFor(() =>
+			expect((screen.getByLabelText('Edit comment') as HTMLInputElement).value).toBe(
+				'revised text',
+			),
+		);
+		expect(screen.getAllByText(/not saved/i).length).toBeGreaterThan(0);
+	});
+
+	it('renders a replyTo cycle without hanging, as separate roots', () => {
+		// defensive: the DB cannot produce this via normal flows, a cycle would
+		// otherwise walk forever
+		mount([
+			makeComment({ id: 60, ownerId: 1, content: 'loop a', replyTo: 61 }),
+			makeComment({ id: 61, ownerId: 2, owner: kbench, content: 'loop b', replyTo: 60 }),
+		]);
+
+		expect(screen.getByText('2 comments')).toBeInTheDocument();
+		expect(rowOf('loop a')).toBeInTheDocument();
+		expect(rowOf('loop b')).toBeInTheDocument();
+	});
+
+	it('pluralizes the comment count', () => {
+		mount([makeComment({ id: 10, content: 'only one' })]);
+		expect(screen.getByText('1 comment')).toBeInTheDocument();
 	});
 });

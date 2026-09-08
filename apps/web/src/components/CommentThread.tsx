@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
 import { Link } from 'react-router';
+import { toast } from 'sonner';
 import { api } from '../lib/api';
 import { myChannelId } from '../lib/auth';
 import { storageBase } from '../lib/env';
@@ -38,19 +39,29 @@ function CommentForm({
 	label: string;
 	submitLabel: string;
 	initialValue?: string;
-	onSubmit: (content: string) => void;
+	/** resolves on success — the form keeps its text when this rejects */
+	onSubmit: (content: string) => Promise<unknown>;
 	onCancel?: () => void;
 }) {
 	const [content, setContent] = useState(initialValue);
+	const [saving, setSaving] = useState(false);
 	// server DTO: content length 3–1024
-	const valid = content.trim().length >= 3;
+	const trimmed = content.trim();
+	const valid = trimmed.length >= 3 && trimmed.length <= 1024;
 	return (
 		<form
-			onSubmit={(event) => {
+			onSubmit={async (event) => {
 				event.preventDefault();
-				if (valid) {
-					onSubmit(content.trim());
+				if (!valid || saving) return;
+				setSaving(true);
+				try {
+					await onSubmit(trimmed);
 					setContent('');
+				} catch {
+					// never discard what the viewer typed on a failed save
+					toast.error('Comment not saved — your text is kept');
+				} finally {
+					setSaving(false);
 				}
 			}}
 		>
@@ -58,6 +69,7 @@ function CommentForm({
 				className="input"
 				aria-label={label}
 				placeholder={label}
+				maxLength={1024}
 				value={content}
 				onChange={(event) => setContent(event.target.value)}
 			/>
@@ -67,7 +79,7 @@ function CommentForm({
 						Cancel
 					</button>
 				)}
-				<button type="submit" className="btn btn-primary btn-sm" disabled={!valid}>
+				<button type="submit" className="btn btn-primary btn-sm" disabled={!valid || saving}>
 					{submitLabel}
 				</button>
 			</div>
@@ -117,8 +129,11 @@ export function CommentThread({ video, me }: { video: WatchVideo; me: Me | null 
 	const comments = video.comments;
 	const byId = new Map(comments.map((comment) => [comment.id, comment]));
 	const rootIdOf = (comment: WatchComment): number => {
+		const seen = new Set<number>(); // a replyTo cycle would walk forever
 		let current = comment;
 		while (current.replyTo != null) {
+			if (seen.has(current.id)) break;
+			seen.add(current.id);
 			const parent = byId.get(current.replyTo);
 			if (!parent) break; // orphaned reply → renders as its own root
 			current = parent;
@@ -145,7 +160,7 @@ export function CommentThread({ video, me }: { video: WatchVideo; me: Me | null 
 							label="Edit comment"
 							submitLabel="Save"
 							initialValue={comment.content}
-							onSubmit={(content) => updateComment.mutate({ id: comment.id, content })}
+							onSubmit={(content) => updateComment.mutateAsync({ id: comment.id, content })}
 							onCancel={() => setEditing(null)}
 						/>
 					) : (
@@ -196,7 +211,7 @@ export function CommentThread({ video, me }: { video: WatchVideo; me: Me | null 
 						<CommentForm
 							label={`Reply to ${who}`}
 							submitLabel="Post reply"
-							onSubmit={(content) => createComment.mutate({ content, replyTo: comment.id })}
+							onSubmit={(content) => createComment.mutateAsync({ content, replyTo: comment.id })}
 							onCancel={() => setReplyingTo(null)}
 						/>
 					)}
@@ -207,7 +222,7 @@ export function CommentThread({ video, me }: { video: WatchVideo; me: Me | null 
 
 	return (
 		<section style={{ display: 'flex', flexDirection: 'column', gap: 18, marginTop: 6 }}>
-			<h6 style={{ margin: 0 }}>{comments.length} comments</h6>
+			<h6 style={{ margin: 0 }}>{comments.length} comment{comments.length === 1 ? '' : 's'}</h6>
 
 			{channelId != null ? (
 				<div className="comment">
@@ -216,7 +231,7 @@ export function CommentThread({ video, me }: { video: WatchVideo; me: Me | null 
 						<CommentForm
 							label="Add a comment"
 							submitLabel="Comment"
-							onSubmit={(content) => createComment.mutate({ content })}
+							onSubmit={(content) => createComment.mutateAsync({ content })}
 						/>
 					</div>
 				</div>
