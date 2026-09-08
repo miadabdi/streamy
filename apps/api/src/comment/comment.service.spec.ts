@@ -9,6 +9,7 @@ describe('CommentService ownership', () => {
 	let commentsFindFirst: ReturnType<typeof vi.fn>;
 	let channelsFindFirst: ReturnType<typeof vi.fn>;
 	let insertExecute: ReturnType<typeof vi.fn>;
+	let videosGetById: ReturnType<typeof vi.fn>;
 
 	const user = { id: 5 } as any;
 
@@ -16,6 +17,7 @@ describe('CommentService ownership', () => {
 		commentsFindFirst = vi.fn();
 		channelsFindFirst = vi.fn();
 		insertExecute = vi.fn().mockResolvedValue([{ id: 1 }]);
+		videosGetById = vi.fn().mockResolvedValue({ id: 2 });
 
 		const insert = vi.fn().mockReturnValue({
 			values: vi.fn().mockReturnValue({
@@ -40,7 +42,7 @@ describe('CommentService ownership', () => {
 				},
 				{
 					provide: VideoService,
-					useValue: { getVideoById: vi.fn().mockResolvedValue({ id: 2 }) },
+					useValue: { getVideoById: videosGetById },
 				},
 			],
 		}).compile();
@@ -84,5 +86,13 @@ describe('CommentService ownership', () => {
 		);
 
 		expect(result).toEqual({ id: 1 });
+	});
+
+	it('passes the requesting user to getVideoById so owners can comment on unreleased videos', async () => {
+		channelsFindFirst.mockResolvedValue({ id: 7, ownerId: 5 });
+
+		await service.createComment({ videoId: 2, ownerId: 7, content: 'nice video!' } as any, user);
+
+		expect(videosGetById).toHaveBeenCalledWith(2, user);
 	});
 });

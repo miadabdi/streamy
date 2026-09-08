@@ -61,7 +61,7 @@ export class CommentService {
 			throw new ForbiddenException(`You don't own channel with id ${createCommentDto.ownerId}`);
 		}
 
-		const video = await this.videoService.getVideoById(createCommentDto.videoId);
+		const video = await this.videoService.getVideoById(createCommentDto.videoId, user);
 		if (!video) {
 			throw new NotFoundException(`Video with id ${createCommentDto.videoId} not found`);
 		}

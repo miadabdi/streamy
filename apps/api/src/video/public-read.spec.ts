@@ -1,15 +1,18 @@
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { ChannelService } from '../channel/channel.service';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import { FileService } from '../file/file.service';
+import { OptionalJwtAuthGuard } from '../common/guards';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { PlaylistService } from '../playlist/playlist.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
 import VideoSearchService from '../search/video-search.service';
 import { TagService } from '../tag/tags.service';
+import { VideoController } from './video.controller';
 import { VideoService } from './video.service';
 
 const dialect = new PgDialect();
@@ -141,6 +144,12 @@ describe('VideoService public read gating', () => {
 			await expect(service.getVideoById(9, undefined)).rejects.toThrow(NotFoundException);
 		});
 
+		it('reports a nonexistent video as NotFound', async () => {
+			findFirst.mockResolvedValue(undefined);
+
+			await expect(service.getVideoById(404, undefined)).rejects.toThrow(NotFoundException);
+		});
+
 		it('returns a released video to anonymous callers', async () => {
 			findFirst.mockResolvedValue(video({ isReleased: true }));
 
@@ -155,6 +164,56 @@ describe('VideoService public read gating', () => {
 			const result = await service.getVideoById(9, { id: 2 } as any);
 
 			expect(result).toEqual(video({ isReleased: true }));
+		});
+	});
+
+	describe('getVideoByVideoId', () => {
+		it('returns an unreleased video to its channel owner', async () => {
+			const result = await service.getVideoByVideoId('vid', { id: 1 } as any);
+
+			expect(result).toEqual(video());
+		});
+
+		it('hides an unreleased video from another signed-in user', async () => {
+			await expect(service.getVideoByVideoId('vid', { id: 2 } as any)).rejects.toThrow(
+				NotFoundException,
+			);
+		});
+
+		it('returns a released video to signed-in non-owners', async () => {
+			findFirst.mockResolvedValue(video({ isReleased: true }));
+
+			const result = await service.getVideoByVideoId('vid', { id: 2 } as any);
+
+			expect(result).toEqual(video({ isReleased: true }));
+		});
+	});
+
+	describe('VideoController /by-id and /by-video-id wiring', () => {
+		const reflector = new Reflector();
+		const videoServiceMock = {
+			getVideoById: vi.fn().mockResolvedValue({ id: 9 }),
+			getVideoByVideoId: vi.fn().mockResolvedValue({ id: 9 }),
+		};
+		const controller = new VideoController(videoServiceMock as any, {} as any);
+
+		it('serves /by-id publicly while still resolving the owner', () => {
+			expect(reflector.get('isPublic', controller.getVideoById)).toBe(true);
+			expect(reflector.get('__guards__', controller.getVideoById)).toContain(OptionalJwtAuthGuard);
+		});
+
+		it('keeps /by-video-id behind the jwt guard', () => {
+			expect(reflector.get('isPublic', controller.getVideoByVideoId)).toBeUndefined();
+		});
+
+		it('passes the requesting user through on both routes', async () => {
+			const user = { id: 1 } as any;
+
+			await controller.getVideoById({ id: 9 } as any, user);
+			await controller.getVideoByVideoId({ videoId: 'vid' } as any, user);
+
+			expect(videoServiceMock.getVideoById).toHaveBeenCalledWith(9, user);
+			expect(videoServiceMock.getVideoByVideoId).toHaveBeenCalledWith('vid', user);
 		});
 	});
 });

@@ -138,7 +138,7 @@ export class VideoController {
 	@HttpCode(HttpStatus.OK)
 	@Get('/by-video-id')
 	getVideoByVideoId(@Query() getVideoByVideoIdDto: GetVideoByVideoIdDto, @GetUser() user: User) {
-		return this.videoService.getVideoByVideoId(getVideoByVideoIdDto.videoId);
+		return this.videoService.getVideoByVideoId(getVideoByVideoIdDto.videoId, user);
 	}
 
 	@HttpCode(HttpStatus.OK)

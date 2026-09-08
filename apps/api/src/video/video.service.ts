@@ -740,12 +740,15 @@ export class VideoService {
 	}
 
 	/**
-	 * fetches a video with subs by video id
-	 * @param {number} videoId
+	 * fetches a video with subs by video id; unreleased videos are only
+	 * served to the owner of their channel, everyone else gets a
+	 * NotFound so unreleased videos' existence stays hidden
+	 * @param {string} videoId
+	 * @param {User} user requesting user, undefined when anonymous
 	 * @returns {Video}
 	 */
-	async getVideoByVideoId(videoId: string): Promise<Video> {
-		return this.drizzleService.db.query.videos.findFirst({
+	async getVideoByVideoId(videoId: string, user?: User): Promise<Video> {
+		const video = await this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.videoId, videoId),
 			with: {
 				videosToTags: {
@@ -772,6 +775,12 @@ export class VideoService {
 				},
 			},
 		});
+
+		if (!video || (!video.isReleased && video.channel.ownerId !== user?.id)) {
+			throw new NotFoundException(`Video with videoId ${videoId} not found`);
+		}
+
+		return video;
 	}
 
 	/**
@@ -856,7 +865,9 @@ export class VideoService {
 			},
 		});
 
-		if (video && !video.isReleased && video.channel.ownerId !== user?.id) {
+		// same NotFound for missing and unreleased: existence of unpublished
+		// videos must not be confirmable by strangers
+		if (!video || (!video.isReleased && video.channel.ownerId !== user?.id)) {
 			throw new NotFoundException(`Video with id ${id} not found`);
 		}
 
