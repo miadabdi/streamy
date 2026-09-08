@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router';
 import { Browse } from '../routes/Browse';
 import { Channel } from '../routes/Channel';
 import { NotFound } from '../routes/NotFound';
+import { RequireAuth } from '../routes/RequireAuth';
 import { Ops } from '../routes/Ops';
 import { Playlists } from '../routes/Playlists';
 import { RootLayout } from '../routes/root';
@@ -25,12 +26,17 @@ export const routes: RouteObject[] = [
 			{ path: '/', element: <Browse /> },
 			{ path: 'search', element: <Search /> },
 			{ path: 'playlists', element: <Playlists /> },
-			{ path: 'settings', element: <Settings /> },
-			{ path: 'ops', element: <Ops /> },
-			{ path: 'studio/videos', element: <MyVideos /> },
-			{ path: 'studio/upload', element: <Upload /> },
-			{ path: 'studio/videos/:id/edit', element: <VideoEdit /> },
-			{ path: 'studio/go-live', element: <GoLive /> },
+			{
+				element: <RequireAuth />,
+				children: [
+					{ path: 'settings', element: <Settings /> },
+					{ path: 'ops', element: <Ops /> },
+					{ path: 'studio/videos', element: <MyVideos /> },
+					{ path: 'studio/upload', element: <Upload /> },
+					{ path: 'studio/videos/:id/edit', element: <VideoEdit /> },
+					{ path: 'studio/go-live', element: <GoLive /> },
+				],
+			},
 			{ path: 'channel/:username', element: <Channel /> },
 			{ path: 'signin', element: <SignIn /> },
 			{ path: 'signup', element: <SignUp /> },

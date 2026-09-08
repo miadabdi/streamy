@@ -39,6 +39,12 @@ export type User = {
 	currentChannelId: number | null;
 };
 
+// GET /user/me and POST /auth/signup: the user minus secret columns, with owned channels.
+export type Me = Omit<
+	User,
+	'password' | 'passwordChangedAt' | 'passwordResetToken' | 'passwordResetExpiresAt'
+> & { channels: Channel[] };
+
 export type Channel = {
 	id: number;
 	createdAt: Date | null;

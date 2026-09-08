@@ -29,8 +29,8 @@ export function RootLayout() {
 	const { data: me } = useMe();
 	const { pathname } = useLocation();
 	const roomy = viewerPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-	const initials = `${me.firstName?.[0] ?? ''}${me.lastName?.[0] ?? ''}`;
-	const displayName = `${me.firstName ?? ''} ${me.lastName ?? ''}`.trim() || me.email;
+	const initials = me ? `${me.firstName?.[0] ?? ''}${me.lastName?.[0] ?? ''}` : '';
+	const displayName = me ? `${me.firstName ?? ''} ${me.lastName ?? ''}`.trim() || me.email : '';
 
 	return (
 		<div className="app">

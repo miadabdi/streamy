@@ -48,7 +48,9 @@ async function request<T>(
 		throw new ApiError(res.status, message);
 	}
 
-	return (await res.json()) as T;
+	// Some 2xx endpoints (signin, signout) reply with an empty body.
+	const text = await res.text();
+	return (text === '' ? undefined : JSON.parse(text)) as T;
 }
 
 export const api = {

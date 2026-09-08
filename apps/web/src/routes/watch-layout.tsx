@@ -7,7 +7,7 @@ import { useMe } from '../lib/auth';
 // Watch drops the sidenav — the player owns the width (Nocturne readme, "App shell").
 export function WatchLayout() {
 	const { data: me } = useMe();
-	const initials = `${me.firstName?.[0] ?? ''}${me.lastName?.[0] ?? ''}`;
+	const initials = me ? `${me.firstName?.[0] ?? ''}${me.lastName?.[0] ?? ''}` : '';
 
 	return (
 		<div className="app-col" data-density="roomy" style={{ minHeight: '100vh' }}>

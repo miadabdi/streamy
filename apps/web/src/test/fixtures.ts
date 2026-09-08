@@ -1,7 +1,7 @@
 // Shapes live in src/types/api.ts (single source of truth, mirrors schema.ts).
-import type { Channel, User, Video } from '../types/api';
+import type { Channel, Me, User, Video } from '../types/api';
 
-export type { Channel, User, Video };
+export type { Channel, Me, User, Video };
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
@@ -23,6 +23,23 @@ export function makeUser(overrides: Partial<User> = {}): User {
 		currentChannelId: null,
 		...overrides,
 	};
+}
+
+/** The GET /user/me shape: user minus secret columns, plus owned channels. */
+export function makeMe(overrides: Partial<Me> = {}): Me {
+	const secrets: readonly (keyof User)[] = [
+		'password',
+		'passwordChangedAt',
+		'passwordResetToken',
+		'passwordResetExpiresAt',
+	];
+	const user = Object.fromEntries(
+		Object.entries(makeUser()).filter(([key]) => !secrets.includes(key as keyof User)),
+	) as Omit<
+		User,
+		'password' | 'passwordChangedAt' | 'passwordResetToken' | 'passwordResetExpiresAt'
+	>;
+	return { ...user, channels: [makeChannel({ ownerId: user.id })], ...overrides };
 }
 
 export function makeChannel(overrides: Partial<Channel> = {}): Channel {

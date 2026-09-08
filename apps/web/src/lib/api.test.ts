@@ -64,6 +64,12 @@ describe('api client', () => {
 		expect((err as ApiError).message).toBe('email must be an email, firstName must be shorter');
 	});
 
+	it('resolves undefined for empty 2xx bodies (signin/signout reply without JSON)', async () => {
+		server.use(http.post('/api/v1/auth/signout', () => new HttpResponse(null, { status: 200 })));
+
+		await expect(api.post('/api/v1/auth/signout')).resolves.toBeUndefined();
+	});
+
 	it('on 401 writes null to [me] and rejects as ApiError', async () => {
 		queryClient.setQueryData(['me'], { id: 7 });
 		server.use(
