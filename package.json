@@ -17,7 +17,7 @@
     "test:e2e:live": "npm run test:e2e:live -w apps/api",
     "requeue:dead-letter": "npm run requeue:dead-letter -w apps/api",
     "db:run:migrate": "npm run db:run:migrate -w apps/api",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
