@@ -13,7 +13,7 @@ export function ChannelAvatar({
 	size = 'sm',
 }: {
 	channel: ChannelWithAvatar | null;
-	size?: '' | 'sm';
+	size?: '' | 'sm' | 'lg';
 }) {
 	if (channel?.avatar) {
 		const file = channel.avatar;

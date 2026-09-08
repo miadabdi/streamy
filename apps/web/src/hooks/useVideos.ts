@@ -12,9 +12,9 @@ function nextOffset(lastPage: VideoListItem[], allPages: VideoListItem[][]): num
 	return lastPage.length === VIDEO_PAGE_SIZE ? allPages.length * VIDEO_PAGE_SIZE : undefined;
 }
 
-export function useVideos(filter: VideoFilter) {
+export function useVideos(filter: VideoFilter, channelId?: number) {
 	return useInfiniteQuery({
-		queryKey: ['videos', filter],
+		queryKey: ['videos', filter, channelId],
 		initialPageParam: 0,
 		queryFn: ({ pageParam }) => {
 			const params = new URLSearchParams({
@@ -23,6 +23,7 @@ export function useVideos(filter: VideoFilter) {
 			});
 			if (filter === 'live') params.set('type', 'live'); // server defaults to vod
 			if (filter === 'subscribed') params.set('onlySubbed', 'true');
+			if (channelId != null) params.set('channelId', String(channelId));
 			return api.get<VideoListItem[]>(`/api/v1/video?${params}`);
 		},
 		getNextPageParam: nextOffset,

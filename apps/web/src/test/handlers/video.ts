@@ -63,6 +63,10 @@ export const videoPool: VideoListItem[] = [
 
 function applyFilters(params: URLSearchParams, pool: VideoListItem[]): VideoListItem[] {
 	let list = pool.filter((v) => v.type === (params.get('type') ?? 'vod'));
+	const channelId = params.get('channelId');
+	if (channelId != null) {
+		list = list.filter((v) => v.channelId === Number(channelId));
+	}
 	if (params.get('onlySubbed') === 'true') {
 		list = list.filter((v) => SUBBED_CHANNEL_IDS.has(v.channelId));
 	}
