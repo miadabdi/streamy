@@ -26,15 +26,19 @@ describe('VideoService processVideoCallback', () => {
 	let service: VideoService;
 	let fGetObject: ReturnType<typeof vi.fn>;
 	let processVideo: ReturnType<typeof vi.fn>;
-	let moveFilesToMinio: ReturnType<typeof vi.fn>;
-	let removeDirectory: ReturnType<typeof vi.fn>;
+	let moveFilesToMinio: ReturnType<
+		typeof vi.fn<(dedicatedDir: string, minioDir: string) => Promise<void>>
+	>;
+	let removeDirectory: ReturnType<typeof vi.fn<(dir: string) => Promise<void>>>;
 	let addToQueue: ReturnType<typeof vi.fn>;
 
 	beforeEach(async () => {
 		fGetObject = vi.fn().mockResolvedValue(undefined);
 		processVideo = vi.fn().mockResolvedValue(undefined);
-		moveFilesToMinio = vi.fn().mockResolvedValue(undefined);
-		removeDirectory = vi.fn().mockResolvedValue(undefined);
+		moveFilesToMinio = vi
+			.fn<(dedicatedDir: string, minioDir: string) => Promise<void>>()
+			.mockResolvedValue(undefined);
+		removeDirectory = vi.fn<(dir: string) => Promise<void>>().mockResolvedValue(undefined);
 		addToQueue = vi.fn().mockResolvedValue(undefined);
 
 		const moduleRef = await Test.createTestingModule({

@@ -42,8 +42,7 @@ async function call(
 			...headers,
 		},
 		body: (raw ? new Uint8Array(raw) : body ? JSON.stringify(body) : undefined) as
-			| BodyInit
-			| undefined,
+			BodyInit | undefined,
 	});
 	const setCookie = res.headers.getSetCookie?.() ?? [];
 	const token = setCookie.find((c) => c.startsWith('access_token='));

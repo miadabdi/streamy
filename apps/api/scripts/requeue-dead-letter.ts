@@ -34,8 +34,7 @@ async function main() {
 		if (!message) break;
 
 		const deaths = message.properties.headers?.['x-death'] as
-			| Array<{ queue?: string; 'original-expiration'?: number }>
-			| undefined;
+			Array<{ queue?: string; 'original-expiration'?: number }> | undefined;
 		const originalQueue = deaths?.[0]?.queue;
 
 		if (!originalQueue) {

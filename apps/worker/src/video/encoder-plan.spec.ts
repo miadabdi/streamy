@@ -1,11 +1,12 @@
 import * as childProcess from 'child_process';
 import { detectEncoderPlan, SOFTWARE_PLAN } from './encoder-plan';
+import type { Mock } from 'vitest';
 
 vi.mock('child_process', () => ({
 	execFile: vi.fn(),
 }));
 
-const execFile = childProcess.execFile as unknown as vi.Mock;
+const execFile = childProcess.execFile as unknown as Mock;
 
 const okProbe = (_c: string, args: string[], _o: unknown, cb: (e: Error | null) => void) =>
 	cb(args.includes('h264_vaapi') ? null : new Error('no hw'));

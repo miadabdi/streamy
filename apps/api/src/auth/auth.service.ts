@@ -162,10 +162,11 @@ export class AuthService {
 		};
 
 		const secret = this.configService.get<string>('JWT_SECRET');
-		const jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN');
+		// Joi validates JWT_EXPIRES_IN as a number of days (default 90)
+		const jwtExpiresIn = this.configService.get<number>('JWT_EXPIRES_IN');
 
 		const token = await this.jwtService.signAsync(paylaod, {
-			expiresIn: `${jwtExpiresIn}d`,
+			expiresIn: jwtExpiresIn * 86_400,
 			secret,
 		});
 

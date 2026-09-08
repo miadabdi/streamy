@@ -5,12 +5,13 @@ import { MinioClientService } from '../minio-client/minio-client.service';
 import { VideoProcessService } from '../video/video-process.service';
 import { VideoService } from '../video/video.service';
 import { HealthController } from './health.controller';
+import type { Mock } from 'vitest';
 
 describe('HealthController', () => {
 	let controller: HealthController;
-	let isConnected: vi.Mock;
-	let isAvailable: vi.Mock;
-	let deadLetterCount: vi.Mock;
+	let isConnected: Mock;
+	let isAvailable: Mock;
+	let deadLetterCount: Mock;
 
 	beforeEach(async () => {
 		isConnected = vi.fn();

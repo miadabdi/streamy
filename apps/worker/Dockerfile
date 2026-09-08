@@ -56,7 +56,7 @@ RUN mkdir -p /home/node/app/node_modules
 WORKDIR /home/node/app
 
 # Copy workspace manifests (all of them: npm validates the whole tree)
-COPY package.json package-lock.json .npmrc ./
+COPY package.json package-lock.json ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/worker/package.json ./apps/worker/
 COPY packages/queues ./packages/queues
