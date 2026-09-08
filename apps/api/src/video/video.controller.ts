@@ -16,7 +16,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser } from '../common/decorators';
 import { Public } from '../common/decorators/public.decorator';
-import { JwtAuthGuard } from '../common/guards';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../common/guards';
 import { SharpPipe } from '../common/pipes/sharp-pipe.pipe';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import { User, Video } from '../drizzle/schema';
@@ -129,8 +129,10 @@ export class VideoController {
 
 	@HttpCode(HttpStatus.OK)
 	@Get('/by-id')
+	@Public()
+	@UseGuards(OptionalJwtAuthGuard)
 	getVideoById(@Query() getVideoByIdDto: GetVideoByIdDto, @GetUser() user: User) {
-		return this.videoService.getVideoById(getVideoByIdDto.id);
+		return this.videoService.getVideoById(getVideoByIdDto.id, user);
 	}
 
 	@HttpCode(HttpStatus.OK)
@@ -141,6 +143,7 @@ export class VideoController {
 
 	@HttpCode(HttpStatus.OK)
 	@Get()
+	@Public()
 	getAllVideos(@Query() getVideosDto: GetVideosDto, @GetUser() user: User) {
 		return this.videoService.getAllVideos(getVideosDto, user);
 	}
@@ -153,6 +156,7 @@ export class VideoController {
 
 	@HttpCode(HttpStatus.OK)
 	@Get('/search')
+	@Public()
 	search(@Query() searchVideosDto: SearchVideosDto, @GetUser() user: User) {
 		return this.videoService.search(searchVideosDto, user);
 	}

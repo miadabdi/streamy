@@ -1,0 +1,160 @@
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import { ChannelService } from '../channel/channel.service';
+import { DrizzleService } from '../drizzle/drizzle.service';
+import { FileService } from '../file/file.service';
+import { MinioClientService } from '../minio-client/minio-client.service';
+import { PlaylistService } from '../playlist/playlist.service';
+import { ConsumerService } from '../queue/consumer.service';
+import { ProducerService } from '../queue/producer.service';
+import VideoSearchService from '../search/video-search.service';
+import { TagService } from '../tag/tags.service';
+import { VideoService } from './video.service';
+
+const dialect = new PgDialect();
+
+describe('VideoService public read gating', () => {
+	let service: VideoService;
+	let findMany: ReturnType<typeof vi.fn>;
+	let findFirst: ReturnType<typeof vi.fn>;
+	let search: ReturnType<typeof vi.fn>;
+	let selectFromWhereExecute: ReturnType<typeof vi.fn>;
+
+	const getVideosDto = (overrides: Record<string, unknown> = {}) =>
+		({
+			offset: 0,
+			limit: 10,
+			type: 'vod',
+			onlySubbed: false,
+			...overrides,
+		}) as any;
+
+	const searchDto = (overrides: Record<string, unknown> = {}) =>
+		({
+			text: 'anything',
+			offset: 0,
+			limit: 10,
+			type: 'vod',
+			onlySubbed: false,
+			...overrides,
+		}) as any;
+
+	const video = (overrides: Record<string, unknown> = {}) =>
+		({
+			id: 9,
+			isReleased: false,
+			channel: { ownerId: 1 },
+			...overrides,
+		}) as any;
+
+	beforeEach(async () => {
+		findMany = vi.fn().mockResolvedValue([{ id: 11 }, { id: 22 }]);
+		findFirst = vi.fn().mockResolvedValue(video());
+		search = vi.fn().mockResolvedValue([{ id: 11 }, { id: 22 }]);
+		selectFromWhereExecute = vi.fn().mockResolvedValue([]);
+
+		const select = vi.fn().mockReturnValue({
+			from: vi.fn().mockReturnValue({
+				where: vi.fn().mockReturnValue({ execute: selectFromWhereExecute }),
+			}),
+		});
+
+		const moduleRef = await Test.createTestingModule({
+			providers: [
+				VideoService,
+				{
+					provide: DrizzleService,
+					useValue: {
+						db: { query: { videos: { findMany, findFirst } }, select },
+					},
+				},
+				{ provide: MinioClientService, useValue: {} },
+				{ provide: FileService, useValue: {} },
+				{ provide: ChannelService, useValue: {} },
+				{ provide: ProducerService, useValue: {} },
+				{ provide: ConsumerService, useValue: {} },
+				{ provide: TagService, useValue: {} },
+				{ provide: PlaylistService, useValue: {} },
+				{ provide: VideoSearchService, useValue: { search } },
+			],
+		}).compile();
+		service = moduleRef.get(VideoService);
+	});
+
+	describe('getAllVideos', () => {
+		it('returns released videos for anonymous callers', async () => {
+			const result = await service.getAllVideos(getVideosDto(), undefined);
+
+			expect(result).toEqual([{ id: 11 }, { id: 22 }]);
+		});
+
+		it('still filters isReleased for anonymous callers', async () => {
+			await service.getAllVideos(getVideosDto(), undefined);
+
+			const rendered = dialect.sqlToQuery(findMany.mock.calls[0][0].where);
+			expect(rendered.sql).toContain('is_released');
+			expect(rendered.params[0]).toBe(true);
+		});
+
+		it('rejects onlySubbed without a signed-in user', async () => {
+			await expect(
+				service.getAllVideos(getVideosDto({ onlySubbed: true }), undefined),
+			).rejects.toThrow(UnauthorizedException);
+		});
+	});
+
+	describe('search', () => {
+		it('returns released videos for anonymous callers', async () => {
+			const result = await service.search(searchDto(), undefined);
+
+			expect(result).toEqual([{ id: 11 }, { id: 22 }]);
+		});
+
+		it('still filters isReleased for anonymous callers', async () => {
+			await service.search(searchDto(), undefined);
+
+			const rendered = dialect.sqlToQuery(findMany.mock.calls[0][0].where);
+			expect(rendered.sql).toContain('is_released');
+			expect(rendered.params).toContain(true);
+		});
+
+		it('rejects onlySubbed without a signed-in user', async () => {
+			await expect(service.search(searchDto({ onlySubbed: true }), undefined)).rejects.toThrow(
+				UnauthorizedException,
+			);
+		});
+	});
+
+	describe('getVideoById', () => {
+		it('returns an unreleased video to its channel owner', async () => {
+			const result = await service.getVideoById(9, { id: 1 } as any);
+
+			expect(result).toEqual(video());
+		});
+
+		it('hides an unreleased video from another signed-in user', async () => {
+			await expect(service.getVideoById(9, { id: 2 } as any)).rejects.toThrow(NotFoundException);
+		});
+
+		it('hides an unreleased video from anonymous callers', async () => {
+			await expect(service.getVideoById(9, undefined)).rejects.toThrow(NotFoundException);
+		});
+
+		it('returns a released video to anonymous callers', async () => {
+			findFirst.mockResolvedValue(video({ isReleased: true }));
+
+			const result = await service.getVideoById(9, undefined);
+
+			expect(result).toEqual(video({ isReleased: true }));
+		});
+
+		it('returns a released video to signed-in non-owners', async () => {
+			findFirst.mockResolvedValue(video({ isReleased: true }));
+
+			const result = await service.getVideoById(9, { id: 2 } as any);
+
+			expect(result).toEqual(video({ isReleased: true }));
+		});
+	});
+});

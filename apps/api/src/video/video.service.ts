@@ -6,6 +6,7 @@ import {
 	Injectable,
 	Logger,
 	NotFoundException,
+	UnauthorizedException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
@@ -85,6 +86,11 @@ export class VideoService {
 		}
 
 		if (searchVideosDto.onlySubbed) {
+			// the endpoint is public; subscriptions can only filter for a signed-in user
+			if (!user) {
+				throw new UnauthorizedException('Sign in to filter by subscriptions');
+			}
+
 			const subbed = await this.drizzleService.db
 				.select()
 				.from(schema.subscriptions)
@@ -378,8 +384,6 @@ export class VideoService {
 	 * @returns {Video[]}
 	 */
 	async getAllVideos(getVideosDto: GetVideosDto, @GetUser() user: User) {
-		console.log(getVideosDto);
-
 		const andArr = [eq(schema.videos.isReleased, true), eq(schema.videos.type, getVideosDto.type)];
 
 		if (getVideosDto.channelId) {
@@ -387,6 +391,11 @@ export class VideoService {
 		}
 
 		if (getVideosDto.onlySubbed) {
+			// the endpoint is public; subscriptions can only filter for a signed-in user
+			if (!user) {
+				throw new UnauthorizedException('Sign in to filter by subscriptions');
+			}
+
 			const subbed = await this.drizzleService.db
 				.select()
 				.from(schema.subscriptions)
@@ -811,12 +820,15 @@ export class VideoService {
 	}
 
 	/**
-	 * fetches video with subs by id
+	 * fetches video with subs by id; unreleased videos are only
+	 * served to the owner of their channel, everyone else gets a
+	 * NotFound so unreleased videos' existence stays hidden
 	 * @param {number} id
+	 * @param {User} user requesting user, undefined when anonymous
 	 * @returns {Video}
 	 */
-	async getVideoById(id: number): Promise<Video> {
-		return this.drizzleService.db.query.videos.findFirst({
+	async getVideoById(id: number, user?: User): Promise<Video> {
+		const video = await this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.id, id),
 			with: {
 				videosToTags: {
@@ -843,6 +855,12 @@ export class VideoService {
 				},
 			},
 		});
+
+		if (video && !video.isReleased && video.channel.ownerId !== user?.id) {
+			throw new NotFoundException(`Video with id ${id} not found`);
+		}
+
+		return video;
 	}
 
 	/**
