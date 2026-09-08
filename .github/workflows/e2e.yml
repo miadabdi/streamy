@@ -35,6 +35,8 @@ jobs:
           sed -i 's/^SMTP_USERNAME=$/SMTP_USERNAME=ci/' .env
           sed -i 's/^SMTP_PASSWORD=$/SMTP_PASSWORD=ci/' .env
           sed -i 's/^SMTP_FROM=$/SMTP_FROM=streamy@ci/' .env
+          # host-run scripts (db:run:migrate) read apps/api/.env, root .env only feeds compose
+          cp .env apps/api/.env
 
       - name: Bring up the stack
         run: >
