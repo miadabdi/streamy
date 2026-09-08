@@ -15,7 +15,8 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser } from '../common/decorators';
-import { JwtAuthGuard } from '../common/guards';
+import { Public } from '../common/decorators/public.decorator';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '../common/guards';
 import { User } from '../drizzle/schema';
 import {
 	CreateSubtitleDto,
@@ -62,11 +63,13 @@ export class SubtitleController {
 
 	@HttpCode(HttpStatus.OK)
 	@Get('/by-video-id')
+	@Public()
+	@UseGuards(OptionalJwtAuthGuard)
 	getSubtitleByVideoId(
 		@Query() getSubtitleByVideoIdDto: GetSubtitleByVideoIdDto,
 		@GetUser() user: User,
 	) {
-		return this.subtitleService.getSubtitlesByVideoId(getSubtitleByVideoIdDto.videoId);
+		return this.subtitleService.getSubtitlesByVideoId(getSubtitleByVideoIdDto.videoId, user);
 	}
 
 	@HttpCode(HttpStatus.OK)
