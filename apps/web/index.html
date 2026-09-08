@@ -5,6 +5,18 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Streamy</title>
+		<script>
+			// Apply persisted theme/density before first paint — no flash of wrong theme.
+			// Keys and valid values mirror src/lib/theme.ts.
+			try {
+				document.documentElement.dataset.theme =
+					localStorage.getItem('streamy.theme') === 'light' ? 'light' : 'dark';
+				document.documentElement.dataset.density =
+					localStorage.getItem('streamy.density') === 'roomy' ? 'roomy' : 'compact';
+			} catch {
+				/* storage unavailable — defaults apply */
+			}
+		</script>
 	</head>
 	<body>
 		<div id="root"></div>
