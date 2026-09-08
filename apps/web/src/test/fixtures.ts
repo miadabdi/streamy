@@ -1,66 +1,7 @@
-// Shapes mirror the select types of apps/api/src/drizzle/schema.ts ($inferSelect):
-// columns with defaults or no .notNull() are nullable, enums are their string unions.
+// Shapes live in src/types/api.ts (single source of truth, mirrors schema.ts).
+import type { Channel, User, Video } from '../types/api';
 
-export type User = {
-	id: number;
-	createdAt: Date | null;
-	updatedAt: Date | null;
-	email: string;
-	password: string;
-	firstName: string | null;
-	lastName: string | null;
-	isAdmin: boolean | null;
-	isEmailVerified: boolean | null;
-	passwordChangedAt: Date | null;
-	passwordResetToken: string | null;
-	passwordResetExpiresAt: Date | null;
-	lastLoginAt: Date | null;
-	currentChannelId: number | null;
-};
-
-export type Channel = {
-	id: number;
-	createdAt: Date | null;
-	updatedAt: Date | null;
-	isActive: boolean | null;
-	deletedAt: Date | null;
-	username: string;
-	name: string;
-	description: string;
-	numberOfSubscribers: number | null;
-	ownerId: number;
-	avatarFileId: number | null;
-};
-
-export type Video = {
-	id: number;
-	videoId: string | null;
-	createdAt: Date | null;
-	updatedAt: Date | null;
-	isActive: boolean | null;
-	deletedAt: Date | null;
-	isReleased: boolean | null;
-	releasedAt: Date | null;
-	type: 'vod' | 'live' | null;
-	name: string;
-	description: string;
-	numberOfVisits: number | null;
-	numberOfLikes: number | null;
-	numberOfDislikes: number | null;
-	channelId: number;
-	duration: number | null;
-	ffmpegProcessLogs: string | null;
-	thumbnailFileId: number | null;
-	processingStatus:
-		| 'ready_for_upload'
-		| 'ready_for_processing'
-		| 'waiting_in_queue'
-		| 'processing'
-		| 'failed_in_processing'
-		| 'done'
-		| null;
-	videoFileId: number | null;
-};
+export type { Channel, User, Video };
 
 const baseDate = new Date('2026-01-01T00:00:00.000Z');
 
