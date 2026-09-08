@@ -1,11 +1,12 @@
-import { screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import App from './App';
-import { renderWithApp } from './test/render';
 
+// App owns routing now (RouterProvider), so it renders at the real jsdom URL
+// instead of inside renderWithApp's MemoryRouter.
 describe('App', () => {
 	it('renders the STREAMY wordmark', () => {
-		renderWithApp(<App />);
+		render(<App />);
 
 		expect(screen.getByText('STREAMY')).toBeInTheDocument();
 	});
