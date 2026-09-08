@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [api, worker]
+        app: [api, worker, web]
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +24,11 @@ jobs:
 
       # vitest transforms without type-checking; this catches spec type errors
       - run: npx tsc --noEmit -p apps/${{ matrix.app }}/tsconfig.json
+
+      # web uses vite's solution-style tsconfig (no files), so tsc -p passes
+      # vacuously; build its referenced projects instead
+      - run: npx tsc -b apps/web
+        if: matrix.app == 'web'
 
       - run: npm test -w apps/${{ matrix.app }}
 

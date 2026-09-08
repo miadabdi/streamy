@@ -12,6 +12,7 @@
     "test": "npm run test -w apps/api -w apps/worker",
     "verify:api": "npm run verify -w apps/api",
     "verify:worker": "npm run verify -w apps/worker",
+    "verify:web": "npm run verify -w apps/web",
     "test:db": "npm run test:db -w apps/api",
     "test:e2e:vod": "npm run test:e2e:vod -w apps/api",
     "test:e2e:live": "npm run test:e2e:live -w apps/api",
