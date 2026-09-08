@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTheme } from './theme';
 
 describe('useTheme', () => {
@@ -50,5 +50,28 @@ describe('useTheme', () => {
 
 		expect(result.current.density).toBe('roomy');
 		expect(document.documentElement.dataset.density).toBe('roomy');
+	});
+
+	it('falls back to defaults when persisted values are garbage', () => {
+		localStorage.setItem('streamy.theme', 'banana');
+		localStorage.setItem('streamy.density', 'banana');
+
+		const { result } = renderHook(() => useTheme());
+
+		expect(result.current.theme).toBe('dark');
+		expect(result.current.density).toBe('compact');
+	});
+
+	it('keeps applying to <html> when localStorage writes throw (storage blocked / quota)', () => {
+		const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+			throw new Error('QuotaExceededError');
+		});
+
+		const { result } = renderHook(() => useTheme());
+
+		act(() => result.current.setTheme('light'));
+
+		expect(document.documentElement.dataset.theme).toBe('light');
+		setItem.mockRestore();
 	});
 });

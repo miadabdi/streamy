@@ -14,6 +14,14 @@ function readStored(key: string): string | null {
 	}
 }
 
+function writeStored(key: string, value: string): void {
+	try {
+		localStorage.setItem(key, value);
+	} catch {
+		// storage unavailable or full — the DOM attribute still applies
+	}
+}
+
 /**
  * Theme and density for the app. Dark + compact are the designed defaults
  * (studio); `data-theme`/`data-density` land on `<html>`, values persist to
@@ -29,12 +37,12 @@ export function useTheme() {
 	);
 
 	useEffect(() => {
-		localStorage.setItem(THEME_KEY, theme);
+		writeStored(THEME_KEY, theme);
 		document.documentElement.dataset.theme = theme;
 	}, [theme]);
 
 	useEffect(() => {
-		localStorage.setItem(DENSITY_KEY, density);
+		writeStored(DENSITY_KEY, density);
 		document.documentElement.dataset.density = density;
 	}, [density]);
 
