@@ -104,8 +104,11 @@ describe('VideoPlayer engine', () => {
 		expect(hls().attachMedia).toHaveBeenCalledWith(container.querySelector('video'));
 	});
 
-	it('falls back to native playback (Safari) without constructing hls.js', () => {
+	it('falls back to native playback when MSE is unavailable, even if canPlayType claims mpegurl', () => {
+		// chromium-family browsers answer 'maybe' for mpegurl while lacking
+		// native WebVTT-in-HLS — MSE must win whenever it exists
 		vi.spyOn(HTMLMediaElement.prototype, 'canPlayType').mockReturnValue('probably');
+		vi.spyOn(mock.MockHls, 'isSupported').mockReturnValue(false);
 		const { container } = mount({ subtitles: [] });
 
 		expect(mock.MockHls.instances).toHaveLength(0);

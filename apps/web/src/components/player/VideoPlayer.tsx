@@ -128,9 +128,12 @@ export function VideoPlayer({
 		let disposed = false;
 		let hls: Hls | null = null;
 
-		if (video.canPlayType('application/vnd.apple.mpegurl')) {
-			video.src = src; // Safari: native HLS
-		} else if (Hls.isSupported()) {
+		// Prefer MSE/hls.js whenever available — `canPlayType` returns 'maybe'
+		// for mpegurl on some Chromium builds whose native playback handles
+		// video but not WebVTT-in-HLS (subtitles + quality menus silently
+		// missing). Native HLS is only the fallback for browsers without MSE
+		// (old iOS Safari); modern Safari has MSE and takes the hls.js path.
+		if (Hls.isSupported()) {
 			hls = new Hls();
 			hlsRef.current = hls;
 			hls.loadSource(src);
@@ -151,6 +154,8 @@ export function VideoPlayer({
 				if (disposed || !hls) return;
 				setActiveHeight(hls.levels[data.level]?.height);
 			});
+		} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+			video.src = src; // native HLS fallback (no MSE)
 		} else {
 			video.src = src; // last resort: let the browser try
 		}
