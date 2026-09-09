@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { routes } from '../lib/router';
 import { RouteError } from './Error';
 
 // Throws on first render, succeeds after — proves retry re-enters the route
@@ -21,6 +22,19 @@ function renderErrorApp() {
 		[{ path: '/', element: <Flaky />, errorElement: <RouteError /> }],
 		{ initialEntries: ['/'] },
 	);
+	return render(<RouterProvider router={router} />);
+}
+
+// The real watch/:id route with its layout swapped for a flaky one: the
+// errorElement (and children) still come from the real router config, so
+// removing the boundary there fails this test — errors bubble only to the
+// nearest errorElement in the MATCHED chain, and the watch branch matches
+// no ancestor boundary on its own.
+function renderWatchCrash() {
+	const testRoutes = routes.map((route) =>
+		'path' in route && route.path === 'watch/:id' ? { ...route, element: <Flaky /> } : route,
+	);
+	const router = createMemoryRouter(testRoutes, { initialEntries: ['/watch/1'] });
 	return render(<RouterProvider router={router} />);
 }
 
@@ -46,6 +60,16 @@ describe('RouteError', () => {
 
 		await user.click(screen.getByRole('button', { name: 'Retry' }));
 		expect(screen.queryByRole('heading', { name: 'Something broke' })).not.toBeInTheDocument();
+		expect(screen.getByText('Recovered content')).toBeInTheDocument();
+	});
+
+	it('covers the watch branch too — a crash there renders RouteError with retry', async () => {
+		const user = userEvent.setup();
+		renderWatchCrash();
+
+		expect(screen.getByRole('heading', { name: 'Something broke' })).toBeInTheDocument();
+		broken = false;
+		await user.click(screen.getByRole('button', { name: 'Retry' }));
 		expect(screen.getByText('Recovered content')).toBeInTheDocument();
 	});
 });

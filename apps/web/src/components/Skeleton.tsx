@@ -50,15 +50,9 @@ function WatchShape() {
 	);
 }
 
-export type SkeletonVariant = 'text' | 'grid' | 'card-row' | 'watch';
+export type SkeletonVariant = 'grid' | 'card-row' | 'watch';
 
-export function Skeleton({
-	variant = 'text',
-	count = 1,
-}: {
-	variant?: SkeletonVariant;
-	count?: number;
-}) {
+export function Skeleton({ variant, count = 1 }: { variant: SkeletonVariant; count?: number }) {
 	const items = Array.from({ length: count }, (_, i) => i);
 	return (
 		<div role="status" aria-label="Loading">
@@ -73,16 +67,10 @@ export function Skeleton({
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 					<WatchShape />
 				</div>
-			) : variant === 'card-row' ? (
+			) : (
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 					{items.map((i) => (
 						<RowItem key={i} />
-					))}
-				</div>
-			) : (
-				<div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-					{items.map((i) => (
-						<Bar key={i} w={i === count - 1 && count > 1 ? '60%' : '100%'} h={12} />
 					))}
 				</div>
 			)}

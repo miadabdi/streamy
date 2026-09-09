@@ -62,6 +62,9 @@ export const routes: RouteObject[] = [
 	{
 		path: 'watch/:id',
 		element: <WatchLayout />,
+		// the watch branch sits outside the root route: without its own
+		// boundary a crash there hits react-router's built-in error screen
+		errorElement: <RouteError />,
 		children: [{ index: true, element: <Watch /> }],
 	},
 ];
