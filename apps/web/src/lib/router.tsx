@@ -1,6 +1,7 @@
 import { createBrowserRouter, type RouteObject } from 'react-router';
 import { Browse } from '../routes/Browse';
 import { Channel } from '../routes/Channel';
+import { RouteError } from '../routes/Error';
 import { NotFound } from '../routes/NotFound';
 import { RequireAdmin } from '../routes/RequireAdmin';
 import { RequireAuth } from '../routes/RequireAuth';
@@ -24,6 +25,9 @@ import { VideoEdit } from '../routes/studio/VideoEdit';
 export const routes: RouteObject[] = [
 	{
 		element: <RootLayout />,
+		// a crash anywhere under the shell replaces the whole tree — an honest
+		// full-page error with retry beats a half-rendered shell
+		errorElement: <RouteError />,
 		children: [
 			{ path: '/', element: <Browse /> },
 			{ path: 'search', element: <Search /> },

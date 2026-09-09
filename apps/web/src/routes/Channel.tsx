@@ -99,6 +99,7 @@ export function Channel() {
 	}
 
 	const ownChannel = me != null && channel.ownerId === me.id;
+	const subs = channel.numberOfSubscribers ?? 0;
 
 	return (
 		<>
@@ -115,8 +116,7 @@ export function Channel() {
 				>
 					<h1 style={{ margin: 0, fontSize: 26 }}>{channel.name}</h1>
 					<div className="mono" style={{ fontSize: 11, color: 'var(--color-muted)' }}>
-						@{channel.username} · {(channel.numberOfSubscribers ?? 0).toLocaleString()}{' '}
-						subscribers
+						@{channel.username} · {subs.toLocaleString()} {subs === 1 ? 'subscriber' : 'subscribers'}
 					</div>
 					{channel.description && (
 						<p

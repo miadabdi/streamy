@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 import { LogDrawer } from '../../components/LogDrawer';
+import { Skeleton } from '../../components/Skeleton';
 import { StatusPill } from '../../components/StatusPill';
 import { Thumb } from '../../components/Thumb';
 import { UploadIcon } from '../../components/icons';
@@ -94,7 +95,12 @@ export function MyVideos() {
 	});
 
 	if (vods.isError || lives.isError) return <p className="page-sub">Could not load your videos.</p>;
-	if (vods.isPending || lives.isPending) return <p className="page-sub">Loading…</p>;
+	if (vods.isPending || lives.isPending)
+		return (
+			<section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+				<Skeleton variant="card-row" count={8} />
+			</section>
+		);
 
 	// lives first: what is on air outranks the archive
 	const videos = [...(lives.data ?? []), ...(vods.data ?? [])];
@@ -135,11 +141,11 @@ export function MyVideos() {
 			</div>
 			<section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 				<div
+					className="table-scroll"
 					style={{
 						borderRadius: 'var(--radius-md)',
 						background: 'var(--color-surface)',
 						boxShadow: 'var(--shadow-sm)',
-						overflow: 'hidden',
 					}}
 				>
 					<table className="table">

@@ -223,7 +223,6 @@ a.tag:hover { background: var(--color-neutral-700); color: var(--color-neutral-1
 .pill-live { color: var(--color-on-accent); background: var(--color-live); box-shadow: none; font-weight: 700; }
 .pill-live::before { animation: streamy-pulse 1.6s ease-in-out infinite; }
 @keyframes streamy-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
-@media (prefers-reduced-motion: reduce) { .pill::before { animation: none !important; } }
 
 /* ══ avatar — initials fallback is the common case ═════════════════════ */
 .avatar { width: 32px; height: 32px; flex: none; border-radius: 50%; overflow: hidden; display: grid; place-items: center; font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.02em; color: var(--color-neutral-200); background: var(--color-neutral-800); box-shadow: inset 0 0 0 1px var(--color-divider-strong); }
@@ -278,6 +277,38 @@ a.tag:hover { background: var(--color-neutral-700); color: var(--color-neutral-1
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); flex-wrap: wrap; }
 .page-head h1 { margin: 0; font-size: 26px; }
 .page-sub { font-family: var(--font-mono); font-size: 11px; color: var(--color-muted); margin: 5px 0 0; }
+
+/* — watch page column: own class so the small-screen breakpoint can widen it — */
+.watch-main { width: 100%; max-width: 1020px; margin: 0 auto; padding: 24px 24px 72px; display: flex; flex-direction: column; gap: 20px; }
+
+/* ══ loading skeletons — surface-tinted Nocturne, not shadcn defaults ════ */
+.skel { position: relative; overflow: hidden; border-radius: var(--radius-sm); background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--color-divider); }
+.skel::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-raised) 70%, transparent), transparent); animation: streamy-shimmer 1.8s ease-in-out infinite; }
+@keyframes streamy-shimmer { 100% { transform: translateX(100%); } }
+
+/* ══ responsive shell ═════════════════════════════════════════════════════ */
+/* <1024px the sidenav becomes a topbar drawer: off-canvas and out of the
+   tab order (visibility) until opened. Breakpoints are CSS-only — no JS
+   matchMedia anywhere, so keyboard and pointer users get the same shell. */
+.app-nav-toggle { display: none; }
+.app-nav-backdrop { position: fixed; inset: 0; z-index: 15; background: rgba(4,5,7,0.55); border: 0; padding: 0; cursor: pointer; }
+@media (max-width: 1023px) {
+  .app-nav-toggle { display: inline-flex; }
+  .app-side { position: fixed; top: 0; bottom: 0; left: 0; height: auto; z-index: 20; width: 248px; background: var(--color-bg); border-right: 1px solid var(--color-divider-strong); box-shadow: var(--shadow-lg); transform: translateX(-100%); transition: transform 0.18s ease, visibility 0.18s; visibility: hidden; }
+  .app-side[data-open] { transform: none; visibility: visible; }
+}
+
+/* <720px: one column per grid, the studio table scrolls instead of
+   squeezing, the player column goes edge-to-edge, and the unwired topbar
+   search box (dead until the search route is reachable from it) steps aside. */
+.table-scroll { overflow-x: auto; }
+.table-scroll .table { min-width: 720px; }
+@media (max-width: 719px) {
+  .vgrid { grid-template-columns: 1fr; }
+  .app-page { padding: 18px 14px 48px; }
+  .watch-main { max-width: none; padding: 14px 10px 48px; }
+  .topbar .searchbar { display: none; }
+}
 
 /* ══ app chrome ════════════════════════════════════════════════════════ */
 .topbar { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-divider); background: var(--color-bg); position: sticky; top: 0; z-index: 5; }
@@ -395,3 +426,10 @@ a.tag:hover { background: var(--color-neutral-700); color: var(--color-neutral-1
 .dialog-title { font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 18px; }
 .dialog-body { font-size: 13px; color: var(--color-muted); }
 .dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* ══ reduced motion — last so it wins the cascade over everything above ══ */
+@media (prefers-reduced-motion: reduce) {
+  .pill::before { animation: none !important; }
+  .skel::after { animation: none; }
+  .app-side { transition: none; }
+}

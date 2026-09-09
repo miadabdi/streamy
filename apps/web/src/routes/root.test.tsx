@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useRoutes } from 'react-router';
 import { describe, expect, it } from 'vitest';
 import { routes } from '../lib/router';
@@ -56,5 +57,38 @@ describe('app shell', () => {
 		renderWithApp(<AppRoutes />, { route: '/ops' });
 
 		expect(await screen.findByText('Admins only')).toBeInTheDocument();
+	});
+
+	it('links the topbar actions to studio upload and go-live', () => {
+		renderWithApp(<AppRoutes />);
+
+		expect(screen.getByRole('link', { name: 'Upload' })).toHaveAttribute('href', '/studio/upload');
+		expect(screen.getByRole('link', { name: 'Go live' })).toHaveAttribute('href', '/studio/go-live');
+	});
+
+	it('opens the sidenav drawer on the menu toggle and closes it on Escape', async () => {
+		const user = userEvent.setup();
+		renderWithApp(<AppRoutes />);
+		const side = document.querySelector<HTMLElement>('.app-side')!;
+
+		expect(side).not.toHaveAttribute('data-open');
+		const toggle = screen.getByRole('button', { name: 'Navigation menu' });
+		await user.click(toggle);
+		expect(side).toHaveAttribute('data-open', '');
+		expect(toggle).toHaveAttribute('aria-expanded', 'true');
+
+		await user.keyboard('{Escape}');
+		expect(side).not.toHaveAttribute('data-open');
+	});
+
+	it('closes the drawer when a navigation happens from it', async () => {
+		const user = userEvent.setup();
+		renderWithApp(<AppRoutes />);
+		const side = document.querySelector<HTMLElement>('.app-side')!;
+
+		await user.click(screen.getByRole('button', { name: 'Navigation menu' }));
+		await user.click(screen.getByRole('link', { name: 'Search' }));
+
+		expect(side).not.toHaveAttribute('data-open');
 	});
 });

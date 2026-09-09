@@ -1,4 +1,5 @@
-import { MagnifyingGlass } from '@phosphor-icons/react';
+import { List, MagnifyingGlass } from '@phosphor-icons/react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router';
 import { Wordmark } from '../components/Wordmark';
 import {
@@ -21,10 +22,28 @@ export function RootLayout() {
 	const roomy = viewerPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 	const initials = me ? `${me.firstName?.[0] ?? ''}${me.lastName?.[0] ?? ''}` : '';
 	const displayName = me ? `${me.firstName ?? ''} ${me.lastName ?? ''}`.trim() || me.email : '';
+	// <1024px the sidenav is a drawer off this toggle (CSS-only breakpoint)
+	const [navOpen, setNavOpen] = useState(false);
+	// navigating from the drawer closes it: state resets during render (the
+	// route element is not remounted — the Watch.tsx pattern), Escape closes
+	// it via the effect below
+	const [navPath, setNavPath] = useState(pathname);
+	if (navPath !== pathname) {
+		setNavPath(pathname);
+		setNavOpen(false);
+	}
+	useEffect(() => {
+		if (!navOpen) return;
+		const onKey = (event: KeyboardEvent) => {
+			if (event.key === 'Escape') setNavOpen(false);
+		};
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	}, [navOpen]);
 
 	return (
 		<div className="app">
-			<aside className="app-side">
+			<aside className="app-side" data-open={navOpen ? '' : undefined} id="app-side">
 				<div className="app-brand">
 					<Link to="/" aria-label="Streamy home">
 						<Wordmark />
@@ -74,19 +93,37 @@ export function RootLayout() {
 					</Link>
 				</div>
 			</aside>
+			{navOpen && (
+				<button
+					className="app-nav-backdrop"
+					type="button"
+					aria-label="Close navigation menu"
+					onClick={() => setNavOpen(false)}
+				/>
+			)}
 			<div className="app-col">
 				<header className="topbar" style={{ gap: 16 }}>
+					<button
+						className="btn btn-icon btn-secondary app-nav-toggle"
+						type="button"
+						aria-controls="app-side"
+						aria-expanded={navOpen}
+						aria-label="Navigation menu"
+						onClick={() => setNavOpen((open) => !open)}
+					>
+						<List size={16} aria-hidden />
+					</button>
 					<label className="searchbar" style={{ flex: 1, maxWidth: 460 }}>
 						<MagnifyingGlass size={15} aria-hidden />
 						<input type="search" placeholder="Search videos" aria-label="Search videos" />
 					</label>
 					<div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-						<button className="btn btn-secondary" type="button">
+						<Link className="btn btn-secondary" to="/studio/upload">
 							<UploadIcon width={15} height={15} aria-hidden /> Upload
-						</button>
-						<button className="btn btn-primary" type="button">
+						</Link>
+						<Link className="btn btn-primary" to="/studio/go-live">
 							<LiveIcon width={15} height={15} aria-hidden /> Go live
-						</button>
+						</Link>
 						<span className="avatar">{initials}</span>
 					</div>
 				</header>

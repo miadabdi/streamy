@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { LoadMore } from '../components/LoadMore';
+import { Skeleton } from '../components/Skeleton';
 import { VideoGrid } from '../components/VideoGrid';
 import { VodIcon } from '../components/icons';
-import { useVideos, type VideoFilter } from '../hooks/useVideos';
+import { useVideos, VIDEO_PAGE_SIZE, type VideoFilter } from '../hooks/useVideos';
 import { useMe } from '../lib/auth';
 
 const emptyCopy: Record<VideoFilter, { title: string; body: string }> = {
@@ -70,7 +71,7 @@ export function Browse() {
 			{videos.isError ? (
 				<p className="page-sub">Could not load videos.</p>
 			) : videos.isPending ? (
-				<p className="page-sub">Loading…</p>
+				<Skeleton variant="grid" count={VIDEO_PAGE_SIZE} />
 			) : items.length === 0 ? (
 				<div className="empty">
 					<VodIcon className="empty-mark" width={32} height={32} aria-hidden />

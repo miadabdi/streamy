@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -148,6 +148,14 @@ function EditChannelForm({ channel, onDone }: { channel: Channel; onDone: () => 
 		setAvatar(file);
 	};
 
+	// revoke on swap (no-op — pick already did) and on unmount: the last
+	// preview otherwise leaks its blob URL for the page's lifetime
+	useEffect(() => {
+		return () => {
+			if (preview) URL.revokeObjectURL(preview);
+		};
+	}, [preview]);
+
 	return (
 		<form
 			aria-label="Edit channel"
@@ -254,6 +262,7 @@ function ChannelsSection({ me }: { me: Me }) {
 			</div>
 			{channels.map((channel) => {
 				const isCurrent = channel.id === current?.id;
+				const subs = channel.numberOfSubscribers ?? 0;
 				return (
 					<div
 						key={channel.id}
@@ -268,7 +277,7 @@ function ChannelsSection({ me }: { me: Me }) {
 									{isCurrent && <span className="tag tag-accent">current</span>}
 								</div>
 								<div className="mono" style={{ fontSize: 11, color: 'var(--color-muted)' }}>
-									@{channel.username} · {channel.numberOfSubscribers ?? 0} subscribers
+									@{channel.username} · {subs} {subs === 1 ? 'subscriber' : 'subscribers'}
 								</div>
 							</div>
 							<div style={{ display: 'flex', gap: 6 }}>

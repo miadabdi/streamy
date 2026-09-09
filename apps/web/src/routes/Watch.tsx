@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp } from '@phosphor-icons/react';
 import { useState, type CSSProperties } from 'react';
 import { Link, useParams } from 'react-router';
 import { ChannelAvatar, CommentThread } from '../components/CommentThread';
+import { Skeleton } from '../components/Skeleton';
 import { VideoPlayer, type PlayerMode } from '../components/player/VideoPlayer';
 import { useVideo } from '../hooks/useVideo';
 import { api } from '../lib/api';
@@ -144,12 +145,7 @@ export function Watch() {
 	}
 
 	if (videoQuery.isPending) {
-		return (
-			<div className="card">
-				<div className="card-kicker">Loading</div>
-				<p className="card-body">Fetching this video…</p>
-			</div>
-		);
+		return <Skeleton variant="watch" />;
 	}
 
 	if (videoQuery.isError || !video) {
@@ -167,6 +163,7 @@ export function Watch() {
 	const ownChannel = me != null && video.channel?.ownerId === me.id;
 	const canEngage = channelId != null;
 	const channel = video.channel;
+	const subs = channel?.numberOfSubscribers ?? 0;
 	const { stance, subscribed, expanded } = view;
 
 	return (
@@ -257,7 +254,7 @@ export function Watch() {
 							{channel.name}
 						</Link>
 						<div className="mono" style={{ fontSize: 11, color: 'var(--color-muted)' }}>
-							{(channel.numberOfSubscribers ?? 0).toLocaleString()} subscribers
+							{subs.toLocaleString()} {subs === 1 ? 'subscriber' : 'subscribers'}
 						</div>
 					</div>
 					{canEngage && !ownChannel && (

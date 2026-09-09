@@ -20,23 +20,14 @@ export function WatchLayout() {
 					<input type="search" placeholder="Search videos" aria-label="Search videos" />
 				</label>
 				<div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-					<button className="btn btn-secondary" type="button">
+					<Link className="btn btn-secondary" to="/studio/upload">
 						<UploadIcon width={15} height={15} aria-hidden /> Upload
-					</button>
+					</Link>
 					<span className="avatar">{initials}</span>
 				</div>
 			</header>
-			<main
-				style={{
-					width: '100%',
-					maxWidth: 1020,
-					margin: '0 auto',
-					padding: '24px 24px 72px',
-					display: 'flex',
-					flexDirection: 'column',
-					gap: 20,
-				}}
-			>
+			{/* .watch-main (nocturne.css) so the small-screen breakpoint can widen it */}
+			<main className="watch-main">
 				<Outlet />
 			</main>
 		</div>
