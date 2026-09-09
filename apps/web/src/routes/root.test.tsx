@@ -21,6 +21,18 @@ describe('app shell', () => {
 		expect(screen.getByText('current channel')).toBeInTheDocument();
 	});
 
+	it('links the switch-channel button to the settings switcher, ships no demo subscriptions', () => {
+		renderWithApp(<AppRoutes />);
+
+		expect(screen.getByRole('link', { name: 'Switch channel' })).toHaveAttribute(
+			'href',
+			'/settings#channels',
+		);
+		// no endpoint lists subscriptions yet — the section stays honestly empty
+		expect(screen.queryByText('longwave')).not.toBeInTheDocument();
+		expect(screen.queryByText('selfhost.cafe')).not.toBeInTheDocument();
+	});
+
 	it('drops the sidenav on /watch/:id', () => {
 		renderWithApp(<AppRoutes />, { route: '/watch/dQw4w9WgXcQ' });
 

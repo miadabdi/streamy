@@ -33,4 +33,17 @@ export const channelHandlers = [
 		const username = new URL(request.url).searchParams.get('username');
 		return HttpResponse.json(channelPool.find((c) => c.username === username) ?? null);
 	}),
+	// GET /channel/by-id answers with the avatar relation (settings' edit form).
+	http.get('/api/v1/channel/by-id', ({ request }) => {
+		const id = Number(new URL(request.url).searchParams.get('id'));
+		return HttpResponse.json(channelPool.find((c) => c.id === id) ?? null);
+	}),
+	// POST /channel (channel.controller.ts createChannel → 201 + the channel)
+	http.post('/api/v1/channel', async ({ request }) =>
+		HttpResponse.json(makeChannel((await request.json()) as object), { status: 201 }),
+	),
+	// PATCH /channel — multipart (FileInterceptor('avatar')); echoes the id row.
+	http.patch('/api/v1/channel', async ({ request }) =>
+		HttpResponse.json(makeChannel({ id: Number((await request.formData()).get('id')) })),
+	),
 ];

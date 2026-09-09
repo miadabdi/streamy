@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { subtitleUploadForm, videoThumbnailForm } from './forms';
+import { channelUpdateForm, subtitleUploadForm, videoThumbnailForm } from './forms';
 
 describe('videoThumbnailForm', () => {
 	it('builds the PATCH /video/set-thumbnail body the controller expects', () => {
@@ -23,5 +23,18 @@ describe('subtitleUploadForm', () => {
 		// CreateSubtitleDto fields
 		expect(form.get('langRFC5646')).toBe('fa-IR');
 		expect(form.get('videoId')).toBe('7');
+	});
+});
+
+describe('channelUpdateForm', () => {
+	it('builds the PATCH /channel body the controller expects, avatar optional', () => {
+		const values = { name: 'Night Watch HQ', description: 'Overnight transcodes.' };
+		expect(channelUpdateForm(1, values).get('avatar')).toBeNull();
+		expect(channelUpdateForm(1, values).get('id')).toBe('1');
+		expect(channelUpdateForm(1, values).get('name')).toBe('Night Watch HQ');
+		expect(channelUpdateForm(1, values).get('description')).toBe('Overnight transcodes.');
+
+		const logo = new File(['x'], 'logo.png', { type: 'image/png' });
+		expect(channelUpdateForm(1, values, logo).get('avatar')).toBe(logo);
 	});
 });

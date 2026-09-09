@@ -10,7 +10,8 @@ const password = z
 	.min(8, 'Password must be at least 8 characters')
 	.max(32, 'Password must be at most 32 characters');
 
-const channel = z.object({
+// Shared by signup's first channel and settings' channel creation.
+export const channelSchema = z.object({
 	username: z
 		.string()
 		.min(8, 'Channel username must be at least 8 characters')
@@ -30,7 +31,7 @@ const channel = z.object({
 });
 
 export const signInSchema = z.object({ email, password });
-export const signUpSchema = z.object({ email, password, channel });
+export const signUpSchema = z.object({ email, password, channel: channelSchema });
 export const forgotPasswordSchema = z.object({ email });
 export const resetPasswordSchema = z.object({
 	email,

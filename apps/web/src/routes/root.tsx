@@ -12,16 +12,6 @@ import {
 } from '../components/icons';
 import { useMe } from '../lib/auth';
 
-// Demo subscription rows (from the home-browse template) until the real
-// subscription list arrives with the viewer tasks.
-const demoSubs = [
-	{ username: 'nightwatch', initials: 'NW', live: true },
-	{ username: 'kbench', initials: 'KB', live: false },
-	{ username: 'selfhost.cafe', initials: 'SC', live: false },
-	{ username: 'attic.tv', initials: 'AT', live: true },
-	{ username: 'longwave', initials: 'LW', live: false },
-];
-
 // Viewer routes read roomier; studio/ops/settings stay dense (Nocturne readme, "App shell").
 const viewerPaths = ['/', '/search', '/channel'];
 
@@ -55,14 +45,9 @@ export function RootLayout() {
 					<NavLink to="/studio/videos">
 						<ReleaseIcon width={16} height={16} aria-hidden /> Studio
 					</NavLink>
+					{/* No endpoint lists subscriptions yet — the section stays
+					    honestly empty instead of shipping fake rows. */}
 					<div className="sidenav-head">Subscriptions</div>
-					{demoSubs.map((sub) => (
-						<NavLink key={sub.username} to={`/channel/${sub.username}`}>
-							<span className="avatar avatar-sm">{sub.initials}</span>
-							<span className="name">{sub.username}</span>
-							{sub.live && <span className="livedot" title="Live now" />}
-						</NavLink>
-					))}
 					<div className="sidenav-head">Instance</div>
 					<NavLink to="/ops">
 						<EncoderIcon width={16} height={16} aria-hidden /> Ops
@@ -84,9 +69,9 @@ export function RootLayout() {
 							</div>
 						</div>
 					</div>
-					<button className="btn btn-secondary btn-sm btn-block" type="button">
+					<Link className="btn btn-secondary btn-sm btn-block" to="/settings#channels">
 						Switch channel
-					</button>
+					</Link>
 				</div>
 			</aside>
 			<div className="app-col">
