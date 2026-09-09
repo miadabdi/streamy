@@ -16,6 +16,7 @@ import { tagsTableColumns } from '../drizzle/table-columns';
 import { VideoService } from '../video/video.service';
 import { CreateTagDto, DeleteTagDto } from './dto';
 import { AddTagsToVideoDto } from './dto/add-tags-to-videos.dto';
+import { RemoveTagFromVideoDto } from './dto/remove-tag-from-video.dto';
 
 @Injectable()
 export class TagService {
@@ -94,6 +95,41 @@ export class TagService {
 
 		return {
 			message: 'Tags were added to the video',
+		};
+	}
+
+	/**
+	 * removes a tag from the tags list of a video owned by logged in user
+	 * @param {RemoveTagFromVideoDto} removeTagFromVideoDto
+	 * @param {User} user
+	 * @returns {{ message: string }}
+	 * @throws {NotFoundException} the video has no such tag
+	 */
+	async removeTagFromVideo(
+		removeTagFromVideoDto: RemoveTagFromVideoDto,
+		user: User,
+	): Promise<{ message: string }> {
+		await this.videoService.userOwnsVideo(removeTagFromVideoDto.videoId, user);
+
+		const removed = await this.drizzleService.db
+			.delete(schema.tagsVideos)
+			.where(
+				and(
+					eq(schema.tagsVideos.videoId, removeTagFromVideoDto.videoId),
+					eq(schema.tagsVideos.tagId, removeTagFromVideoDto.tagId),
+				),
+			)
+			.returning({ tagId: schema.tagsVideos.tagId })
+			.execute();
+
+		if (removed.length === 0) {
+			throw new NotFoundException(
+				`Tag with id ${removeTagFromVideoDto.tagId} is not on video with id ${removeTagFromVideoDto.videoId}`,
+			);
+		}
+
+		return {
+			message: 'Tag was removed from the video',
 		};
 	}
 

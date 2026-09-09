@@ -12,7 +12,13 @@ import {
 import { GetUser } from '../common/decorators';
 import { AdminGuard, JwtAuthGuard } from '../common/guards';
 import { User } from '../drizzle/schema';
-import { AddTagsToVideoDto, CreateTagDto, DeleteTagDto, GetTagByIdDto } from './dto';
+import {
+	AddTagsToVideoDto,
+	CreateTagDto,
+	DeleteTagDto,
+	GetTagByIdDto,
+	RemoveTagFromVideoDto,
+} from './dto';
 import { TagService } from './tags.service';
 
 @Controller('/tag')
@@ -43,6 +49,12 @@ export class TagController {
 	@Get()
 	getTags(@GetUser() user: User) {
 		return this.tagService.getTags();
+	}
+
+	@HttpCode(HttpStatus.OK)
+	@Delete('/remove-from-video')
+	removeTagFromVideo(@Query() removeTagFromVideoDto: RemoveTagFromVideoDto, @GetUser() user: User) {
+		return this.tagService.removeTagFromVideo(removeTagFromVideoDto, user);
 	}
 
 	@HttpCode(HttpStatus.OK)
