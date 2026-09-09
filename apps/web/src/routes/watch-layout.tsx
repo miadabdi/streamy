@@ -36,7 +36,7 @@ export function WatchLayout() {
 						<UploadIcon width={15} height={15} aria-hidden /> Upload
 					</Link>
 					<Link to="/settings" aria-label="Profile and channel settings">
-					<ChannelAvatar channel={currentChannel} />
+					<ChannelAvatar channel={currentChannel} size="" />
 				</Link>
 				</div>
 			</header>
