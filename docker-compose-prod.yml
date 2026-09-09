@@ -47,6 +47,8 @@ services:
       context: .
       dockerfile: apps/worker/Dockerfile
       target: production
+    # explicit so a stale image's CMD metadata can't start a bare `node` REPL
+    command: node apps/worker/dist/main
     ports:
       - "${PROCESS_NODE_PORT}:3001"
     networks:
