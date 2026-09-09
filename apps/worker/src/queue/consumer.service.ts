@@ -127,9 +127,9 @@ export class ConsumerService {
 				},
 			},
 		);
-		await pump.pump();
-		// backfill: catches messages published between pumps (the release-driven
-		// pump only fires when a running job finishes)
+		// not awaited: basic.get throws until the channel connects — the
+		// interval keeps pumping and the first successful pass starts then
+		void pump.pump();
 		setInterval(() => void pump.pump(), 2000);
 	}
 

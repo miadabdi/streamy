@@ -40,6 +40,10 @@ export function createQueuePump<T>(deps: QueuePumpDeps, options: QueuePumpOption
 				}
 				options.gate.start(key, () => options.run(content));
 			}
+		} catch (err: any) {
+			// transient: not-yet-connected at boot, or a reconnect window — the
+			// interval/release pump retries
+			deps.warn(`pump failed, will retry: ${err.message}`);
 		} finally {
 			pumping = false;
 		}
