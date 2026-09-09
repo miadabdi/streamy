@@ -26,7 +26,16 @@ export class LiveService {
 	) {}
 
 	async onModuleInit() {
-		await this.consumerService.listenOnQueue('q.live.process', this.processLiveCallback.bind(this));
+		// ack on receipt: a live job runs for the whole broadcast and would
+		// otherwise trip rabbitmq's consumer_timeout mid-stream and get
+		// redelivered as a corrupting duplicate
+		await this.consumerService.listenOnQueue(
+			'q.live.process',
+			this.processLiveCallback.bind(this),
+			{
+				ackOnReceipt: true,
+			},
+		);
 
 		if (!existsSync(this.videoFilesDir)) {
 			mkdirSync(this.videoFilesDir);

@@ -191,6 +191,7 @@ services:
       - "${RABBITMQ_CONSOLE_PORT}:15672" # management panel port
     volumes:
       - rmq_data:/var/lib/rabbitmq
+      - ./docker/rmq/advanced.config:/etc/rabbitmq/advanced.config:ro
     environment:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}

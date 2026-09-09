@@ -34,8 +34,16 @@ export class ConsumerService {
 	 * This method sets a callback as message handler of a specific queue
 	 * @param {RMQ_QUEUES_TYPE} queue name of queue
 	 * @param {(content: any) => Promise<any>} callback
+	 * @param {{ ackOnReceipt?: boolean }} options ackOnReceipt: ack before the
+	 *   callback runs — for handlers that legitimately outlive rabbitmq's
+	 *   30-minute default consumer_timeout (live transcodes run for the whole
+	 *   broadcast). At-most-once: a crashed job is not redelivered.
 	 */
-	async listenOnQueue(queue: RMQ_QUEUES_TYPE, callback: (content: any) => Promise<any>) {
+	async listenOnQueue(
+		queue: RMQ_QUEUES_TYPE,
+		callback: (content: any) => Promise<any>,
+		{ ackOnReceipt = false }: { ackOnReceipt?: boolean } = {},
+	) {
 		this.logger.log(`Setup consumer for queue ${queue}`);
 		this.listeners.set(queue, callback);
 		await this.channelWrapper.addSetup(async (channel: amqplib.ConfirmChannel) => {
@@ -45,7 +53,10 @@ export class ConsumerService {
 		await this.channelWrapper.consume(
 			queue,
 			(message) => {
-				this.handleMessage(queue, callback, message);
+				if (ackOnReceipt && message) {
+					this.channelWrapper.ack(message);
+				}
+				this.handleMessage(queue, callback, message, ackOnReceipt);
 			},
 			{
 				prefetch: 1,
@@ -65,6 +76,7 @@ export class ConsumerService {
 		queue: RMQ_QUEUES_TYPE,
 		callback: (content: any) => Promise<any>,
 		message: amqplib.Message | null,
+		alreadyAcked = false,
 	) {
 		if (!message) return;
 
@@ -74,11 +86,13 @@ export class ConsumerService {
 
 			await callback(content);
 
-			await this.channelWrapper.ack(message);
+			if (!alreadyAcked) await this.channelWrapper.ack(message);
 		} catch (err) {
 			this.logger.error(`Error on consuming queue ${queue}, dead-lettering message`);
 			this.logger.error(err);
-			await this.channelWrapper.nack(message, false, false);
+			// ackOnReceipt messages are already settled — requeueing a dead
+			// letter is wrong for them (the nack would target a settled tag)
+			if (!alreadyAcked) await this.channelWrapper.nack(message, false, false);
 		}
 	}
 
