@@ -129,7 +129,9 @@ export class PlaylistService {
 				playlistId: addVideosDto.playlistId,
 			};
 		});
-		await manager.insert(schema.playlistsVideos).values(values).execute();
+		// (video_id, playlist_id) is unique — the watched-beacon re-adds on every
+		// re-watch, so duplicates are expected and silently skipped
+		await manager.insert(schema.playlistsVideos).values(values).onConflictDoNothing().execute();
 
 		return {
 			message: 'Videos were added to the playlist',
