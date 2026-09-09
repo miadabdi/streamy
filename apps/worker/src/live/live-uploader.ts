@@ -51,7 +51,16 @@ export class LiveUploader {
 	async flush(): Promise<void> {
 		const files = (await readdir(this.dir)).filter(isUploadable);
 		for (const file of files) {
-			await this.upload(file, join(this.dir, file));
+			try {
+				await this.upload(file, join(this.dir, file));
+			} catch (err: any) {
+				// the file vanished between readdir and upload — a concurrently
+				// ending job cleaned the shared directory, or it was already
+				// uploaded during the stream; the segment is not worth failing
+				// the whole broadcast over
+				if (err?.code === 'ENOENT') continue;
+				throw err;
+			}
 		}
 	}
 

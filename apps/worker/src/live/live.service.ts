@@ -34,7 +34,9 @@ export class LiveService {
 	}
 
 	async processLiveCallback(message: LiveProcessMsg) {
-		const dedicatedDir = join(this.videoFilesDir, message.streamKey);
+		// unique per job: an encoder reconnect queues a second job for the same
+		// stream — a shared dir made the jobs corrupt each other's final sweep
+		const dedicatedDir = join(this.videoFilesDir, `${message.streamKey}-${Date.now()}`);
 
 		try {
 			mkdirSync(dedicatedDir, { recursive: true });
