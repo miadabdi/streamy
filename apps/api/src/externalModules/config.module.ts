@@ -18,6 +18,7 @@ export const ConfigModuleSetup = ConfigModule.forRoot({
 		PORT: Joi.number().min(1024).default(3000),
 		COOKIE_EXPIRES_IN: Joi.number().min(1).default(90),
 		COMPRESSION_THRESHOLD: Joi.number().min(1024).required(),
+		CORS_ORIGINS: Joi.string().optional().allow(''),
 		THROTTLE_TTL: Joi.number().min(1).default(60),
 		THROTTLE_LIMIT: Joi.number().min(1).default(3600),
 		SMTP_HOST: Joi.string().min(1).required(),

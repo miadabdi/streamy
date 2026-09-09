@@ -10,6 +10,7 @@ import { AppModule } from './app.module';
 import { API_PREFIX } from './common/constants';
 import { AllExceptionsFilter } from './common/exceptions';
 import { LoggingInterceptor, TimeoutInterceptor } from './common/interceptors';
+import { parseCorsOrigins } from './externalModules/cors-origins';
 import { LoggerService } from './logger/logger.service';
 
 async function bootstrap() {
@@ -31,8 +32,11 @@ async function bootstrap() {
 	app.use(cookieParser());
 	app.use(hpp());
 
+	// CORS_ORIGINS gates cross-origin access for split deployments; unset
+	// means no origins allowed (same-origin only — both dev and prod are
+	// same-origin behind proxies)
 	app.enableCors({
-		origin: '*',
+		origin: parseCorsOrigins(configService.get<string>('CORS_ORIGINS')),
 		credentials: true,
 	});
 
