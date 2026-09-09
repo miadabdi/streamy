@@ -76,7 +76,10 @@ export class LiveService {
 	}
 
 	async srsOnPublish(srsOnPublishDto: OnPublishDto) {
-		if (srsOnPublishDto.app != 'live') {
+		// some encoders (obs with the full url in the server field) report the
+		// app as "live/<stream-key>" — normalize so both split styles publish
+		const app = srsOnPublishDto.app.split('/')[0];
+		if (app != 'live') {
 			throw new ForbiddenException('Only live app is allowed');
 		}
 
@@ -98,7 +101,9 @@ export class LiveService {
 	 * @returns {{ code: number }}
 	 */
 	async srsOnUnpublish(srsOnUnpublishDto: OnUnpublishDto) {
-		if (srsOnUnpublishDto.app != 'live') {
+		// same normalization as on_publish: obs-style "live/<key>" apps
+		const app = srsOnUnpublishDto.app.split('/')[0];
+		if (app != 'live') {
 			throw new ForbiddenException('Only live app is allowed');
 		}
 
