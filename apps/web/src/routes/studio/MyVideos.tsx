@@ -159,7 +159,10 @@ export function MyVideos() {
 								<tr key={video.id}>
 									<td>
 										<div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-											<div style={{ width: 76, flex: 'none' }}>
+											{/* .vcard-thumb carries the position:relative + overflow:hidden the
+												absolute fallback needs — without it the gradient escapes the cell
+												and blankets the row's pointer events */}
+											<div className="vcard-thumb" style={{ width: 76, flex: 'none' }}>
 												<Thumb
 													seed={String(video.id)}
 													initials={channelInitials(video.channel?.name)}

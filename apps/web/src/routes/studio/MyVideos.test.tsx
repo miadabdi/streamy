@@ -157,6 +157,20 @@ describe('My videos', () => {
 		expect(within(rowTitled('Wiring the closet')).getAllByText('—')).toHaveLength(2);
 	});
 
+	it('keeps the thumbnail fallback contained to its cell wrapper', async () => {
+		mount();
+		await mountedRow('Rebuilding the rack');
+
+		// .vcard-fallback is position:absolute inset:0: without .vcard-thumb
+		// (position:relative, overflow:hidden) around it, the gradient escapes
+		// the cell and intercepts the row's pointer events (M2 fix round 2)
+		const fallbacks = Array.from(document.querySelectorAll('.vcard-fallback'));
+		expect(fallbacks.length).toBeGreaterThan(0);
+		for (const fallback of fallbacks) {
+			expect(fallback.closest('.vcard-thumb')).not.toBeNull();
+		}
+	});
+
 	it('offers Release only on done rows and posts the release to the API', async () => {
 		const user = userEvent.setup();
 		mount();
