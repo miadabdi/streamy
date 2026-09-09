@@ -154,6 +154,22 @@ export function VideoPlayer({
 				if (disposed || !hls) return;
 				setActiveHeight(hls.levels[data.level]?.height);
 			});
+			// hls.js treats a 404 manifest as fatal with no retry — but the live
+			// self-monitor mounts the moment the publish flips, often before
+			// ffmpeg has written master.m3u8. Keep retrying while live (bounded).
+			let manifestRetries = 0;
+			hls.on(Hls.Events.ERROR, (_event, data) => {
+				if (disposed || !hls) return;
+				const manifestMissing =
+					data.details === Hls.ErrorDetails.MANIFEST_LOAD_ERROR ||
+					data.details === Hls.ErrorDetails.MANIFEST_LOAD_TIMEOUT;
+				if (data.fatal && manifestMissing && mode === 'live' && manifestRetries < 40) {
+					manifestRetries += 1;
+					setTimeout(() => {
+						if (!disposed && hlsRef.current === hls) hls.loadSource(src);
+					}, 3000);
+				}
+			});
 		} else if (video.canPlayType('application/vnd.apple.mpegurl')) {
 			video.src = src; // native HLS fallback (no MSE)
 		} else {
