@@ -12,6 +12,12 @@ export default defineConfig({
 				target: 'http://localhost:9002',
 				rewrite: (path) => path.replace(/^\/storage/, ''),
 			},
+			// the worker is a separate origin (:3001); strip the prefix the same
+			// way /storage does — the worker's own routes are /api/v1/health/…
+			'/worker-api': {
+				target: 'http://localhost:3001',
+				rewrite: (path) => path.replace(/^\/worker-api/, ''),
+			},
 		},
 	},
 	test: {

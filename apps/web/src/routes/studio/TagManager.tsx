@@ -6,7 +6,7 @@ import { useMe } from '../../lib/auth';
 import type { Tag, WatchVideo } from '../../types/api';
 
 /** Chip with the template's `.tag-remove` affordance; Enter/Space activate it like a button. */
-function TagChip({
+export function TagChip({
 	title,
 	confirmLabel,
 	onRemove,

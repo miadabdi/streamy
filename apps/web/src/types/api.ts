@@ -152,6 +152,16 @@ export type Tag = {
 	title: string;
 };
 
+/** GET /health/readiness on the worker (apps/worker/src/health): dependency,
+ *  dead-letter and in-flight job state, reached via the /worker-api proxy. */
+export type Readiness = {
+	rmq: boolean;
+	storage: boolean;
+	deadLetters: number;
+	encoder: 'h264_vaapi' | 'h264_nvenc' | 'h264_qsv' | 'libx264';
+	activeJob: { videoId: number; startedAt: string } | null;
+};
+
 export type ChannelWithAvatar = Channel & { avatar: ApiFile | null };
 
 export type WatchComment = Comment & {

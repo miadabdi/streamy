@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router';
 import { Browse } from '../routes/Browse';
 import { Channel } from '../routes/Channel';
 import { NotFound } from '../routes/NotFound';
+import { RequireAdmin } from '../routes/RequireAdmin';
 import { RequireAuth } from '../routes/RequireAuth';
 import { Ops } from '../routes/Ops';
 import { PlaylistDetail } from '../routes/PlaylistDetail';
@@ -34,7 +35,12 @@ export const routes: RouteObject[] = [
 					{ path: 'playlists', element: <Playlists /> },
 					{ path: 'playlists/:id', element: <PlaylistDetail /> },
 					{ path: 'settings', element: <Settings /> },
-					{ path: 'ops', element: <Ops /> },
+					// ops manages the whole instance: the sidenav link stays for
+					// everyone, but the content is gated behind RequireAdmin
+					{
+						element: <RequireAdmin />,
+						children: [{ path: 'ops', element: <Ops /> }],
+					},
 					{ path: 'studio/videos', element: <MyVideos /> },
 					{ path: 'studio/upload', element: <Upload /> },
 					{ path: 'studio/videos/:id/edit', element: <VideoEdit /> },

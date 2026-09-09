@@ -51,4 +51,10 @@ describe('app shell', () => {
 		renderWithApp(<AppRoutes />, { route: '/settings' });
 		expect(document.querySelector('.app-page')).not.toHaveAttribute('data-density');
 	});
+
+	it('gates /ops content behind admin — non-admins get the honest state', async () => {
+		renderWithApp(<AppRoutes />, { route: '/ops' });
+
+		expect(await screen.findByText('Admins only')).toBeInTheDocument();
+	});
 });

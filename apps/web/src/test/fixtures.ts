@@ -6,6 +6,7 @@ import type {
 	Comment,
 	Me,
 	Playlist,
+	Readiness,
 	Subtitle,
 	Tag,
 	User,
@@ -22,6 +23,7 @@ export type {
 	Comment,
 	Me,
 	Playlist,
+	Readiness,
 	Subtitle,
 	Tag,
 	User,
@@ -177,6 +179,19 @@ export function makeTag(overrides: Partial<Tag> = {}): Tag {
 		isActive: true,
 		deletedAt: null,
 		title: 'ffmpeg',
+		...overrides,
+	};
+}
+
+/** Worker GET /health/readiness shape; startedAt defaults to "just began" so
+ *  elapsed assertions in tests override it with a controlled age. */
+export function makeReadiness(overrides: Partial<Readiness> = {}): Readiness {
+	return {
+		rmq: true,
+		storage: true,
+		deadLetters: 0,
+		encoder: 'h264_vaapi',
+		activeJob: { videoId: 7, startedAt: new Date().toISOString() },
 		...overrides,
 	};
 }
