@@ -24,15 +24,18 @@ async function request<T>(
 	body?: unknown,
 	opts: RequestOptions = {},
 ): Promise<T> {
+	// FormData (multipart uploads) goes through untouched: the browser must set
+	// the multipart Content-Type with its boundary — a manual one breaks parsing.
+	const isForm = body instanceof FormData;
 	const res = await fetch(path, {
 		...opts,
 		method,
 		credentials: 'include',
 		headers: {
-			...(body !== undefined && { 'Content-Type': 'application/json' }),
+			...(body !== undefined && !isForm && { 'Content-Type': 'application/json' }),
 			...opts.headers,
 		},
-		body: body !== undefined ? JSON.stringify(body) : undefined,
+		body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
 	});
 
 	if (!res.ok) {

@@ -84,6 +84,26 @@ describe('api client', () => {
 		expect(queryClient.getQueryData(['me'])).toBeNull();
 	});
 
+	it('passes FormData through untouched — no JSON content-type, no stringify', async () => {
+		// body-shape assertions live in forms.test.ts (msw cannot re-read an
+		// undici-serialized FormData request body under jsdom, so this only
+		// proves the multipart passthrough via the generated content-type)
+		server.use(
+			http.patch('/api/v1/video/set-thumbnail', ({ request }) => {
+				expect(request.headers.get('content-type')).toContain('multipart/form-data');
+				return HttpResponse.json({ id: 1 }, { status: 200 });
+			}),
+		);
+
+		const body = new FormData();
+		body.append('id', '1');
+		body.append('thumbnail', new File(['x'], 'thumb.png', { type: 'image/png' }));
+
+		await expect(api.patch('/api/v1/video/set-thumbnail', body)).resolves.toMatchObject({
+			id: 1,
+		});
+	});
+
 	it('GET /user/me 401 does NOT write [me]', async () => {
 		queryClient.setQueryData(['me'], { id: 7 });
 		server.use(
