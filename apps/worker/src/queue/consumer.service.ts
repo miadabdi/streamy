@@ -8,6 +8,8 @@ import {
 	RMQ_QUEUES,
 	RMQ_QUEUES_TYPE,
 } from '@miadabdi/streamy-queues';
+import { JobGate } from './job-gate';
+import { createQueuePump } from './queue-pump';
 
 @Injectable()
 export class ConsumerService {
@@ -74,6 +76,61 @@ export class ConsumerService {
 			`Consumer service started and listening on ${queue} for messages` +
 				(ackOnReceipt ? '' : ` (concurrency ${concurrency})`),
 		);
+	}
+
+	/**
+	 * pull-model consumer for long jobs (transcodes): instead of subscribing —
+	 * which with ack-on-receipt would drain the whole queue into worker memory —
+	 * the pump basic.gets ONE message at a time, only while a slot is free, and
+	 * acks it on receipt. Whatever the worker cannot run stays queued in
+	 * rabbitmq (durable across restarts), and no message is ever unacked while
+	 * a job runs, so no consumer_timeout can touch it.
+	 *
+	 * @param {RMQ_QUEUES_TYPE} queue name of queue
+	 * @param {(content: any) => Promise<any>} run the job; errors are the
+	 *   caller's business (the message is already settled by then)
+	 * @param {{ concurrency?: number; keyOf?: (content: any) => string }} options
+	 *   concurrency: simultaneous jobs (default 1)
+	 *   keyOf: job identity — a message whose key is already in flight is
+	 *   acked and dropped as a redundant duplicate
+	 */
+	async pollOnQueue(
+		queue: RMQ_QUEUES_TYPE,
+		run: (content: any) => Promise<unknown>,
+		{
+			concurrency = 1,
+			keyOf,
+			duplicateLabel = 'job',
+		}: { concurrency?: number; keyOf?: (content: any) => string; duplicateLabel?: string } = {},
+	) {
+		this.logger.log(`Setup pull consumer for queue ${queue} (concurrency ${concurrency})`);
+		this.listeners.set(queue, run);
+		await this.channelWrapper.addSetup(async (channel: amqplib.ConfirmChannel) => {
+			await this.assertQueue(channel, queue);
+		});
+
+		const gate = new JobGate(concurrency);
+		const pump = createQueuePump(
+			{
+				// amqplib resolves `false` when the queue is empty — normalize to null
+				get: async () => (await this.channelWrapper.get(queue, { noAck: false })) || null,
+				ack: (message) => this.channelWrapper.ack(message as amqplib.Message),
+				warn: (message) => this.logger.warn(message),
+			},
+			{
+				gate,
+				keyOf: keyOf ?? (() => `${queue}-${Date.now()}`),
+				duplicateLabel,
+				run: (content) => {
+					this.logger.verbose(`Pulled message from ${queue}: ${JSON.stringify(content)}`);
+					return run(content);
+				},
+			},
+		);
+		await pump.pump();
+		// backfill: catches messages published between pumps (the release-driven
+		// pump only fires when a running job finishes)
+		setInterval(() => void pump.pump(), 2000);
 	}
 
 	private async assertQueue(channel: amqplib.ConfirmChannel, queue: RMQ_QUEUES_TYPE) {

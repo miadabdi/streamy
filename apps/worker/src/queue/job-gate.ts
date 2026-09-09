@@ -1,40 +1,47 @@
 /**
- * in-process concurrency gate for queue jobs whose messages are acked on
- * receipt (so rabbitmq's prefetch cannot bound them): at most `max` jobs run
- * concurrently, extras wait in a FIFO, and a job whose key is already running
- * OR WAITING is dropped as a duplicate (a redelivered/replayed message for
- * work this process already owns can only corrupt its output).
- *
- * keys are tracked from entry — including while waiting — so a duplicate is
- * caught even before the first copy starts running.
+ * in-process concurrency gate for pulled queue jobs: at most `max` run at
+ * once, and a key that is running (or queued behind the gate) marks later
+ * arrivals as duplicates — a replayed message for work this process already
+ * owns can only corrupt its output.
  */
 export class JobGate {
 	private keys = new Set<string>();
 	private running = 0;
-	private waiters: Array<() => void> = [];
+	private releaseListeners: Array<() => void> = [];
 
 	constructor(private readonly max: number) {}
 
+	get hasCapacity(): boolean {
+		return this.running < this.max;
+	}
+
+	/** a job with this key is in flight (running or waiting to be started) */
+	has(key: string): boolean {
+		return this.keys.has(key);
+	}
+
 	/**
-	 * @returns the job's result, or `undefined` when a job with this key is
-	 * already in flight (duplicate dropped)
+	 * starts the job immediately — callers must have checked `hasCapacity`.
+	 * @returns false when a job with this key is already in flight (duplicate)
 	 */
-	async run<T>(key: string, job: () => Promise<T>): Promise<T | undefined> {
-		if (this.keys.has(key)) return undefined;
+	start(key: string, job: () => Promise<unknown>): boolean {
+		if (this.keys.has(key)) return false;
 		this.keys.add(key);
-		try {
-			while (this.running >= this.max) {
-				await new Promise<void>((resolve) => this.waiters.push(resolve));
-			}
-			this.running += 1;
+		this.running += 1;
+		void (async () => {
 			try {
-				return await job();
+				await job();
 			} finally {
 				this.running -= 1;
-				this.waiters.shift()?.();
+				this.keys.delete(key);
+				for (const listener of this.releaseListeners.splice(0)) listener();
 			}
-		} finally {
-			this.keys.delete(key);
-		}
+		})();
+		return true;
+	}
+
+	/** fires whenever a job finishes and a slot opens up */
+	onRelease(listener: () => void): void {
+		this.releaseListeners.push(listener);
 	}
 }

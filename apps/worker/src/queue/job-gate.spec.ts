@@ -1,68 +1,48 @@
 import { describe, expect, it, vi } from 'vitest';
 import { JobGate } from './job-gate';
 
-function deferred<T = void>() {
-	let resolve!: (value: T) => void;
-	const promise = new Promise<T>((r) => (resolve = r));
+function deferred() {
+	let resolve!: () => void;
+	const promise = new Promise<void>((r) => (resolve = r));
 	return { promise, resolve };
 }
 
 describe('JobGate', () => {
-	it('runs at most max jobs concurrently; extras wait in FIFO order', async () => {
+	it('reports capacity while below max and fires onRelease when a job finishes', async () => {
 		const gate = new JobGate(2);
-		const order: string[] = [];
 		const a = deferred();
 		const b = deferred();
-		const c = deferred();
+		const released = vi.fn();
+		gate.onRelease(released);
 
-		const jobA = gate.run('a', async () => {
-			order.push('a:start');
-			await a.promise;
-			order.push('a:end');
-		});
-		const jobB = gate.run('b', async () => {
-			order.push('b:start');
-			await b.promise;
-			order.push('b:end');
-		});
-		const jobC = gate.run('c', async () => {
-			order.push('c:start');
-			await c.promise;
-			order.push('c:end');
-		});
-		await Promise.resolve(); // let a and b enter
+		expect(gate.hasCapacity).toBe(true);
+		expect(gate.start('a', () => a.promise)).toBe(true);
+		expect(gate.start('b', () => b.promise)).toBe(true);
+		expect(gate.hasCapacity).toBe(false); // both slots held
+		expect(released).not.toHaveBeenCalled();
 
-		// c must not start while both slots are held
-		expect(order).toEqual(['a:start', 'b:start']);
-
-		a.resolve(); // frees a slot → c starts
-		await vi.waitUntil(() => order.includes('c:start'));
-		expect(order).toEqual(['a:start', 'b:start', 'a:end', 'c:start']);
-
+		a.resolve();
+		await vi.waitUntil(() => released.mock.calls.length > 0);
+		expect(gate.hasCapacity).toBe(true);
 		b.resolve();
-		c.resolve();
-		await Promise.all([jobA, jobB, jobC]);
-		expect(order).toEqual(['a:start', 'b:start', 'a:end', 'c:start', 'b:end', 'c:end']);
 	});
 
-	it('drops a duplicate key even while the first copy is still waiting', async () => {
-		const gate = new JobGate(1);
-		const blocker = deferred();
-		const first = gate.run('same', () => blocker.promise);
-
-		// a second arrival for the same key while the first waits (not running)
-		const second = await gate.run('same', async () => 'ran');
-		expect(second).toBeUndefined();
-
-		blocker.resolve();
-		await first;
+	it('rejects a duplicate key while the first job runs', async () => {
+		const gate = new JobGate(2);
+		const job = deferred();
+		expect(gate.start('same', () => job.promise)).toBe(true);
+		expect(gate.has('same')).toBe(true);
+		expect(gate.start('same', async () => 'never')).toBe(false);
+		job.resolve();
+		await vi.waitUntil(() => !gate.has('same'));
 	});
 
-	it('frees the key after completion so a later job may run', async () => {
+	it('frees the key after completion so it can start again', async () => {
 		const gate = new JobGate(1);
-		const first = await gate.run('k', async () => 1);
-		const second = await gate.run('k', async () => 2);
-		expect(first).toBe(1);
-		expect(second).toBe(2);
+		const first = deferred();
+		gate.start('k', () => first.promise);
+		first.resolve();
+		await vi.waitUntil(() => !gate.has('k'));
+		expect(gate.start('k', async () => 2)).toBe(true);
 	});
 });

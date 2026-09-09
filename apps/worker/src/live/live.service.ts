@@ -5,7 +5,6 @@ import { readdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConsumerService } from '../queue/consumer.service';
-import { JobGate } from '../queue/job-gate';
 import { ProducerService } from '../queue/producer.service';
 import { VideoProcessingStatus } from '../video/enum';
 import { SetVideoStatusMsg } from '../video/interface';
@@ -17,7 +16,6 @@ import { LiveProcessMsg } from './interface';
 export class LiveService {
 	private logger = new Logger(LiveService.name);
 	private videoFilesDir = join(__dirname, 'liveFiles');
-	private liveGate = new JobGate(1);
 
 	constructor(
 		private configService: ConfigService,
@@ -28,30 +26,21 @@ export class LiveService {
 	) {}
 
 	async onModuleInit() {
-		// ack on receipt: a live job runs for the whole broadcast and would
-		// otherwise be redelivered as a corrupting duplicate on any timeout;
-		// the JobGate replaces the prefetch bound this acking gives up
-		this.liveGate = new JobGate(this.configService.get<number>('LIVE_PROCESS_CONCURRENCY') ?? 1);
-		await this.consumerService.listenOnQueue(
+		// pull-model consumer, same as vod: a live job is taken only when a
+		// slot is free, acked on receipt, and extras stay queued in rabbitmq
+		const concurrency = this.configService.get<number>('LIVE_PROCESS_CONCURRENCY') ?? 1;
+		await this.consumerService.pollOnQueue(
 			'q.live.process',
-			this.processLiveCallback.bind(this),
+			(message: LiveProcessMsg) => this.runLiveJob(message),
 			{
-				ackOnReceipt: true,
+				concurrency,
+				keyOf: (message: LiveProcessMsg) => message.streamKey,
+				duplicateLabel: 'live job',
 			},
 		);
 
 		if (!existsSync(this.videoFilesDir)) {
 			mkdirSync(this.videoFilesDir);
-		}
-	}
-
-	async processLiveCallback(message: LiveProcessMsg) {
-		// a job already runs (or waits) for this stream: its rtmp pull follows
-		// whatever srs serves under the key (including after an encoder
-		// reconnect), so a duplicate could only overwrite its storage output
-		const ran = await this.liveGate.run(message.streamKey, () => this.runLiveJob(message));
-		if (ran === undefined) {
-			this.logger.warn(`live job for ${message.streamKey} already in flight — duplicate dropped`);
 		}
 	}
 
