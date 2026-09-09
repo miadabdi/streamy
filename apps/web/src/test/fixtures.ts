@@ -111,6 +111,11 @@ export function makeVideo(overrides: Partial<Video> = {}): Video {
 		thumbnailFileId: null,
 		processingStatus: 'done',
 		videoFileId: null,
+		// live-stream defaults (overridden per test): a fresh row says 'live'
+		// because isActive defaults true, before any publish ever happened
+		liveState: 'live',
+		liveStartedAt: null,
+		disconnectedAt: null,
 		...overrides,
 	};
 }

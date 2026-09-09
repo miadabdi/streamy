@@ -13,6 +13,9 @@ import { isPending, type WatchVideo } from '../types/api';
 
 function playerMode(video: WatchVideo): PlayerMode {
 	if (video.type !== 'live') return 'vod';
+	// reconnecting (dropped, inside the grace window): keep the live player —
+	// it stalls at the edge and resumes when segments continue
+	if (video.liveState === 'reconnecting') return 'live';
 	return video.isActive === false ? 'replay' : 'live';
 }
 
@@ -179,13 +182,21 @@ export function Watch() {
 					</p>
 				</div>
 			) : (
-				<VideoPlayer
-					key={video.id}
-					videoId={video.id}
-					mode={playerMode(video)}
-					subtitles={video.subtitles}
-					onWatched={markWatched}
-				/>
+				<>
+					{video.liveState === 'reconnecting' && (
+						<div className="card" style={{ width: '100%' }}>
+							<div className="card-kicker">Stream interrupted — reconnecting</div>
+							<p className="card-body">The stream resumes when the encoder reconnects.</p>
+						</div>
+					)}
+					<VideoPlayer
+						key={video.id}
+						videoId={video.id}
+						mode={playerMode(video)}
+						subtitles={video.subtitles}
+						onWatched={markWatched}
+					/>
+				</>
 			)}
 
 			<div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

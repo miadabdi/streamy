@@ -91,6 +91,14 @@ export type Video = {
 	thumbnailFileId: number | null;
 	processingStatus: VideoProcessingStatus | null;
 	videoFileId: number | null;
+	/** live videos only (GET /video/by-id and /video/live-by-video-id, the
+	 *  API's LiveVideoStatePayload): computed stream state — 'reconnecting' =
+	 *  inactive inside the resume grace window — plus the live timestamps.
+	 *  Unlike the Date fields above, these only ever travel as ISO strings;
+	 *  vod payloads omit them. */
+	liveState?: 'live' | 'reconnecting' | 'ended';
+	liveStartedAt?: string | null;
+	disconnectedAt?: string | null;
 };
 
 // GET /video and /video/search items: the video with its embedded relations

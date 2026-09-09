@@ -24,23 +24,39 @@ const metadataSchema = z.object({
 });
 type MetadataValues = z.infer<typeof metadataSchema>;
 
-/** Component-local wizard: create → connect (key, waiting) → live → ended. */
-type Stage = 'create' | 'connect' | 'live' | 'ended';
+/** Component-local wizard: create → connect (key, waiting) → live ↔ reconnecting → ended. */
+type Stage = 'create' | 'connect' | 'live' | 'reconnecting' | 'ended';
 
 const STEPS = ['Create', 'Connect', 'Live'] as const;
-const STEP_OF: Record<Stage, number> = { create: 1, connect: 2, live: 3, ended: 3 };
+// reconnecting is mid-broadcast: still the Live step
+const STEP_OF: Record<Stage, number> = {
+	create: 1,
+	connect: 2,
+	live: 3,
+	reconnecting: 3,
+	ended: 3,
+};
 
 /**
- * GET /video/live-by-video-id stops matching the key once the stream ends —
- * srsOnUnpublish flips isActive false, so the answer becomes null — and the
- * worker's later `done`/failed writes land on that same dead row, so they mean
- * "ended" here too. `processing` = the worker is pulling from SRS and
- * packaging live HLS, i.e. the broadcast is up.
+ * GET /video/live-by-video-id stops matching the key once the resume grace
+ * window lapses — srsOnUnpublish flips isActive false with disconnectedAt
+ * set, so past the window the answer becomes null — and the worker's later
+ * `done`/failed writes land on that same dead row, so they mean "ended" here
+ * too. Once the broadcast has started (liveStartedAt, set on first publish
+ * and kept across resumes), the payload's liveState is authoritative:
+ * 'reconnecting' = the encoder dropped inside the grace window. Before the
+ * first publish isActive defaults true, so a fresh row is also labelled
+ * 'live' — those flows derive from processingStatus instead.
  */
 function streamStageOf(
 	live: Video | null | undefined,
 	answered: boolean,
 ): Exclude<Stage, 'create'> {
+	if (live?.liveStartedAt != null) {
+		if (live.liveState === 'live') return 'live';
+		if (live.liveState === 'reconnecting') return 'reconnecting';
+		if (live.liveState === 'ended') return 'ended';
+	}
 	if (
 		answered &&
 		(live == null || live.processingStatus === 'done' || live.processingStatus === 'failed_in_processing')
@@ -90,7 +106,8 @@ export function GoLive() {
 			)) ?? null,
 		enabled: streamKey != null,
 		// the polling lives in the query options (MyVideos pattern), never an
-		// interval — and it retires itself the moment the stream ends
+		// interval — it rides through 'reconnecting' and retires itself the
+		// moment the stream ends
 		refetchInterval: (query) =>
 			streamStageOf(query.state.data, query.state.dataUpdatedAt > 0) === 'ended'
 				? false
@@ -99,13 +116,15 @@ export function GoLive() {
 
 	const stage: Stage = video == null ? 'create' : streamStageOf(live.data, live.dataUpdatedAt > 0);
 
-	// elapsed clock, anchored on the publish flip (updatedAt jumps when SRS
-	// on_publish sets processing). The clock is state, written only from
+	// elapsed clock: total broadcast age. Anchored on liveStartedAt (first
+	// publish, kept across resumes — updatedAt, the pre-liveStartedAt
+	// fallback, jumps on every write). The clock is state, written only from
 	// callbacks — Date.now() during render is impure — and the 1s tick is a
 	// display concern, not data polling.
 	const [now, setNow] = useState<number | null>(null);
 	useEffect(() => {
-		if (stage !== 'live') return;
+		// reconnecting is mid-broadcast: the clock keeps running through it
+		if (stage !== 'live' && stage !== 'reconnecting') return;
 		const sync = () => setNow(Date.now());
 		const first = setTimeout(sync, 0); // resync the snapshot right after the flip
 		const ticker = setInterval(sync, 1000);
@@ -114,6 +133,10 @@ export function GoLive() {
 			clearInterval(ticker);
 		};
 	}, [stage]);
+
+	// total-since-start anchor: the broadcast start when it exists, else the
+	// last write (the pre-liveStartedAt fallback)
+	const elapsedAnchor = live.data?.liveStartedAt ?? live.data?.updatedAt ?? null;
 
 	if (!me) return <p className="page-sub">Loading…</p>;
 
@@ -286,15 +309,29 @@ export function GoLive() {
 					</section>
 				)}
 
-				{stage === 'live' && video != null && live.data != null && (
+				{(stage === 'live' || stage === 'reconnecting') && video != null && live.data != null && (
 					<section style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
 						<div>
 							<h2 style={{ margin: 0, fontSize: 22 }}>You're live</h2>
-							<p className="page-sub">
-								The watch page is serving this stream now. Stop your encoder to end it — the
-								replay takes over on the same URL.
-							</p>
+							{stage === 'reconnecting' ? (
+								<>
+									<div style={{ marginTop: 8 }}>
+										<span className="pill pill-processing">Reconnecting — stream key held</span>
+									</div>
+									<p className="page-sub">
+										Your encoder dropped. Reconnect within the grace window and the
+										broadcast continues.
+									</p>
+								</>
+							) : (
+								<p className="page-sub">
+									The watch page is serving this stream now. Stop your encoder to end it — the
+									replay takes over on the same URL.
+								</p>
+							)}
 						</div>
+						{/* reconnecting keeps the self-monitor mounted: the stream
+						    stalled at the edge and resumes when segments continue */}
 						<VideoPlayer videoId={video.id} mode="live" />
 						<div
 							style={{
@@ -310,8 +347,8 @@ export function GoLive() {
 								<div className="stat-value">
 									<span className="mono">
 										{clock(
-											live.data.updatedAt && now != null
-												? (now - new Date(live.data.updatedAt).getTime()) / 1000
+											elapsedAnchor != null && now != null
+												? (now - new Date(elapsedAnchor).getTime()) / 1000
 												: 0,
 										)}
 									</span>

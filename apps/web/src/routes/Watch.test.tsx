@@ -135,6 +135,24 @@ describe('Watch page', () => {
 		expect((await screen.findByTestId('player')).textContent).toBe('7:replay');
 	});
 
+	it('banners a reconnecting stream and keeps the live player on it', async () => {
+		// isActive is false (the encoder dropped) but the disconnect sits
+		// inside the grace window: live mode, not replay
+		mountWatch(
+			baseVideo({
+				type: 'live',
+				isActive: false,
+				duration: null,
+				liveState: 'reconnecting',
+				liveStartedAt: '2026-01-01T00:00:00.000Z',
+				disconnectedAt: '2026-01-01T00:59:50.000Z',
+			}),
+		);
+
+		expect(await screen.findByText('Stream interrupted — reconnecting')).toBeInTheDocument();
+		expect(screen.getByTestId('player').textContent).toBe('7:live');
+	});
+
 	it('hides engagement for anonymous visitors and links to signin instead', async () => {
 		mountWatch(baseVideo(), { session: 'anonymous' });
 
