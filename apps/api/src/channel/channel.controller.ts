@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { GetUser } from '../common/decorators';
+import { Public } from '../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../common/guards';
 import { SharpPipe } from '../common/pipes/sharp-pipe.pipe';
 import { User } from '../drizzle/schema';
@@ -70,6 +71,7 @@ export class ChannelController {
 
 	@HttpCode(HttpStatus.OK)
 	@Get('/by-username')
+	@Public()
 	getChannelByUsername(
 		@Query() getChannelByUsernameDto: GetChannelByUsernameDto,
 		@GetUser() user: User,
