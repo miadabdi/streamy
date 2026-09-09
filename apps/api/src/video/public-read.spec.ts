@@ -1,4 +1,5 @@
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { PgDialect } from 'drizzle-orm/pg-core';
@@ -66,6 +67,7 @@ describe('VideoService public read gating', () => {
 		const moduleRef = await Test.createTestingModule({
 			providers: [
 				VideoService,
+				{ provide: ConfigService, useValue: { get: vi.fn() } },
 				{
 					provide: DrizzleService,
 					useValue: {

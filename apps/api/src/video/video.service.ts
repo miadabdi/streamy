@@ -8,8 +8,9 @@ import {
 	NotFoundException,
 	UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'crypto';
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, or, sql } from 'drizzle-orm';
 import { ChannelService } from '../channel/channel.service';
 import { GetUser } from '../common/decorators';
 import { TransactionType } from '../common/types/transaction.type';
@@ -39,6 +40,17 @@ import { WatchedVideoDto } from './dto/watched-video.dto';
 import { SetVideoStatusMsg } from './interface';
 import { VideoProcessMsg } from './interface/video-process-msg.interface';
 
+/**
+ * live video payload served on /by-id and /live-by-video-id: computed stream
+ * state plus the live timestamps serialized as ISO strings
+ */
+export type LiveVideoStatePayload = Omit<Video, 'liveStartedAt' | 'disconnectedAt'> & {
+	liveState: 'live' | 'reconnecting' | 'ended';
+	/** null until the first publish / a disconnect happened */
+	liveStartedAt: string | null;
+	disconnectedAt: string | null;
+};
+
 @Injectable()
 export class VideoService {
 	private logger = new Logger(VideoService.name);
@@ -54,6 +66,7 @@ export class VideoService {
 		private playlistService: PlaylistService,
 		private videoSearchService: VideoSearchService,
 		private minioClientService: MinioClientService,
+		private configService: ConfigService,
 	) {}
 
 	onModuleInit() {
@@ -784,18 +797,59 @@ export class VideoService {
 	}
 
 	/**
-	 * finds a video record with type of live and passed videoId
-	 * @param {string} videoId
-	 * @returns {Video}
+	 * reconnect grace window in seconds (LIVE_RESUME_GRACE_SECONDS, default 300)
+	 * @returns {number}
 	 */
-	getLiveByVideoId(videoId: string) {
-		return this.drizzleService.db.query.videos.findFirst({
+	liveResumeGraceSeconds(): number {
+		return Number(this.configService.get('LIVE_RESUME_GRACE_SECONDS') ?? 300);
+	}
+
+	/**
+	 * finds a video record with type of live and passed videoId; inactive rows
+	 * still match while their disconnect is inside the resume grace window,
+	 * so a reconnecting encoder and the watch page can find them
+	 * @param {string} videoId
+	 * @returns {Promise<Video | LiveVideoStatePayload | undefined>}
+	 */
+	async getLiveByVideoId(videoId: string) {
+		const video = await this.drizzleService.db.query.videos.findFirst({
 			where: and(
 				eq(schema.videos.videoId, videoId),
 				eq(schema.videos.type, schema.videoTypeEnum.live),
-				eq(schema.videos.isActive, true),
+				or(
+					eq(schema.videos.isActive, true),
+					gt(
+						schema.videos.disconnectedAt,
+						sql`now() - make_interval(secs => ${this.liveResumeGraceSeconds()})`,
+					),
+				),
 			),
 		});
+
+		return video != null ? this.withLiveState(video) : video;
+	}
+
+	/**
+	 * adds the live-stream fields to a live video payload; vod videos pass
+	 * through unchanged
+	 * @param {Video} video
+	 * @returns {Video | LiveVideoStatePayload}
+	 */
+	private withLiveState(video: Video): Video | LiveVideoStatePayload {
+		if (video.type != schema.videoTypeEnum.live) {
+			return video;
+		}
+
+		const withinGrace =
+			!!video.disconnectedAt &&
+			video.disconnectedAt.getTime() > Date.now() - this.liveResumeGraceSeconds() * 1000;
+
+		return {
+			...video,
+			liveState: video.isActive ? 'live' : withinGrace ? 'reconnecting' : 'ended',
+			liveStartedAt: video.liveStartedAt?.toISOString() ?? null,
+			disconnectedAt: video.disconnectedAt?.toISOString() ?? null,
+		};
 	}
 
 	/**
@@ -834,9 +888,9 @@ export class VideoService {
 	 * NotFound so unreleased videos' existence stays hidden
 	 * @param {number} id
 	 * @param {User} user requesting user, undefined when anonymous
-	 * @returns {Video}
+	 * @returns {Promise<Video | LiveVideoStatePayload>}
 	 */
-	async getVideoById(id: number, user?: User): Promise<Video> {
+	async getVideoById(id: number, user?: User): Promise<Video | LiveVideoStatePayload> {
 		const video = await this.drizzleService.db.query.videos.findFirst({
 			where: eq(schema.videos.id, id),
 			with: {
@@ -871,7 +925,7 @@ export class VideoService {
 			throw new NotFoundException(`Video with id ${id} not found`);
 		}
 
-		return video;
+		return this.withLiveState(video);
 	}
 
 	/**

@@ -6,10 +6,9 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import { DrizzleService } from '../drizzle/drizzle.service';
 import * as schema from '../drizzle/schema';
-import { videoTypeEnum } from '../drizzle/schema';
 import { ProducerService } from '../queue/producer.service';
 import { VideoService } from '../video/video.service';
 import { OnPlayDto, OnPublishDto, OnStopDto, OnUnpublishDto } from './dto';
@@ -35,46 +34,16 @@ export class LiveService {
 	}
 
 	/**
-	 * it would send live info to process queue
-	 * @param {string} app
-	 * @param {string} streamKey
-	 * @returns {{ message: string }}
+	 * accepts a publish by the video's state:
+	 * - ready_for_processing: fresh broadcast, enqueue the processing job
+	 * - processing: republish while the worker is still running — the job
+	 *   rides through short gaps, only restore the live flags
+	 * - done/failed_in_processing inside the grace window: resume — the
+	 *   conditional update makes a racing double-publish lose and skip the
+	 *   enqueue
+	 * @param {OnPublishDto} srsOnPublishDto
+	 * @returns {{ code: number }}
 	 */
-	async sendLiveToProcessQueue(app: string, streamKey: string): Promise<{ message: string }> {
-		const video = await this.drizzleService.db.query.videos.findFirst({
-			where: and(eq(schema.videos.type, videoTypeEnum.live), eq(schema.videos.videoId, streamKey)),
-		});
-
-		if (!video) {
-			throw new NotFoundException(`Live video with stream key ${streamKey} not found`);
-		}
-
-		if (video.processingStatus != schema.VideoProccessingStatusEnum.ready_for_processing) {
-			throw new BadRequestException(
-				`Video is not in ready_for_processing state, current state: ${video.processingStatus}`,
-			);
-		}
-
-		await this.sendLiveProcessRMQMsg({
-			id: video.id,
-			videoId: video.videoId,
-			app,
-			streamKey,
-		});
-
-		await this.drizzleService.db
-			.update(schema.videos)
-			.set({
-				processingStatus: schema.VideoProccessingStatusEnum.processing,
-			})
-			.where(eq(schema.videos.id, video.id))
-			.execute();
-
-		return {
-			message: 'Live sent to process queue successfully',
-		};
-	}
-
 	async srsOnPublish(srsOnPublishDto: OnPublishDto) {
 		// some encoders (obs with the full url in the server field) report the
 		// app as "live/<stream-key>" — normalize so both split styles publish
@@ -83,13 +52,87 @@ export class LiveService {
 			throw new ForbiddenException('Only live app is allowed');
 		}
 
-		const data = await this.videoService.getLiveByVideoId(srsOnPublishDto.stream);
+		const video = await this.videoService.getLiveByVideoId(srsOnPublishDto.stream);
 
-		if (!data) {
+		if (!video) {
 			throw new NotFoundException('Key not found');
 		}
 
-		await this.sendLiveToProcessQueue(srsOnPublishDto.app, srsOnPublishDto.stream);
+		switch (video.processingStatus) {
+			case schema.VideoProccessingStatusEnum.ready_for_processing: {
+				await this.sendLiveProcessRMQMsg({
+					id: video.id,
+					videoId: video.videoId,
+					app: srsOnPublishDto.app,
+					streamKey: srsOnPublishDto.stream,
+				});
+
+				await this.drizzleService.db
+					.update(schema.videos)
+					.set({
+						processingStatus: schema.VideoProccessingStatusEnum.processing,
+						// start of the broadcast; kept on later resumes
+						...(video.liveStartedAt ? {} : { liveStartedAt: new Date() }),
+						isActive: true,
+						disconnectedAt: null,
+					})
+					.where(eq(schema.videos.id, video.id))
+					.execute();
+				break;
+			}
+
+			case schema.VideoProccessingStatusEnum.processing:
+				await this.drizzleService.db
+					.update(schema.videos)
+					.set({ isActive: true, disconnectedAt: null })
+					.where(eq(schema.videos.id, video.id))
+					.execute();
+				break;
+
+			case schema.VideoProccessingStatusEnum.done:
+			case schema.VideoProccessingStatusEnum.failed_in_processing: {
+				const resumed = await this.drizzleService.db
+					.update(schema.videos)
+					.set({
+						processingStatus: schema.VideoProccessingStatusEnum.processing,
+						isActive: true,
+						disconnectedAt: null,
+					})
+					.where(
+						and(
+							eq(schema.videos.id, video.id),
+							inArray(schema.videos.processingStatus, [
+								schema.VideoProccessingStatusEnum.done,
+								schema.VideoProccessingStatusEnum.failed_in_processing,
+							]),
+							gt(
+								schema.videos.disconnectedAt,
+								sql`now() - make_interval(secs => ${this.videoService.liveResumeGraceSeconds()})`,
+							),
+						),
+					)
+					.returning({ id: schema.videos.id })
+					.execute();
+
+				if (resumed.length == 0) {
+					return { code: 0 };
+				}
+
+				await this.sendLiveProcessRMQMsg({
+					id: video.id,
+					videoId: video.videoId,
+					app: srsOnPublishDto.app,
+					streamKey: srsOnPublishDto.stream,
+					resume: true,
+				});
+				break;
+			}
+
+			default:
+				throw new BadRequestException(
+					`Video is not in a publishable state, current state: ${video.processingStatus}`,
+				);
+		}
 
 		return { code: 0 };
 	}
@@ -115,7 +158,7 @@ export class LiveService {
 
 		await this.drizzleService.db
 			.update(schema.videos)
-			.set({ isActive: false })
+			.set({ isActive: false, disconnectedAt: new Date() })
 			.where(eq(schema.videos.id, video.id))
 			.execute();
 

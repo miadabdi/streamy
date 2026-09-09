@@ -10,6 +10,7 @@ describe('LiveService srsOnUnpublish', () => {
 	let service: LiveService;
 	let getLiveByVideoId: ReturnType<typeof vi.fn>;
 	let execute: ReturnType<typeof vi.fn>;
+	let set: ReturnType<typeof vi.fn>;
 
 	const dto = (stream: string) =>
 		({
@@ -30,12 +31,11 @@ describe('LiveService srsOnUnpublish', () => {
 	beforeEach(async () => {
 		getLiveByVideoId = vi.fn();
 		execute = vi.fn().mockResolvedValue(undefined);
-
-		const update = vi.fn().mockReturnValue({
-			set: vi.fn().mockReturnValue({
-				where: vi.fn().mockReturnValue({ execute }),
-			}),
+		set = vi.fn().mockReturnValue({
+			where: vi.fn().mockReturnValue({ execute }),
 		});
+
+		const update = vi.fn().mockReturnValue({ set });
 
 		const moduleRef = await Test.createTestingModule({
 			providers: [
@@ -52,12 +52,16 @@ describe('LiveService srsOnUnpublish', () => {
 		service = moduleRef.get(LiveService);
 	});
 
-	it('marks the live video inactive when the stream ends', async () => {
+	it('marks the live video inactive with a disconnect timestamp when the stream ends', async () => {
 		getLiveByVideoId.mockResolvedValue({ id: 5, videoId: 'deadbeefdeadbeef' });
 
 		const result = await service.srsOnUnpublish(dto('deadbeefdeadbeef'));
 
 		expect(result).toEqual({ code: 0 });
+		expect(set).toHaveBeenCalledWith({
+			isActive: false,
+			disconnectedAt: expect.any(Date),
+		});
 		expect(execute).toHaveBeenCalledTimes(1);
 	});
 

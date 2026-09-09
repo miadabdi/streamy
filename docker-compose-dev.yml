@@ -30,6 +30,7 @@ services:
       - THROTTLE_TTL=${THROTTLE_TTL}
       - THROTTLE_LIMIT=${THROTTLE_LIMIT}
       - COMPRESSION_THRESHOLD=${COMPRESSION_THRESHOLD}
+      - LIVE_RESUME_GRACE_SECONDS=${LIVE_RESUME_GRACE_SECONDS:-300}
       # dev mail is captured by mailpit instead of hitting a real provider
       - SMTP_HOST=mailpit
       - SMTP_PORT=1025

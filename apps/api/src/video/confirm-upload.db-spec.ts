@@ -77,6 +77,7 @@ describe('confirmUpload against a real database', () => {
 			{
 				client: { statObject },
 			} as any,
+			{ get: vi.fn().mockReturnValue(300) } as any,
 		);
 	});
 

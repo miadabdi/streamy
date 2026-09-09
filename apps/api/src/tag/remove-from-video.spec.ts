@@ -1,4 +1,5 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { ChannelService } from '../channel/channel.service';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -36,6 +37,7 @@ describe('TagService removeTagFromVideo', () => {
 			providers: [
 				TagService,
 				VideoService,
+				{ provide: ConfigService, useValue: {} },
 				{
 					provide: DrizzleService,
 					useValue: {

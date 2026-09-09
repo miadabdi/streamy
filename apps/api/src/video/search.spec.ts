@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { ChannelService } from '../channel/channel.service';
 import { DrizzleService } from '../drizzle/drizzle.service';
@@ -41,6 +42,7 @@ describe('VideoService search', () => {
 		const moduleRef = await Test.createTestingModule({
 			providers: [
 				VideoService,
+				{ provide: ConfigService, useValue: {} },
 				{
 					provide: DrizzleService,
 					useValue: {
