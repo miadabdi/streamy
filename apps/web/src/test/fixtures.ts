@@ -5,6 +5,7 @@ import type {
 	ChannelWithAvatar,
 	Comment,
 	Me,
+	Playlist,
 	Subtitle,
 	Tag,
 	User,
@@ -20,6 +21,7 @@ export type {
 	ChannelWithAvatar,
 	Comment,
 	Me,
+	Playlist,
 	Subtitle,
 	Tag,
 	User,
@@ -118,6 +120,23 @@ export function makeVideoListItem(overrides: Partial<VideoListItem> = {}): Video
 		channel: makeChannel(),
 		thumbnailFile: null,
 		videoFile: null,
+		...overrides,
+	};
+}
+
+export function makePlaylist(overrides: Partial<Playlist> = {}): Playlist {
+	return {
+		id: 10,
+		createdAt: baseDate,
+		updatedAt: baseDate,
+		isActive: true,
+		deletedAt: null,
+		name: 'Rack diaries',
+		description: 'Everything I did to the closet, in the order I did it.',
+		channelId: 1,
+		privacy: 'private',
+		type: 'custom',
+		playlistsVideos: [],
 		...overrides,
 	};
 }

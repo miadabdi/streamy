@@ -4,6 +4,7 @@ import { Channel } from '../routes/Channel';
 import { NotFound } from '../routes/NotFound';
 import { RequireAuth } from '../routes/RequireAuth';
 import { Ops } from '../routes/Ops';
+import { PlaylistDetail } from '../routes/PlaylistDetail';
 import { Playlists } from '../routes/Playlists';
 import { RootLayout } from '../routes/root';
 import { Search } from '../routes/Search';
@@ -25,10 +26,13 @@ export const routes: RouteObject[] = [
 		children: [
 			{ path: '/', element: <Browse /> },
 			{ path: 'search', element: <Search /> },
-			{ path: 'playlists', element: <Playlists /> },
 			{
 				element: <RequireAuth />,
 				children: [
+					// the playlists library is per-channel user data (by-channel is
+					// owner-only), so it lives behind the gate like studio/settings
+					{ path: 'playlists', element: <Playlists /> },
+					{ path: 'playlists/:id', element: <PlaylistDetail /> },
 					{ path: 'settings', element: <Settings /> },
 					{ path: 'ops', element: <Ops /> },
 					{ path: 'studio/videos', element: <MyVideos /> },

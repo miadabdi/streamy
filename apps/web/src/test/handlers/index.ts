@@ -1,6 +1,7 @@
 import type { HttpHandler } from 'msw';
 import { authHandlers } from './auth';
 import { channelHandlers } from './channel';
+import { playlistHandlers } from './playlist';
 import { subtitleHandlers } from './subtitle';
 import { userHandlers } from './user';
 import { videoHandlers } from './video';
@@ -12,4 +13,5 @@ export const handlers: HttpHandler[] = [
 	...channelHandlers,
 	...videoHandlers,
 	...subtitleHandlers,
+	...playlistHandlers,
 ];
