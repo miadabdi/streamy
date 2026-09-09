@@ -92,4 +92,25 @@ describe('VideoService processVideoCallback', () => {
 		await running;
 		expect(service.activeJob).toBeNull();
 	});
+
+	it('drops a duplicate job for a video that is already processing', async () => {
+		let release: () => void = () => {};
+		const gate = new Promise<void>((resolve) => (release = resolve));
+		processVideo.mockImplementation(() => gate);
+
+		const first = service.processVideoCallback(message);
+		// let the first job reach its transcode gate (past download + queueing)
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(processVideo).toHaveBeenCalledTimes(1);
+		// second arrival for the same videoId while the first is in flight
+		await service.processVideoCallback(message);
+		expect(processVideo).toHaveBeenCalledTimes(1);
+		expect(addToQueue).not.toHaveBeenCalledWith(
+			expect.objectContaining({ videoId: message.videoId, status: 'failed_in_processing' }),
+		);
+
+		release();
+		await first;
+		expect(service.activeJobs.size).toBe(0);
+	});
 });

@@ -68,6 +68,12 @@ export class VideoService {
 	}
 
 	async processVideoCallback(message: VideoProcessMsg) {
+		// prefetch no longer redelivers, but a manually requeued duplicate would
+		// overwrite the running transcode's storage output — drop it instead
+		if (this.activeJobs.has(message.videoId)) {
+			this.logger.warn(`vod job for video ${message.videoId} already running — duplicate dropped`);
+			return;
+		}
 		this.activeJobs.set(message.videoId, new Date().toISOString());
 		try {
 			await this.processVideo(message);
