@@ -8,7 +8,10 @@ export default defineConfig({
 	server: {
 		proxy: {
 			'/api': 'http://localhost:3000',
-			'/storage': 'http://localhost:9002',
+			'/storage': {
+				target: 'http://localhost:9002',
+				rewrite: (path) => path.replace(/^\/storage/, ''),
+			},
 		},
 	},
 	test: {
