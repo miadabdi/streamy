@@ -5,6 +5,7 @@ import { readdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConsumerService } from '../queue/consumer.service';
+import { JobGate } from '../queue/job-gate';
 import { ProducerService } from '../queue/producer.service';
 import { VideoProcessingStatus } from '../video/enum';
 import { SetVideoStatusMsg } from '../video/interface';
@@ -16,12 +17,7 @@ import { LiveProcessMsg } from './interface';
 export class LiveService {
 	private logger = new Logger(LiveService.name);
 	private videoFilesDir = join(__dirname, 'liveFiles');
-	// in-process gate: messages are acked on receipt (so rabbitmq's prefetch
-	// cannot bound them) — this set + fifo enforce the same semantics locally
-	private runningKeys = new Set<string>();
-	private runningCount = 0;
-	private maxConcurrent = 1;
-	private waiters: Array<() => void> = [];
+	private liveGate = new JobGate(1);
 
 	constructor(
 		private configService: ConfigService,
@@ -34,8 +30,8 @@ export class LiveService {
 	async onModuleInit() {
 		// ack on receipt: a live job runs for the whole broadcast and would
 		// otherwise be redelivered as a corrupting duplicate on any timeout;
-		// the in-process gate below replaces the prefetch bound this acking gives up
-		this.maxConcurrent = this.configService.get<number>('LIVE_PROCESS_CONCURRENCY') ?? 1;
+		// the JobGate replaces the prefetch bound this acking gives up
+		this.liveGate = new JobGate(this.configService.get<number>('LIVE_PROCESS_CONCURRENCY') ?? 1);
 		await this.consumerService.listenOnQueue(
 			'q.live.process',
 			this.processLiveCallback.bind(this),
@@ -50,24 +46,12 @@ export class LiveService {
 	}
 
 	async processLiveCallback(message: LiveProcessMsg) {
-		// a job already runs for this stream: its rtmp pull follows whatever srs
-		// serves under the key (including after an encoder reconnect), so a
-		// duplicate would only overwrite the running job's storage output
-		if (this.runningKeys.has(message.streamKey)) {
-			this.logger.warn(`live job for ${message.streamKey} already running — duplicate dropped`);
-			return;
-		}
-		while (this.runningCount >= this.maxConcurrent) {
-			await new Promise<void>((resolve) => this.waiters.push(resolve));
-		}
-		this.runningKeys.add(message.streamKey);
-		this.runningCount += 1;
-		try {
-			await this.runLiveJob(message);
-		} finally {
-			this.runningKeys.delete(message.streamKey);
-			this.runningCount -= 1;
-			this.waiters.shift()?.();
+		// a job already runs (or waits) for this stream: its rtmp pull follows
+		// whatever srs serves under the key (including after an encoder
+		// reconnect), so a duplicate could only overwrite its storage output
+		const ran = await this.liveGate.run(message.streamKey, () => this.runLiveJob(message));
+		if (ran === undefined) {
+			this.logger.warn(`live job for ${message.streamKey} already in flight — duplicate dropped`);
 		}
 	}
 

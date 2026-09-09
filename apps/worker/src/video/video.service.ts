@@ -7,6 +7,7 @@ import { join } from 'path';
 import { BUCKET_NAMES_TYPE, RFC5646_LANGUAGE_TAGS } from '../common/constants';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConsumerService } from '../queue/consumer.service';
+import { JobGate } from '../queue/job-gate';
 import { ProducerService } from '../queue/producer.service';
 import { VideoProcessingStatus } from './enum';
 import { SetVideoStatusMsg } from './interface';
@@ -27,13 +28,15 @@ export class VideoService {
 	) {}
 
 	async onModuleInit() {
-		// how many vod transcodes may run interleaved (each is a full ffmpeg;
-		// VIDEO_PROCESS_CONCURRENCY in .env, default 1 = the old serial behavior)
+		// ack on receipt + in-process gate (JobGate): the transcode no longer
+		// holds an unacked delivery, so no broker consumer_timeout can ever
+		// redeliver it mid-run; VIDEO_PROCESS_CONCURRENCY bounds concurrency
 		const concurrency = this.configService.get<number>('VIDEO_PROCESS_CONCURRENCY') ?? 1;
+		this.vodGate = new JobGate(concurrency);
 		await this.consumerService.listenOnQueue(
 			'q.video.process',
 			this.processVideoCallback.bind(this),
-			{ concurrency },
+			{ ackOnReceipt: true },
 		);
 
 		if (!existsSync(this.videoFilesDir)) {
@@ -58,6 +61,7 @@ export class VideoService {
 
 	/** in-flight jobs (videoId → start), exposed by the health endpoint */
 	activeJobs = new Map<number, string>();
+	private vodGate = new JobGate(1);
 
 	/** oldest in-flight job — kept for the single-job consumers of the api shape */
 	get activeJob(): { videoId: number; startedAt: string } | null {
@@ -68,17 +72,18 @@ export class VideoService {
 	}
 
 	async processVideoCallback(message: VideoProcessMsg) {
-		// prefetch no longer redelivers, but a manually requeued duplicate would
-		// overwrite the running transcode's storage output — drop it instead
-		if (this.activeJobs.has(message.videoId)) {
-			this.logger.warn(`vod job for video ${message.videoId} already running — duplicate dropped`);
-			return;
-		}
-		this.activeJobs.set(message.videoId, new Date().toISOString());
-		try {
-			await this.processVideo(message);
-		} finally {
-			this.activeJobs.delete(message.videoId);
+		const ran = await this.vodGate.run(String(message.videoId), async () => {
+			this.activeJobs.set(message.videoId, new Date().toISOString());
+			try {
+				await this.processVideo(message);
+			} finally {
+				this.activeJobs.delete(message.videoId);
+			}
+		});
+		if (ran === undefined) {
+			this.logger.warn(
+				`vod job for video ${message.videoId} already in flight — duplicate dropped`,
+			);
 		}
 	}
 
