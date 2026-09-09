@@ -64,10 +64,13 @@ export class VideoService {
 
 	private async processVideo(message: VideoProcessMsg) {
 		console.dir(message, { depth: null });
+		// unique per job: a redelivered/replayed duplicate would otherwise share
+		// the videoId-keyed dir and corrupt the other run mid-transcode
+		const jobDir = `${message.videoId}-${Date.now()}`;
 		const { localfilepath: videoFilePath, dedicatedDir } = await this.downloadMinioFile(
 			message.bucketName,
 			message.filePath,
-			message.videoId.toString(),
+			jobDir,
 		);
 
 		this.producerService.addToQueue('q.set.video.status', {
@@ -92,10 +95,10 @@ export class VideoService {
 		}
 
 		for (const sub of message.subs) {
-			const { localfilepath: subFilePath, dedicatedDir } = await this.downloadMinioFile(
+			const { localfilepath: subFilePath } = await this.downloadMinioFile(
 				sub.bucketName,
 				sub.filePath,
-				message.videoId.toString(),
+				jobDir,
 			);
 
 			const langCode = sub.langRFC5646;
@@ -220,7 +223,19 @@ export class VideoService {
 			) {
 				const filePath = join(dedicatedDir, fileName);
 
-				await this.minioClientService.client.fPutObject('hls', join(minioDir, fileName), filePath);
+				try {
+					await this.minioClientService.client.fPutObject(
+						'hls',
+						join(minioDir, fileName),
+						filePath,
+					);
+				} catch (err: any) {
+					// the file vanished between readdir and upload — a duplicate
+					// job cleaned the shared tree; not worth failing the upload of
+					// every other segment over one already-gone file
+					if (err?.code === 'ENOENT') continue;
+					throw err;
+				}
 			}
 		}
 	}
