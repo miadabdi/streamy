@@ -198,6 +198,8 @@ export const videos = pgTable(
 			VideoProccessingStatusEnum.ready_for_upload,
 		),
 		videoFileId: integer('video_file_id').references(() => files.id),
+		disconnectedAt: timestamp('disconnected_at', { precision: 6, withTimezone: true }),
+		liveStartedAt: timestamp('live_started_at', { precision: 6, withTimezone: true }),
 	},
 	(videos) => {
 		return {

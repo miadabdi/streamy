@@ -1,4 +1,6 @@
 {
+	"id": "5a888f8e-177c-4ae2-95e1-f34e27192001",
+	"prevId": "ac891431-c0c0-49c6-9904-2ef336b2ef4f",
 	"version": "7",
 	"dialect": "postgresql",
 	"tables": {
@@ -79,6 +81,7 @@
 			},
 			"indexes": {
 				"channels_username_idx": {
+					"name": "channels_username_idx",
 					"columns": [
 						{
 							"expression": "username",
@@ -87,44 +90,164 @@
 							"nulls": "last"
 						}
 					],
-					"with": {},
-					"name": "channels_username_idx",
 					"isUnique": true,
+					"concurrently": false,
 					"method": "btree",
-					"concurrently": false
+					"with": {}
 				}
 			},
 			"foreignKeys": {
 				"channels_owner_id_users_id_fk": {
 					"name": "channels_owner_id_users_id_fk",
 					"tableFrom": "channels",
-					"columnsFrom": ["owner_id"],
 					"tableTo": "users",
+					"columnsFrom": ["owner_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				},
 				"channels_avatar_file_id_files_id_fk": {
 					"name": "channels_avatar_file_id_files_id_fk",
 					"tableFrom": "channels",
-					"columnsFrom": ["avatar_file_id"],
 					"tableTo": "files",
+					"columnsFrom": ["avatar_file_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {
 				"channels_username_unique": {
 					"name": "channels_username_unique",
-					"columns": ["username"],
-					"nullsNotDistinct": false
+					"nullsNotDistinct": false,
+					"columns": ["username"]
 				}
 			},
 			"policies": {},
-			"isRLSEnabled": false,
-			"checkConstraints": {}
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.comments": {
+			"name": "comments",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "now()"
+				},
+				"is_active": {
+					"name": "is_active",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": false,
+					"default": true
+				},
+				"deleted_at": {
+					"name": "deleted_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"is_edited": {
+					"name": "is_edited",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": false,
+					"default": false
+				},
+				"video_id": {
+					"name": "video_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"owner_id": {
+					"name": "owner_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"reply_to": {
+					"name": "reply_to",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"content": {
+					"name": "content",
+					"type": "varchar(1024)",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {
+				"comments_video_id_idx": {
+					"name": "comments_video_id_idx",
+					"columns": [
+						{
+							"expression": "video_id",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": false,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {
+				"comments_video_id_videos_id_fk": {
+					"name": "comments_video_id_videos_id_fk",
+					"tableFrom": "comments",
+					"tableTo": "videos",
+					"columnsFrom": ["video_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"comments_owner_id_channels_id_fk": {
+					"name": "comments_owner_id_channels_id_fk",
+					"tableFrom": "comments",
+					"tableTo": "channels",
+					"columnsFrom": ["owner_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"comments_reply_to_comments_id_fk": {
+					"name": "comments_reply_to_comments_id_fk",
+					"tableFrom": "comments",
+					"tableTo": "comments",
+					"columnsFrom": ["reply_to"],
+					"columnsTo": ["id"],
+					"onDelete": "set null",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
 		},
 		"public.files": {
 			"name": "files",
@@ -158,7 +281,7 @@
 				},
 				"path": {
 					"name": "path",
-					"type": "text",
+					"type": "varchar(1024)",
 					"primaryKey": false,
 					"notNull": true
 				},
@@ -166,13 +289,13 @@
 					"name": "mimetype",
 					"type": "varchar(50)",
 					"primaryKey": false,
-					"notNull": true
+					"notNull": false
 				},
 				"size_in_byte": {
 					"name": "size_in_byte",
 					"type": "integer",
 					"primaryKey": false,
-					"notNull": true
+					"notNull": false
 				},
 				"user_id": {
 					"name": "user_id",
@@ -186,18 +309,18 @@
 				"files_user_id_users_id_fk": {
 					"name": "files_user_id_users_id_fk",
 					"tableFrom": "files",
-					"columnsFrom": ["user_id"],
 					"tableTo": "users",
+					"columnsFrom": ["user_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"policies": {},
-			"isRLSEnabled": false,
-			"checkConstraints": {}
+			"checkConstraints": {},
+			"isRLSEnabled": false
 		},
 		"public.playlists": {
 			"name": "playlists",
@@ -257,6 +380,7 @@
 				"privacy": {
 					"name": "privacy",
 					"type": "playlist_privacy",
+					"typeSchema": "public",
 					"primaryKey": false,
 					"notNull": false,
 					"default": "'private'"
@@ -264,8 +388,10 @@
 				"type": {
 					"name": "type",
 					"type": "playlist_type",
+					"typeSchema": "public",
 					"primaryKey": false,
-					"notNull": true
+					"notNull": false,
+					"default": "'custom'"
 				}
 			},
 			"indexes": {},
@@ -273,18 +399,18 @@
 				"playlists_channel_id_channels_id_fk": {
 					"name": "playlists_channel_id_channels_id_fk",
 					"tableFrom": "playlists",
-					"columnsFrom": ["channel_id"],
 					"tableTo": "channels",
+					"columnsFrom": ["channel_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"policies": {},
-			"isRLSEnabled": false,
-			"checkConstraints": {}
+			"checkConstraints": {},
+			"isRLSEnabled": false
 		},
 		"public.playlists_videos": {
 			"name": "playlists_videos",
@@ -315,20 +441,20 @@
 				"playlists_videos_playlist_id_playlists_id_fk": {
 					"name": "playlists_videos_playlist_id_playlists_id_fk",
 					"tableFrom": "playlists_videos",
-					"columnsFrom": ["playlist_id"],
 					"tableTo": "playlists",
+					"columnsFrom": ["playlist_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				},
 				"playlists_videos_video_id_videos_id_fk": {
 					"name": "playlists_videos_video_id_videos_id_fk",
 					"tableFrom": "playlists_videos",
-					"columnsFrom": ["video_id"],
 					"tableTo": "videos",
+					"columnsFrom": ["video_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {
@@ -339,8 +465,64 @@
 			},
 			"uniqueConstraints": {},
 			"policies": {},
-			"isRLSEnabled": false,
-			"checkConstraints": {}
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.subscriptions": {
+			"name": "subscriptions",
+			"schema": "",
+			"columns": {
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "now()"
+				},
+				"follower_id": {
+					"name": "follower_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"followee_id": {
+					"name": "followee_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"subscriptions_follower_id_channels_id_fk": {
+					"name": "subscriptions_follower_id_channels_id_fk",
+					"tableFrom": "subscriptions",
+					"tableTo": "channels",
+					"columnsFrom": ["follower_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"subscriptions_followee_id_channels_id_fk": {
+					"name": "subscriptions_followee_id_channels_id_fk",
+					"tableFrom": "subscriptions",
+					"tableTo": "channels",
+					"columnsFrom": ["followee_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"subscription_pk": {
+					"name": "subscription_pk",
+					"columns": ["followee_id", "follower_id"]
+				}
+			},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
 		},
 		"public.subtitles": {
 			"name": "subtitles",
@@ -403,27 +585,151 @@
 				"subtitles_video_id_videos_id_fk": {
 					"name": "subtitles_video_id_videos_id_fk",
 					"tableFrom": "subtitles",
-					"columnsFrom": ["video_id"],
 					"tableTo": "videos",
+					"columnsFrom": ["video_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				},
 				"subtitles_file_id_files_id_fk": {
 					"name": "subtitles_file_id_files_id_fk",
 					"tableFrom": "subtitles",
-					"columnsFrom": ["file_id"],
 					"tableTo": "files",
+					"columnsFrom": ["file_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"policies": {},
-			"isRLSEnabled": false,
-			"checkConstraints": {}
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.tags": {
+			"name": "tags",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "serial",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "now()"
+				},
+				"is_active": {
+					"name": "is_active",
+					"type": "boolean",
+					"primaryKey": false,
+					"notNull": false,
+					"default": true
+				},
+				"deleted_at": {
+					"name": "deleted_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"title": {
+					"name": "title",
+					"type": "varchar(128)",
+					"primaryKey": false,
+					"notNull": true
+				}
+			},
+			"indexes": {
+				"tags_title_idx": {
+					"name": "tags_title_idx",
+					"columns": [
+						{
+							"expression": "title",
+							"isExpression": false,
+							"asc": true,
+							"nulls": "last"
+						}
+					],
+					"isUnique": true,
+					"concurrently": false,
+					"method": "btree",
+					"with": {}
+				}
+			},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.tags_videos": {
+			"name": "tags_videos",
+			"schema": "",
+			"columns": {
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "now()"
+				},
+				"tag_id": {
+					"name": "tag_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"video_id": {
+					"name": "video_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {
+				"tags_videos_tag_id_tags_id_fk": {
+					"name": "tags_videos_tag_id_tags_id_fk",
+					"tableFrom": "tags_videos",
+					"tableTo": "tags",
+					"columnsFrom": ["tag_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"tags_videos_video_id_videos_id_fk": {
+					"name": "tags_videos_video_id_videos_id_fk",
+					"tableFrom": "tags_videos",
+					"tableTo": "videos",
+					"columnsFrom": ["video_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				}
+			},
+			"compositePrimaryKeys": {
+				"tags_videos_pk": {
+					"name": "tags_videos_pk",
+					"columns": ["video_id", "tag_id"]
+				}
+			},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
 		},
 		"public.users": {
 			"name": "users",
@@ -520,6 +826,7 @@
 			},
 			"indexes": {
 				"users_email_idx": {
+					"name": "users_email_idx",
 					"columns": [
 						{
 							"expression": "email",
@@ -528,11 +835,10 @@
 							"nulls": "last"
 						}
 					],
-					"with": {},
-					"name": "users_email_idx",
 					"isUnique": true,
+					"concurrently": false,
 					"method": "btree",
-					"concurrently": false
+					"with": {}
 				}
 			},
 			"foreignKeys": {},
@@ -540,13 +846,13 @@
 			"uniqueConstraints": {
 				"users_email_unique": {
 					"name": "users_email_unique",
-					"columns": ["email"],
-					"nullsNotDistinct": false
+					"nullsNotDistinct": false,
+					"columns": ["email"]
 				}
 			},
 			"policies": {},
-			"isRLSEnabled": false,
-			"checkConstraints": {}
+			"checkConstraints": {},
+			"isRLSEnabled": false
 		},
 		"public.videos": {
 			"name": "videos",
@@ -604,6 +910,14 @@
 					"primaryKey": false,
 					"notNull": false
 				},
+				"type": {
+					"name": "type",
+					"type": "video_type",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": false,
+					"default": "'vod'"
+				},
 				"name": {
 					"name": "name",
 					"type": "varchar(256)",
@@ -649,6 +963,12 @@
 					"primaryKey": false,
 					"notNull": false
 				},
+				"ffmpeg_process_logs": {
+					"name": "ffmpeg_process_logs",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
 				"thumbnail_file_id": {
 					"name": "thumbnail_file_id",
 					"type": "integer",
@@ -658,13 +978,33 @@
 				"processing_status": {
 					"name": "processing_status",
 					"type": "video_proccessing_status",
+					"typeSchema": "public",
 					"primaryKey": false,
 					"notNull": false,
 					"default": "'ready_for_upload'"
+				},
+				"video_file_id": {
+					"name": "video_file_id",
+					"type": "integer",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"disconnected_at": {
+					"name": "disconnected_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"live_started_at": {
+					"name": "live_started_at",
+					"type": "timestamp (6) with time zone",
+					"primaryKey": false,
+					"notNull": false
 				}
 			},
 			"indexes": {
 				"videos_channel_id_idx": {
+					"name": "videos_channel_id_idx",
 					"columns": [
 						{
 							"expression": "channel_id",
@@ -673,13 +1013,13 @@
 							"nulls": "last"
 						}
 					],
-					"with": {},
-					"name": "videos_channel_id_idx",
 					"isUnique": false,
+					"concurrently": false,
 					"method": "btree",
-					"concurrently": false
+					"with": {}
 				},
 				"videos_video_id_idx": {
+					"name": "videos_video_id_idx",
 					"columns": [
 						{
 							"expression": "video_id",
@@ -688,38 +1028,46 @@
 							"nulls": "last"
 						}
 					],
-					"with": {},
-					"name": "videos_video_id_idx",
 					"isUnique": true,
+					"concurrently": false,
 					"method": "btree",
-					"concurrently": false
+					"with": {}
 				}
 			},
 			"foreignKeys": {
 				"videos_channel_id_channels_id_fk": {
 					"name": "videos_channel_id_channels_id_fk",
 					"tableFrom": "videos",
-					"columnsFrom": ["channel_id"],
 					"tableTo": "channels",
+					"columnsFrom": ["channel_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				},
 				"videos_thumbnail_file_id_files_id_fk": {
 					"name": "videos_thumbnail_file_id_files_id_fk",
 					"tableFrom": "videos",
-					"columnsFrom": ["thumbnail_file_id"],
 					"tableTo": "files",
+					"columnsFrom": ["thumbnail_file_id"],
 					"columnsTo": ["id"],
-					"onUpdate": "no action",
-					"onDelete": "no action"
+					"onDelete": "no action",
+					"onUpdate": "no action"
+				},
+				"videos_video_file_id_files_id_fk": {
+					"name": "videos_video_file_id_files_id_fk",
+					"tableFrom": "videos",
+					"tableTo": "files",
+					"columnsFrom": ["video_file_id"],
+					"columnsTo": ["id"],
+					"onDelete": "no action",
+					"onUpdate": "no action"
 				}
 			},
 			"compositePrimaryKeys": {},
 			"uniqueConstraints": {},
 			"policies": {},
-			"isRLSEnabled": false,
-			"checkConstraints": {}
+			"checkConstraints": {},
+			"isRLSEnabled": false
 		}
 	},
 	"enums": {
@@ -744,18 +1092,21 @@
 				"failed_in_processing",
 				"done"
 			]
+		},
+		"public.video_type": {
+			"name": "video_type",
+			"schema": "public",
+			"values": ["vod", "live"]
 		}
 	},
 	"schemas": {},
-	"_meta": {
-		"schemas": {},
-		"tables": {},
-		"columns": {}
-	},
-	"id": "6c18c317-1adb-4997-98ec-88ddd786df6b",
-	"prevId": "1a9837ec-5292-45aa-8ec6-2c4431cd8917",
 	"sequences": {},
+	"roles": {},
 	"policies": {},
 	"views": {},
-	"roles": {}
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
 }
