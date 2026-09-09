@@ -63,11 +63,12 @@ export class VideoProcessService {
 		return this.run(args, dedicatedDir, niceness);
 	}
 
-	async processLiveVideo(rtmpUrl: string, dedicatedDir: string) {
+	async processLiveVideo(rtmpUrl: string, dedicatedDir: string, startNumber = 1) {
 		const args = buildLiveArgs(
 			rtmpUrl,
 			this.configService.get<number>('FFMPEG_THREAD_COUNT'),
 			this.plan,
+			startNumber,
 		);
 		const niceness = this.configService.get<number>('FFMPEG_LIVE_NICENESS');
 

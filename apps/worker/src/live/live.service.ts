@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { existsSync, mkdirSync } from 'fs';
 import { readdir, rm } from 'fs/promises';
 import { join } from 'path';
+import { Readable } from 'stream';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
@@ -49,8 +50,17 @@ export class LiveService {
 		// stream — a shared dir made the jobs corrupt each other's final sweep
 		const dedicatedDir = join(this.videoFilesDir, `${message.streamKey}-${Date.now()}`);
 
+		// resume leg: previous playlists spliced ahead of this leg's entries on
+		// every upload (undefined on a fresh broadcast)
+		let prefixes: Map<string, string> | undefined;
+		let startNumber = 1;
+
 		try {
 			mkdirSync(dedicatedDir, { recursive: true });
+
+			if (message.resume) {
+				({ prefixes, startNumber } = await this.prepareResume(message.id));
+			}
 
 			const srsHost = this.configService.get<string>('SRS_RTMP_HOST') ?? 'localhost';
 			const rtmpUrl = `rtmp://${srsHost}:1935/${message.app}/${message.streamKey}`;
@@ -63,6 +73,7 @@ export class LiveService {
 				dedicatedDir,
 				message.id.toString(),
 				this.minioClientService.client,
+				prefixes,
 			);
 			const intervalMs = (this.configService.get<number>('LIVE_UPLOAD_INTERVAL') ?? 5) * 1000;
 			let ticking = false;
@@ -82,7 +93,7 @@ export class LiveService {
 				for (let attempt = 1; attempt <= 3; attempt++) {
 					try {
 						// resolves when the rtmp source ends and ffmpeg exits cleanly
-						await this.videoProcessService.processLiveVideo(rtmpUrl, dedicatedDir);
+						await this.videoProcessService.processLiveVideo(rtmpUrl, dedicatedDir, startNumber);
 						break;
 					} catch (err) {
 						const files = await readdir(dedicatedDir).catch(() => [] as string[]);
@@ -113,12 +124,15 @@ export class LiveService {
 
 			this.logger.error(`live processing of ${message.streamKey} failed: ${logs}`);
 
-			// best effort: flush whatever was produced so the partial stream is playable
+			// best effort: flush whatever was produced so the partial stream is
+			// playable; the splice prefixes matter here too, or the flush would
+			// overwrite the previous leg's playlist with only this leg's tail
 			try {
 				const uploader = new LiveUploader(
 					dedicatedDir,
 					message.id.toString(),
 					this.minioClientService.client,
+					prefixes,
 				);
 				await uploader.flush();
 			} catch (flushErr: any) {
@@ -132,6 +146,51 @@ export class LiveService {
 				logs,
 			} as SetVideoStatusMsg);
 		}
+	}
+
+	/**
+	 * resume leg: pull each variant's stored playlist. the next segment number
+	 * continues after the fullest variant so this leg's files never collide
+	 * with what is already uploaded. a variant that is missing or produced no
+	 * segments contributes nothing; if none did, the broadcast starts fresh.
+	 */
+	private async prepareResume(videoId: number): Promise<{
+		prefixes: Map<string, string>;
+		startNumber: number;
+	}> {
+		const variants = ['1080p', '720p', '360p'];
+		const prefixes = new Map<string, string>();
+		let maxCount = 0;
+
+		for (const variant of variants) {
+			try {
+				const stream = await this.minioClientService.client.getObject(
+					'hls',
+					`${videoId}/manifest_${variant}.m3u8`,
+				);
+				const content = await this.readObject(stream);
+				const segmentCount = (content.match(/\.ts/g) ?? []).length;
+				if (segmentCount === 0) continue;
+				maxCount = Math.max(maxCount, segmentCount);
+				// the previous leg wrote an ENDLIST on exit; the spliced playlist
+				// must not terminate before this leg's entries
+				prefixes.set(`manifest_${variant}.m3u8`, content.replace(/#EXT-X-ENDLIST\n?$/, ''));
+			} catch (err: any) {
+				this.logger.warn(`resume splice: no usable manifest for ${variant}: ${err.message}`);
+			}
+		}
+
+		return { prefixes, startNumber: prefixes.size ? maxCount + 1 : 1 };
+	}
+
+	private readObject(stream: Readable): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const chunks: Buffer[] = [];
+			// minio yields buffers, but a mocked/edge stream may yield strings
+			stream.on('data', (chunk: Buffer | string) => chunks.push(Buffer.from(chunk)));
+			stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+			stream.on('error', reject);
+		});
 	}
 
 	private async removeDirectory(dir: string) {

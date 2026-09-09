@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { readdir, stat } from 'fs/promises';
+import { readFile, readdir, stat } from 'fs/promises';
 import { join } from 'path';
 
 const UPLOADABLE_PREFIXES = ['manifest_', 'master.m3u8', 'segment_', 'sub_vtt_'];
@@ -23,7 +23,12 @@ export class LiveUploader {
 	constructor(
 		private dir: string,
 		private minioDir: string,
-		private client: { fPutObject: (bucket: string, key: string, path: string) => Promise<unknown> },
+		private client: {
+			fPutObject: (bucket: string, key: string, path: string) => Promise<unknown>;
+			putObject: (bucket: string, key: string, body: Buffer) => Promise<unknown>;
+		},
+		/** resume legs: variant manifest filename -> playlist already in storage */
+		private prefixes?: Map<string, string>,
 	) {}
 
 	async tick(): Promise<void> {
@@ -65,7 +70,26 @@ export class LiveUploader {
 	}
 
 	private async upload(file: string, fullPath: string) {
-		await this.client.fPutObject('hls', join(this.minioDir, file), fullPath);
+		const prefix = this.prefixes?.get(file);
+		if (prefix === undefined) {
+			await this.client.fPutObject('hls', join(this.minioDir, file), fullPath);
+			this.uploaded.add(file);
+			return;
+		}
+
+		// resumed leg: the stored playlist, a discontinuity, then this leg's
+		// entries (the local header up to the first #EXTINF is stripped).
+		// until the first segment exists there is nothing to append — leave
+		// the stored playlist alone rather than truncate it.
+		const local = await readFile(fullPath, 'utf8');
+		const at = local.indexOf('#EXTINF');
+		if (at < 0) return;
+
+		await this.client.putObject(
+			'hls',
+			join(this.minioDir, file),
+			Buffer.from(prefix + '#EXT-X-DISCONTINUITY\n' + local.slice(at)),
+		);
 		this.uploaded.add(file);
 	}
 }

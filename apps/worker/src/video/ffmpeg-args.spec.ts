@@ -78,6 +78,20 @@ describe('ffmpeg argument builders', () => {
 		}
 	});
 
+	it('omits -hls_start_number by default and inserts it in the hls block when given', () => {
+		const fresh = buildLiveArgs('rtmp://x', 8, SOFTWARE_PLAN);
+		expect(fresh).not.toContain('-hls_start_number');
+
+		const resumed = buildLiveArgs('rtmp://x', 8, SOFTWARE_PLAN, 7);
+		expect(resumed[resumed.indexOf('-hls_start_number') + 1]).toBe('7');
+		expect(resumed.indexOf('-hls_start_number')).toBeGreaterThan(resumed.indexOf('-f'));
+		expect(resumed.indexOf('-hls_start_number')).toBeLessThan(
+			resumed.indexOf('-hls_segment_filename'),
+		);
+		// explicit 1 stays the default behavior: no flag
+		expect(buildLiveArgs('rtmp://x', 8, SOFTWARE_PLAN, 1)).not.toContain('-hls_start_number');
+	});
+
 	it('places every flag value as its own element', () => {
 		for (const args of [
 			buildVodArgs('v.mp4', 8, SOFTWARE_PLAN),

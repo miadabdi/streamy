@@ -130,7 +130,12 @@ export function buildSubtitleArgs(
 	];
 }
 
-export function buildLiveArgs(rtmpInput: string, threads: number, plan: EncoderPlan): string[] {
+export function buildLiveArgs(
+	rtmpInput: string,
+	threads: number,
+	plan: EncoderPlan,
+	startNumber = 1,
+): string[] {
 	return [
 		'-hide_banner',
 		'-loglevel',
@@ -202,6 +207,9 @@ export function buildLiveArgs(rtmpInput: string, threads: number, plan: EncoderP
 		'master.m3u8',
 		'-var_stream_map',
 		THREE_VARIANT_STREAM_MAP,
+		// resumed legs number segments after the previous leg's last one so
+		// the files they write never collide with what is already uploaded
+		...(startNumber > 1 ? ['-hls_start_number', String(startNumber)] : []),
 		'-hls_segment_filename',
 		'segment_%v_%05d.ts',
 		'manifest_%v.m3u8',
