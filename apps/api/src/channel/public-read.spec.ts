@@ -32,7 +32,7 @@ describe('ChannelService.getChannelByUsername payload scope', () => {
 		const withRelations = findFirst.mock.calls[0][0].with;
 		expect(Object.keys(withRelations)).not.toContain('playlists');
 		expect(withRelations.avatar).toBe(true);
-		expect(withRelations.subscriptions).toBeDefined();
+		expect(withRelations.subscriptions).toBeUndefined();
 	});
 });
 
