@@ -54,7 +54,7 @@ describe('Ops', () => {
 		expect(tile('Encoder').querySelector('.stat-flag')).toHaveClass('stat-flag-hw');
 		expect(screen.getByText('Hardware')).toBeInTheDocument();
 		expect(tile('Active job').textContent).toContain('#7');
-		expect(screen.getByText(/elapsed$/)).toBeInTheDocument();
+		expect(screen.getByText(/elapsed/)).toBeInTheDocument();
 	});
 
 	it('flags the software encoder as a visible fallback', async () => {
@@ -93,7 +93,7 @@ describe('Ops', () => {
 		expect(await screen.findByText('#42')).toBeInTheDocument();
 		const value = tile('Active job').querySelector('.stat-value');
 		expect(value).toHaveClass('mono');
-		expect(screen.getByText('06:12 elapsed')).toBeInTheDocument();
+		expect(screen.getByText('06:12 elapsed on oldest')).toBeInTheDocument();
 	});
 
 	it('shows an honest error state when the worker is unreachable', async () => {

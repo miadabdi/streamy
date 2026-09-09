@@ -34,15 +34,21 @@ export class ConsumerService {
 	 * This method sets a callback as message handler of a specific queue
 	 * @param {RMQ_QUEUES_TYPE} queue name of queue
 	 * @param {(content: any) => Promise<any>} callback
-	 * @param {{ ackOnReceipt?: boolean }} options ackOnReceipt: ack before the
-	 *   callback runs — for handlers that legitimately outlive rabbitmq's
-	 *   30-minute default consumer_timeout (live transcodes run for the whole
-	 *   broadcast). At-most-once: a crashed job is not redelivered.
+	 * @param {{ ackOnReceipt?: boolean; concurrency?: number }} options
+	 *   ackOnReceipt: ack before the callback runs — for handlers that
+	 *   legitimately outlive any consumer_timeout (live transcodes run for the
+	 *   whole broadcast). At-most-once: a crashed job is not redelivered.
+	 *   concurrency: how many messages of this queue may run interleaved
+	 *   (the consume handler is not awaited, so prefetch is the only bound;
+	 *   each message still acks when its own job finishes).
 	 */
 	async listenOnQueue(
 		queue: RMQ_QUEUES_TYPE,
 		callback: (content: any) => Promise<any>,
-		{ ackOnReceipt = false }: { ackOnReceipt?: boolean } = {},
+		{
+			ackOnReceipt = false,
+			concurrency = 1,
+		}: { ackOnReceipt?: boolean; concurrency?: number } = {},
 	) {
 		this.logger.log(`Setup consumer for queue ${queue}`);
 		this.listeners.set(queue, callback);
@@ -59,10 +65,12 @@ export class ConsumerService {
 				this.handleMessage(queue, callback, message, ackOnReceipt);
 			},
 			{
-				prefetch: 1,
+				prefetch: concurrency,
 			},
 		);
-		this.logger.log(`Consumer service started and listening on ${queue} for messages`);
+		this.logger.log(
+			`Consumer service started and listening on ${queue} for messages (concurrency ${concurrency})`,
+		);
 	}
 
 	private async assertQueue(channel: amqplib.ConfirmChannel, queue: RMQ_QUEUES_TYPE) {

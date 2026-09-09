@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { MinioClientService } from '../minio-client/minio-client.service';
 import { ConsumerService } from '../queue/consumer.service';
 import { ProducerService } from '../queue/producer.service';
@@ -44,6 +45,7 @@ describe('VideoService processVideoCallback', () => {
 		const moduleRef = await Test.createTestingModule({
 			providers: [
 				VideoService,
+				{ provide: ConfigService, useValue: { get: vi.fn().mockReturnValue(undefined) } },
 				{ provide: ConsumerService, useValue: { listenOnQueue: vi.fn() } },
 				{ provide: MinioClientService, useValue: { client: { fGetObject, fPutObject: vi.fn() } } },
 				{ provide: VideoProcessService, useValue: { processVideo } },

@@ -24,7 +24,7 @@ describe('HealthController', () => {
 				{ provide: ConsumerService, useValue: { isConnected } },
 				{ provide: DeadLetterService, useValue: { count: deadLetterCount } },
 				{ provide: MinioClientService, useValue: { isAvailable } },
-				{ provide: VideoService, useValue: { activeJob: null } },
+				{ provide: VideoService, useValue: { activeJob: null, activeJobs: new Map() } },
 				{ provide: VideoProcessService, useValue: { activeEncoder: 'h264_vaapi' } },
 			],
 		}).compile();
@@ -50,6 +50,7 @@ describe('HealthController', () => {
 			deadLetters: 0,
 			encoder: 'h264_vaapi',
 			activeJob: null,
+			activeJobs: [],
 		});
 	});
 
@@ -63,7 +64,10 @@ describe('HealthController', () => {
 				{ provide: ConsumerService, useValue: { isConnected } },
 				{ provide: DeadLetterService, useValue: { count: deadLetterCount } },
 				{ provide: MinioClientService, useValue: { isAvailable } },
-				{ provide: VideoService, useValue: { activeJob } },
+				{
+					provide: VideoService,
+					useValue: { activeJob, activeJobs: new Map([[activeJob.videoId, activeJob.startedAt]]) },
+				},
 				{ provide: VideoProcessService, useValue: { activeEncoder: 'h264_vaapi' } },
 			],
 		}).compile();
@@ -76,6 +80,7 @@ describe('HealthController', () => {
 			deadLetters: 0,
 			encoder: 'h264_vaapi',
 			activeJob,
+			activeJobs: [activeJob],
 		});
 	});
 });

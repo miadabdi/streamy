@@ -160,6 +160,7 @@ export type Readiness = {
 	deadLetters: number;
 	encoder: 'h264_vaapi' | 'h264_nvenc' | 'h264_qsv' | 'libx264';
 	activeJob: { videoId: number; startedAt: string } | null;
+	activeJobs?: { videoId: number; startedAt: string }[];
 };
 
 export type ChannelWithAvatar = Channel & { avatar: ApiFile | null };

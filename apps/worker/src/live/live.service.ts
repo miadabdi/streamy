@@ -27,13 +27,15 @@ export class LiveService {
 
 	async onModuleInit() {
 		// ack on receipt: a live job runs for the whole broadcast and would
-		// otherwise trip rabbitmq's consumer_timeout mid-stream and get
-		// redelivered as a corrupting duplicate
+		// otherwise be redelivered as a corrupting duplicate on any timeout;
+		// LIVE_PROCESS_CONCURRENCY in .env bounds simultaneous live transcodes
+		const concurrency = this.configService.get<number>('LIVE_PROCESS_CONCURRENCY') ?? 1;
 		await this.consumerService.listenOnQueue(
 			'q.live.process',
 			this.processLiveCallback.bind(this),
 			{
 				ackOnReceipt: true,
+				concurrency,
 			},
 		);
 

@@ -1,5 +1,6 @@
 import * as m3u8Parser from '@miadabdi/m3u8-parser';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { existsSync, mkdirSync } from 'fs';
 import { readFile, readdir, rm, writeFile } from 'fs/promises';
 import { join } from 'path';
@@ -18,6 +19,7 @@ export class VideoService {
 	private videoFilesDir = join(__dirname, 'videoFiles');
 
 	constructor(
+		private configService: ConfigService,
 		private consumerService: ConsumerService,
 		private minioClientService: MinioClientService,
 		private videoProcessService: VideoProcessService,
@@ -25,9 +27,13 @@ export class VideoService {
 	) {}
 
 	async onModuleInit() {
+		// how many vod transcodes may run interleaved (each is a full ffmpeg;
+		// VIDEO_PROCESS_CONCURRENCY in .env, default 1 = the old serial behavior)
+		const concurrency = this.configService.get<number>('VIDEO_PROCESS_CONCURRENCY') ?? 1;
 		await this.consumerService.listenOnQueue(
 			'q.video.process',
 			this.processVideoCallback.bind(this),
+			{ concurrency },
 		);
 
 		if (!existsSync(this.videoFilesDir)) {
@@ -50,15 +56,23 @@ export class VideoService {
 		return { localfilepath, dedicatedDir };
 	}
 
-	/** current in-flight job, exposed by the health endpoint */
-	activeJob: { videoId: number; startedAt: string } | null = null;
+	/** in-flight jobs (videoId → start), exposed by the health endpoint */
+	activeJobs = new Map<number, string>();
+
+	/** oldest in-flight job — kept for the single-job consumers of the api shape */
+	get activeJob(): { videoId: number; startedAt: string } | null {
+		for (const [videoId, startedAt] of this.activeJobs) {
+			return { videoId, startedAt };
+		}
+		return null;
+	}
 
 	async processVideoCallback(message: VideoProcessMsg) {
-		this.activeJob = { videoId: message.videoId, startedAt: new Date().toISOString() };
+		this.activeJobs.set(message.videoId, new Date().toISOString());
 		try {
 			await this.processVideo(message);
 		} finally {
-			this.activeJob = null;
+			this.activeJobs.delete(message.videoId);
 		}
 	}
 

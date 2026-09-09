@@ -35,7 +35,12 @@ export class HealthController {
 			storage: await this.minioClientService.isAvailable(),
 			deadLetters: await this.deadLetterService.count(),
 			encoder: this.videoProcessService.activeEncoder,
+			// oldest job (back-compat shape) + all of them for concurrent workers
 			activeJob: this.videoService.activeJob,
+			activeJobs: [...this.videoService.activeJobs].map(([videoId, startedAt]) => ({
+				videoId,
+				startedAt,
+			})),
 		};
 	}
 }

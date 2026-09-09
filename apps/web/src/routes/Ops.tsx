@@ -134,13 +134,17 @@ export function Ops() {
 				/>
 				<StatTile
 					label="Active job"
-					value={readiness.activeJob ? `#${readiness.activeJob.videoId}` : 'No active job'}
+					value={
+						readiness.activeJob
+							? `${readiness.activeJobs?.length && readiness.activeJobs.length > 1 ? `${readiness.activeJobs.length} · ` : ''}#${readiness.activeJob.videoId}`
+							: 'No active job'
+					}
 					small
 					mono
 					icon={<ElapsedIcon width={14} height={14} aria-hidden />}
 					note={
 						readiness.activeJob
-							? `${formatElapsed(readiness.activeJob.startedAt)} elapsed`
+							? `${formatElapsed(readiness.activeJob.startedAt)} elapsed on oldest`
 							: 'worker idle, waiting on the queue'
 					}
 				/>
