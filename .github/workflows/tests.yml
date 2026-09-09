@@ -32,7 +32,7 @@ jobs:
 
       - run: npm test -w apps/${{ matrix.app }}
 
-  # the worker dockerfile compiles ffmpeg from source; this keeps it honest.
+  # builds both docker images end-to-end; the worker uses distro ffmpeg now.
   # the web build also proves the SPA assembles inside the production image
   docker-build:
     runs-on: ubuntu-latest
