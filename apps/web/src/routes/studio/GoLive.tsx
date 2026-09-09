@@ -234,20 +234,19 @@ export function GoLive() {
 						<div>
 							<h2 style={{ margin: 0, fontSize: 22 }}>Point your encoder here</h2>
 							<p className="page-sub">
-								OBS: Settings → Stream → Custom — paste the ingest URL, then the key.
+								OBS: Settings → Stream → Custom — the URL below goes in <strong>Server</strong>,
+								the key in <strong>Stream Key</strong>. Don't paste them into one field.
 							</p>
 						</div>
 						<div className="field">
-							<label htmlFor="gl-rtmp">RTMP ingest URL</label>
+							<label htmlFor="gl-rtmp">Server URL</label>
 							<div className="secret">
-								<code id="gl-rtmp" className="mono">{`${rtmpBase()}/${video.videoId}`}</code>
+								<code id="gl-rtmp" className="mono">{rtmpBase()}</code>
 								<button
 									className="btn btn-ghost btn-sm"
 									type="button"
 									onClick={() => {
-										navigator.clipboard
-											?.writeText(`${rtmpBase()}/${video.videoId}`)
-											.catch(() => {});
+										navigator.clipboard?.writeText(rtmpBase()).catch(() => {});
 									}}
 								>
 									Copy URL

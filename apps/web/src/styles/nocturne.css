@@ -433,3 +433,7 @@ a.tag:hover { background: var(--color-neutral-700); color: var(--color-neutral-1
   .skel::after { animation: none; }
   .app-side { transition: none; }
 }
+
+/* app tweak: generous scrub hit area with pointer cursor; the visual bar grows on hover */
+.player-scrub { cursor: pointer; padding: 9px 0; margin: -9px 0; }
+.player-scrub:hover { height: 7px; }

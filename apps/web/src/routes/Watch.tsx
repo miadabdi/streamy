@@ -241,8 +241,6 @@ export function Watch() {
 						alignItems: 'center',
 						gap: 12,
 						padding: '14px 0',
-						borderTop: '1px solid var(--color-divider)',
-						borderBottom: '1px solid var(--color-divider)',
 					}}
 				>
 					<ChannelAvatar channel={channel} size="" />

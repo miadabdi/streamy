@@ -360,7 +360,9 @@ export function VideoPlayer({
 				<video
 					ref={videoRef}
 					playsInline
-					style={{ width: '100%', height: '100%', display: 'block' }}
+					/* click the surface to toggle play — the control bar sits above and swallows its own clicks */
+					onClick={commands.togglePlay}
+					style={{ width: '100%', height: '100%', display: 'block', cursor: 'pointer' }}
 				>
 					{nativeTracks.map((t) => (
 						<track key={t.key} kind="subtitles" srcLang={t.lang} label={t.label} />

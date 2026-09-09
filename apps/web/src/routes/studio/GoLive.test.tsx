@@ -122,13 +122,13 @@ describe('Go live wizard', () => {
 				tagIds: [],
 			},
 		]);
-		expect(screen.getByText(`rtmp://localhost/live/${STREAM_KEY}`)).toHaveClass('mono');
+		expect(screen.getByText('rtmp://localhost/live')).toHaveClass('mono');
 		expect(document.querySelector('.secret[data-masked="true"]')).not.toBeNull();
 		expect(screen.queryByText(STREAM_KEY)).toBeNull();
 		expect(screen.getByText(/Treat it like a password/)).toBeInTheDocument();
 
 		await user.click(screen.getByRole('button', { name: 'Copy URL' }));
-		expect(writeText).toHaveBeenCalledWith(`rtmp://localhost/live/${STREAM_KEY}`);
+		expect(writeText).toHaveBeenCalledWith('rtmp://localhost/live');
 
 		// waiting for the encoder: status copy, and NO player until segments exist
 		expect(await screen.findByText('Waiting for your stream')).toBeInTheDocument();
@@ -141,7 +141,7 @@ describe('Go live wizard', () => {
 
 		createStream();
 
-		expect(await screen.findByText(`rtmp://stream.home.lan/live/${STREAM_KEY}`)).toBeInTheDocument();
+		expect(await screen.findByText('rtmp://stream.home.lan/live')).toBeInTheDocument();
 	});
 
 	it('shows the create error with a retry when the POST fails', async () => {
