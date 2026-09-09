@@ -29,7 +29,7 @@ RUN curl -fsSL https://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.xz | tar
         --enable-libx264 \
         --enable-vaapi \
         --enable-libvpl \
-    && make -j"$(nproc)" \
+    && make -j"$(($(nproc) > 8 ? 8 : $(nproc)))" \
     && make install
 
 ###################
