@@ -75,15 +75,7 @@ export function Channel() {
 			<div className="empty">
 				<VodIcon className="empty-mark" width={32} height={32} aria-hidden />
 				<h4>Couldn’t load this channel</h4>
-				{!me ? (
-					// GET /channel/by-username is JWT-gated in the API today
-					<p>
-						Channels need a signed-in viewer.{' '}
-						<Link to="/signin">Sign in</Link> to see this page.
-					</p>
-				) : (
-					<p>Something went wrong fetching it.</p>
-				)}
+				<p>Something went wrong fetching it.</p>
 			</div>
 		);
 	}
