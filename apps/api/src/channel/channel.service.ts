@@ -263,6 +263,8 @@ export class ChannelService {
 	 * @param {string} username username of a channel
 	 * @returns {Channel | null}
 	 */
+	// ponytail: profile read is public — playlists (and their videos) deliberately not loaded here;
+	// a properly-scoped playlist-listing route owns that when the FE needs it
 	async getChannelByUsername(username: string): Promise<Channel | null> {
 		return this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.username, username),
@@ -273,15 +275,6 @@ export class ChannelService {
 						followee: {
 							with: {
 								avatar: true,
-							},
-						},
-					},
-				},
-				playlists: {
-					with: {
-						playlistsVideos: {
-							with: {
-								video: true,
 							},
 						},
 					},
