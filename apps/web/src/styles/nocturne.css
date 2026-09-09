@@ -434,6 +434,9 @@ a.tag:hover { background: var(--color-neutral-700); color: var(--color-neutral-1
   .app-side { transition: none; }
 }
 
-/* app tweak: generous scrub hit area with pointer cursor; the visual bar grows on hover */
-.player-scrub { cursor: pointer; padding: 9px 0; margin: -9px 0; }
-.player-scrub:hover { height: 7px; }
+/* app tweak: generous scrub hit area with pointer cursor; the visual bar
+   (3px, vertically centered) grows on hover. Global box-sizing is border-box,
+   so padding would collapse the fill — size the box itself instead. */
+.player-scrub { cursor: pointer; height: 18px; display: flex; align-items: center; }
+.player-scrub > i { height: 3px; }
+.player-scrub:hover > i { height: 7px; }
