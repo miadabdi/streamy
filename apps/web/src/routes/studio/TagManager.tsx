@@ -59,7 +59,12 @@ export function TagManager({ video }: { video: WatchVideo }) {
 				videoId: video.id,
 				tagIds: [tagId],
 			}),
-		onSuccess: invalidate,
+		onSuccess: () => {
+			// the added tag left `available`; without this the select would keep
+			// targeting the now-stale id
+			setPick('');
+			invalidate();
+		},
 		onError: (error) => toast.error(error.message),
 	});
 	const remove = useMutation({
