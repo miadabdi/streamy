@@ -65,7 +65,7 @@ function RowActions({ video, onRelease, onViewLog, releasing }: {
 	}
 	if (video.processingStatus === 'ready_for_upload') {
 		return (
-			<Link className="btn btn-secondary btn-sm" to="/studio/upload">
+			<Link className="btn btn-secondary btn-sm" to={`/studio/upload?videoId=${video.id}`}>
 				Continue upload
 			</Link>
 		);

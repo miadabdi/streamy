@@ -1,5 +1,20 @@
 // Small display formatters shared by cards, the watch page and comments.
 
+// SI units (kB = 1000 B), matching how storage sizes are reported.
+export function formatBytes(bytes: number): string {
+	if (bytes < 1000) return `${Math.round(bytes)} B`;
+	const units = ['kB', 'MB', 'GB', 'TB'];
+	let value = bytes / 1000;
+	let unit = 0;
+	while (value >= 1000 && unit < units.length - 1) {
+		value /= 1000;
+		unit++;
+	}
+	// one decimal below 10, integers above — "2.5 MB", "18 MB"
+	const rounded = value >= 10 ? Math.round(value) : Math.round(value * 10) / 10;
+	return `${rounded} ${units[unit]}`;
+}
+
 export function channelInitials(name: string | null | undefined): string {
 	const words = (name ?? '?').split(/[^a-zA-Z0-9]+|(?<=[a-z0-9])(?=[A-Z])/).filter(Boolean);
 	return (words.length >= 2 ? words[0][0] + words[1][0] : (name ?? '?').slice(0, 2)).toUpperCase();

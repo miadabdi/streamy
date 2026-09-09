@@ -18,5 +18,8 @@ export default defineConfig({
 		environment: 'jsdom',
 		globals: true,
 		setupFiles: 'src/test/setup.ts',
+		// one jsdom fork per file; a fork per core oversubscribes a dev box and
+		// tips timing-sensitive tests (userEvent typing) past their timeouts
+		maxWorkers: '50%',
 	},
 });

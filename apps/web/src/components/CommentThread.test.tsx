@@ -213,7 +213,9 @@ describe('CommentThread', () => {
 		).toBe(true); // sonner feedback (store is global across tests)
 	});
 
-	it('blocks over-length content client-side, matching the 1024 server max', async () => {
+	// 1030 keystrokes of userEvent typing: scales with CPU contention, so the
+	// default 5s test timeout leaves no headroom on a busy machine
+	it('blocks over-length content client-side, matching the 1024 server max', { timeout: 10_000 }, async () => {
 		const user = userEvent.setup();
 		mount([]);
 
@@ -242,10 +244,12 @@ describe('CommentThread', () => {
 		await user.type(input, 'revised text');
 		await user.click(screen.getByRole('button', { name: 'Save' }));
 
-		await waitFor(() =>
-			expect((screen.getByLabelText('Edit comment') as HTMLInputElement).value).toBe(
-				'revised text',
-			),
+		await waitFor(
+			() =>
+				expect((screen.getByLabelText('Edit comment') as HTMLInputElement).value).toBe(
+					'revised text',
+				),
+			{ timeout: 3_000 }, // same contention headroom as above
 		);
 		expect(screen.getAllByText(/not saved/i).length).toBeGreaterThan(0);
 	});

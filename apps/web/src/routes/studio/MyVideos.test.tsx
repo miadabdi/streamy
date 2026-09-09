@@ -204,7 +204,7 @@ describe('My videos', () => {
 		);
 		expect(
 			within(rowTitled('Untitled draft')).getByRole('link', { name: 'Continue upload' }),
-		).toHaveAttribute('href', '/studio/upload');
+		).toHaveAttribute('href', '/studio/upload?videoId=6');
 	});
 
 	it('opens the ffmpeg log drawer from a failed row, raw and unedited', async () => {
