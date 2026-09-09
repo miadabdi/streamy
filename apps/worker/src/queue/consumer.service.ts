@@ -68,8 +68,11 @@ export class ConsumerService {
 				prefetch: concurrency,
 			},
 		);
+		// prefetch only bounds in-flight deliveries — for ack-on-receipt queues
+		// (live) the real cap is the listener's in-process gate, not this number
 		this.logger.log(
-			`Consumer service started and listening on ${queue} for messages (concurrency ${concurrency})`,
+			`Consumer service started and listening on ${queue} for messages` +
+				(ackOnReceipt ? '' : ` (concurrency ${concurrency})`),
 		);
 	}
 
