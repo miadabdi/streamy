@@ -32,7 +32,8 @@ jobs:
 
       - run: npm test -w apps/${{ matrix.app }}
 
-  # the worker dockerfile compiles ffmpeg from source; this keeps it honest
+  # the worker dockerfile compiles ffmpeg from source; this keeps it honest.
+  # the web build also proves the SPA assembles inside the production image
   docker-build:
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -48,5 +49,14 @@ jobs:
           target: production
           push: false
           tags: streamy-process-node:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          tags: streamy-web:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max

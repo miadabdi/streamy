@@ -5,6 +5,10 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Streamy</title>
+		<!-- Runtime config (window.__ENV__) — must run before the bundle.
+		     Dev serves an empty stub from public/env.js; the production
+		     entrypoint renders it from env.js.template. -->
+		<script src="/env.js"></script>
 		<script>
 			// Apply persisted theme/density before first paint — no flash of wrong theme.
 			// Keys and valid values mirror src/lib/theme.ts.
