@@ -157,7 +157,10 @@ export function Watch() {
 		);
 	}
 
-	const processing = isPending(video.processingStatus);
+	// a live video "processing" while active is ON AIR, not mid-pipeline —
+	// the live player (and its manifest-retry) must run for viewers
+	const processing =
+		isPending(video.processingStatus) && playerMode(video) !== 'live';
 	const description = video.description ?? '';
 	const longDescription = description.length > 220;
 	const ownChannel = me != null && video.channel?.ownerId === me.id;
