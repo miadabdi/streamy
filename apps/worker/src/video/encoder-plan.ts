@@ -1,5 +1,4 @@
 import { execFile } from 'child_process';
-import { join } from 'path';
 
 /**
  * hardware-first transcoding with graceful software fallback.
@@ -13,7 +12,7 @@ import { join } from 'path';
 
 // resolvable both under `nest start` (cwd = repo root) and `node dist/main`,
 // and overridable for containers where ffmpeg comes from the distro package
-export const ffmpegPath = process.env.FFMPEG_PATH || join(process.cwd(), 'binaries', 'ffmpeg');
+export const ffmpegPath = process.env.FFMPEG_PATH || 'ffmpeg';
 
 export type EncoderName = 'h264_vaapi' | 'h264_nvenc' | 'h264_qsv' | 'libx264';
 
