@@ -296,17 +296,32 @@ describe('modes', () => {
 		expect(screen.queryByText('This stream has ended')).not.toBeInTheDocument();
 	});
 
-	it('live drops the scrub, shows the LIVE pill, elapsed time and jump-to-live', () => {
+	it('live keeps DVR: scrub spans the seekable window, jump-to-live returns to the edge', () => {
 		const { container } = mount({ mode: 'live', subtitles: [] });
 		const video = container.querySelector('video') as HTMLVideoElement;
 
+		// no seekable window yet (segments not loaded): no scrub, but the LIVE pill
 		expect(container.querySelector('.player-scrub')).not.toBeInTheDocument();
 		expect(screen.getByText('Live', { selector: '.pill-live' })).toBeInTheDocument();
 
+		// the event playlist retains the whole broadcast: [0 .. 3000]
+		Object.defineProperty(video, 'seekable', {
+			configurable: true,
+			value: { length: 1, start: () => 0, end: () => 3000 },
+		});
 		video.currentTime = 2472; // 41:12 since the window start
 		fireEvent(video, new Event('timeupdate'));
+		expect(container.querySelector('.player-scrub')).toBeInTheDocument();
 		expect(screen.getByText('41:12')).toBeInTheDocument();
 		expect(screen.getByText('LIVE')).toBeInTheDocument();
+
+		// scrub at 10% of the bar → 300s into the retained window
+		const scrub = container.querySelector('.player-scrub') as HTMLElement;
+		Object.assign(scrub.getBoundingClientRect, {}); // jsdom rect is all zeros
+		scrub.getBoundingClientRect = () =>
+			({ left: 0, width: 1000, right: 1000, top: 0, height: 18 }) as DOMRect;
+		fireEvent.click(scrub, { clientX: 100 });
+		expect(video.currentTime).toBe(300);
 
 		hls().liveSyncPosition = 3000;
 		fireEvent.click(screen.getByRole('button', { name: 'Jump to live' }));

@@ -356,12 +356,34 @@ export function VideoPlayer({
 		announce('Jumped to live');
 	}
 
+	/** DVR window for live ([start, end] of the last seekable range); [0, duration] otherwise */
+	function scrubWindow(): [number, number] | null {
+		const video = videoRef.current;
+		if (!video) return null;
+		if (isLive) {
+			const seekable = video.seekable;
+			if (seekable.length === 0) return null;
+			const start = seekable.start(seekable.length - 1);
+			const end = seekable.end(seekable.length - 1);
+			return end > start ? [start, end] : null;
+		}
+		return duration > 0 ? [0, duration] : null;
+	}
+
 	function seekFromScrub(event: ReactMouseEvent<HTMLDivElement>) {
 		const video = videoRef.current;
-		if (!video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+		if (!video) return;
 		const rect = event.currentTarget.getBoundingClientRect();
 		if (rect.width <= 0) return;
-		video.currentTime = ((event.clientX - rect.left) / rect.width) * video.duration;
+		const ratio = (event.clientX - rect.left) / rect.width;
+		if (isLive) {
+			const window = scrubWindow();
+			if (!window) return;
+			const target = window[0] + ratio * (window[1] - window[0]);
+			video.currentTime = Math.min(Math.max(target, window[0]), window[1]);
+		} else if (Number.isFinite(video.duration) && video.duration > 0) {
+			video.currentTime = ratio * video.duration;
+		}
 	}
 
 	function onKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
@@ -411,11 +433,26 @@ export function VideoPlayer({
 					<span className="player-time">
 						{isLive ? formatTime(elapsed) : formatTime(current)}
 					</span>
-					{!isLive && (
-						<div className="player-scrub" onClick={seekFromScrub}>
-							<i style={{ width: `${duration > 0 ? (current / duration) * 100 : 0}%` }} />
-						</div>
-					)}
+					{/* live keeps the scrub bar too — the event playlist retains the
+					    whole stream, so seeking back is DVR; jump-to-live returns */}
+					{(() => {
+						if (!isLive) {
+							return (
+								<div className="player-scrub" onClick={seekFromScrub}>
+									<i style={{ width: `${duration > 0 ? (current / duration) * 100 : 0}%` }} />
+								</div>
+							);
+						}
+						const window = scrubWindow();
+						if (!window) return null;
+						const [start, end] = window;
+						const fill = end > start ? ((current - start) / (end - start)) * 100 : 0;
+						return (
+							<div className="player-scrub" onClick={seekFromScrub}>
+								<i style={{ width: `${Math.min(Math.max(fill, 0), 100)}%` }} />
+							</div>
+						);
+					})()}
 					<span className="player-time">{isLive ? 'LIVE' : formatTime(duration)}</span>
 					{isLive && (
 						<button
