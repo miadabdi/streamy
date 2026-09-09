@@ -209,7 +209,7 @@ export function buildLiveArgs(
 		THREE_VARIANT_STREAM_MAP,
 		// resumed legs number segments after the previous leg's last one so
 		// the files they write never collide with what is already uploaded
-		...(startNumber > 1 ? ['-hls_start_number', String(startNumber)] : []),
+		...(startNumber > 1 ? ['-start_number', String(startNumber)] : []),
 		'-hls_segment_filename',
 		'segment_%v_%05d.ts',
 		'manifest_%v.m3u8',
