@@ -8,7 +8,7 @@
 	"scripts": {
 		"minio:down:dev": "sudo docker compose rm minio -f -s",
 		"minio:up:dev": "sudo docker compose up minio -d",
-		"db:gen:migrate": "npx drizzle-kit generate:pg",
+		"db:gen:migrate": "npx drizzle-kit generate",
 		"db:run:migrate": "tsx ./src/drizzle/migrate.ts",
 		"db:up:dev": "sudo docker compose up streamy_db -d",
 		"db:down:dev": "sudo docker compose down streamy_db",
