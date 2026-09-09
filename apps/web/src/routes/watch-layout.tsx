@@ -1,5 +1,6 @@
 import { MagnifyingGlass } from '@phosphor-icons/react';
 import { Link, Outlet, useNavigate } from 'react-router';
+import { ChannelAvatar } from '../components/CommentThread';
 import { Wordmark } from '../components/Wordmark';
 import { UploadIcon } from '../components/icons';
 import { useMe } from '../lib/auth';
@@ -8,7 +9,8 @@ import { useMe } from '../lib/auth';
 export function WatchLayout() {
 	const { data: me } = useMe();
 	const navigate = useNavigate();
-	const initials = me ? `${me.firstName?.[0] ?? ''}${me.lastName?.[0] ?? ''}` : '';
+	// chrome identity is the current channel, same as RootLayout
+	const currentChannel = me?.channels.find((c) => c.id === me.currentChannelId) ?? null;
 
 	return (
 		<div className="app-col" data-density="roomy" style={{ minHeight: '100vh' }}>
@@ -33,7 +35,9 @@ export function WatchLayout() {
 					<Link className="btn btn-secondary" to="/studio/upload">
 						<UploadIcon width={15} height={15} aria-hidden /> Upload
 					</Link>
-					<span className="avatar">{initials}</span>
+					<Link to="/settings" aria-label="Profile and channel settings">
+					<ChannelAvatar channel={currentChannel} />
+				</Link>
 				</div>
 			</header>
 			{/* .watch-main (nocturne.css) so the small-screen breakpoint can widen it */}

@@ -6,13 +6,14 @@ import { api } from '../lib/api';
 import { myChannelId } from '../lib/auth';
 import { storageBase } from '../lib/env';
 import { channelInitials, timeAgo } from '../lib/format';
-import type { ChannelWithAvatar, Me, WatchComment, WatchVideo } from '../types/api';
+import type { ApiFile, ChannelWithAvatar, Me, WatchComment, WatchVideo } from '../types/api';
 
 export function ChannelAvatar({
 	channel,
 	size = 'sm',
 }: {
-	channel: ChannelWithAvatar | null;
+	/** structural: me.channels carries no avatar relation — initials fallback covers it */
+	channel: { name: string | null; avatar?: ApiFile | null } | null;
 	size?: '' | 'sm' | 'lg';
 }) {
 	if (channel?.avatar) {

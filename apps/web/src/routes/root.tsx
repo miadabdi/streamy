@@ -1,6 +1,7 @@
 import { List, MagnifyingGlass } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
+import { ChannelAvatar } from '../components/CommentThread';
 import { Wordmark } from '../components/Wordmark';
 import {
 	ChannelIcon,
@@ -21,7 +22,9 @@ export function RootLayout() {
 	const { pathname } = useLocation();
 	const navigate = useNavigate();
 	const roomy = viewerPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
-	const initials = me ? `${me.firstName?.[0] ?? ''}${me.lastName?.[0] ?? ''}` : '';
+	// chrome identity is the current channel (the design's avatar = channel
+	// avatar with initials fallback); user firstName/lastName stay on Settings
+	const currentChannel = me?.channels.find((c) => c.id === me.currentChannelId) ?? null;
 	const displayName = me ? `${me.firstName ?? ''} ${me.lastName ?? ''}`.trim() || me.email : '';
 	// <1024px the sidenav is a drawer off this toggle (CSS-only breakpoint)
 	const [navOpen, setNavOpen] = useState(false);
@@ -78,7 +81,7 @@ export function RootLayout() {
 				</nav>
 				<div className="app-channel">
 					<div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-						<span className="avatar avatar-sm">{initials}</span>
+						<ChannelAvatar channel={currentChannel} size="sm" />
 						<div style={{ minWidth: 0 }}>
 							<div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.2 }}>{displayName}</div>
 							<div
@@ -134,7 +137,9 @@ export function RootLayout() {
 						<Link className="btn btn-primary" to="/studio/go-live">
 							<LiveIcon width={15} height={15} aria-hidden /> Go live
 						</Link>
-						<span className="avatar">{initials}</span>
+						<Link to="/settings" aria-label="Profile and channel settings">
+						<ChannelAvatar channel={currentChannel} />
+					</Link>
 					</div>
 				</header>
 				<main className="app-page" data-density={roomy ? 'roomy' : undefined}>
