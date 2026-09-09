@@ -1,14 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MagnifyingGlass } from '@phosphor-icons/react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { LoadMore } from '../components/LoadMore';
 import { VideoGrid } from '../components/VideoGrid';
 import { useDebounced } from '../hooks/useDebounced';
 import { useVideoSearch } from '../hooks/useVideos';
 
 export function Search() {
-	const [text, setText] = useState('');
+	const [searchParams, setSearchParams] = useSearchParams();
+	const qParam = searchParams.get('q') ?? '';
+	// ?q= is the contract with the topbar search, which can re-target this
+	// route without remounting it — track the param and reseed (the navPath
+	// pattern in root.tsx)
+	const [view, setView] = useState({ q: qParam, text: qParam });
+	if (view.q !== qParam) setView({ q: qParam, text: qParam });
+	const text = view.text;
 	const query = useDebounced(text, 300).trim();
+	// keep the URL honest about the live query (shareable, and the topbar
+	// round-trip works when this element stays mounted)
+	useEffect(() => {
+		setSearchParams(query ? { q: query } : {}, { replace: true });
+	}, [query, setSearchParams]);
 	const results = useVideoSearch(query);
 	const items = results.data?.pages.flat() ?? [];
 
@@ -29,7 +41,7 @@ export function Search() {
 						placeholder="Search videos"
 						aria-label="Search videos"
 						value={text}
-						onChange={(e) => setText(e.target.value)}
+						onChange={(e) => setView({ q: qParam, text: e.target.value })}
 						autoFocus
 					/>
 				</label>

@@ -66,6 +66,17 @@ describe('app shell', () => {
 		expect(screen.getByRole('link', { name: 'Go live' })).toHaveAttribute('href', '/studio/go-live');
 	});
 
+	it('submits the topbar search to /search with the query seeding the page input', async () => {
+		const user = userEvent.setup();
+		renderWithApp(<AppRoutes />);
+
+		await user.type(screen.getByLabelText('Search videos'), 'rack{Enter}');
+
+		// landed on /search: the page's own input is seeded from ?q=
+		expect(await screen.findByRole('heading', { name: 'Search' })).toBeInTheDocument();
+		expect(document.querySelector('.app-page input')).toHaveValue('rack');
+	});
+
 	it('opens the sidenav drawer on the menu toggle and closes it on Escape', async () => {
 		const user = userEvent.setup();
 		renderWithApp(<AppRoutes />);

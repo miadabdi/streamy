@@ -1,6 +1,6 @@
 import { List, MagnifyingGlass } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 import { Wordmark } from '../components/Wordmark';
 import {
 	ChannelIcon,
@@ -19,6 +19,7 @@ const viewerPaths = ['/', '/search', '/channel'];
 export function RootLayout() {
 	const { data: me } = useMe();
 	const { pathname } = useLocation();
+	const navigate = useNavigate();
 	const roomy = viewerPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 	const initials = me ? `${me.firstName?.[0] ?? ''}${me.lastName?.[0] ?? ''}` : '';
 	const displayName = me ? `${me.firstName ?? ''} ${me.lastName ?? ''}`.trim() || me.email : '';
@@ -113,10 +114,19 @@ export function RootLayout() {
 					>
 						<List size={16} aria-hidden />
 					</button>
-					<label className="searchbar" style={{ flex: 1, maxWidth: 460 }}>
+					<form
+						className="searchbar"
+						role="search"
+						style={{ flex: 1, maxWidth: 460 }}
+						onSubmit={(event) => {
+							event.preventDefault();
+							const text = String(new FormData(event.currentTarget).get('q') ?? '').trim();
+							navigate(text ? `/search?q=${encodeURIComponent(text)}` : '/search');
+						}}
+					>
 						<MagnifyingGlass size={15} aria-hidden />
-						<input type="search" placeholder="Search videos" aria-label="Search videos" />
-					</label>
+						<input type="search" name="q" placeholder="Search videos" aria-label="Search videos" />
+					</form>
 					<div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
 						<Link className="btn btn-secondary" to="/studio/upload">
 							<UploadIcon width={15} height={15} aria-hidden /> Upload
