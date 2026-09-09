@@ -52,7 +52,7 @@ export class SubtitleController {
 	@HttpCode(HttpStatus.OK)
 	@Get('/by-id')
 	getSubtitleById(@Query() getSubtitleByIdDto: GetSubtitleByIdDto, @GetUser() user: User) {
-		return this.subtitleService.getSubtitleById(getSubtitleByIdDto.id);
+		return this.subtitleService.getSubtitleById(getSubtitleByIdDto.id, user);
 	}
 
 	@HttpCode(HttpStatus.OK)

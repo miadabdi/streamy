@@ -54,7 +54,7 @@ export class PlaylistController {
 	@HttpCode(HttpStatus.OK)
 	@Get('/by-id')
 	getPlaylistById(@Query() getPlaylistByIdDto: GetPlaylistByIdDto, @GetUser() user: User) {
-		return this.playlistService.getPlaylistById(getPlaylistByIdDto.id);
+		return this.playlistService.getPlaylistById(getPlaylistByIdDto.id, user);
 	}
 
 	@HttpCode(HttpStatus.OK)

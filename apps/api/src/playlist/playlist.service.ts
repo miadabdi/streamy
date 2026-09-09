@@ -172,11 +172,27 @@ export class PlaylistService {
 	}
 
 	/**
-	 * finds and returns a playlist with id of input id
+	 * finds and returns a playlist with id of input id; only the owner of
+	 * the playlist's channel may read it (playlists can be private)
 	 * @param {number} id
+	 * @param {User} user
 	 * @returns {Playlist}
+	 * @throws {NotFoundException} playlist is missing or not owned by the requester
 	 */
-	async getPlaylistById(id: number): Promise<Playlist> {
+	async getPlaylistById(id: number, user: User): Promise<Playlist> {
+		const playlist = await this.drizzleService.db.query.playlists.findFirst({
+			where: eq(schema.playlists.id, id),
+			with: {
+				channel: true,
+			},
+		});
+
+		// same NotFound for missing and not-owned: a playlist's existence
+		// must not be confirmable by strangers
+		if (!playlist || playlist.channel.ownerId !== user.id) {
+			throw new NotFoundException(`Playlist with id ${id} not found`);
+		}
+
 		return this.drizzleService.db.query.playlists.findFirst({
 			where: eq(schema.playlists.id, id),
 			with: {

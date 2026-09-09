@@ -146,19 +146,36 @@ export class SubtitleService {
 	}
 
 	/**
-	 * finds a subtitle by id
+	 * finds a subtitle by id; subtitles of unreleased videos are only
+	 * served to the owner of the video's channel
 	 * @param {number} id id of subtitle record
+	 * @param {User} user
 	 * @returns {Subtitle}
+	 * @throws {NotFoundException} subtitle is missing or its video is unreleased to the requester
 	 */
-	async getSubtitleById(id: number): Promise<Subtitle> {
+	async getSubtitleById(id: number, user: User): Promise<Subtitle> {
 		const subtitle = await this.drizzleService.db.query.subtitles.findFirst({
+			where: eq(schema.subtitles.id, id),
+			with: {
+				video: {
+					with: {
+						channel: true,
+					},
+				},
+			},
+		});
+
+		// same NotFound for missing and unreleased: mirrors getSubtitlesByVideoId
+		if (!subtitle || (!subtitle.video.isReleased && subtitle.video.channel.ownerId !== user.id)) {
+			throw new NotFoundException(`Subtitle with id ${id} not found`);
+		}
+
+		return this.drizzleService.db.query.subtitles.findFirst({
 			where: eq(schema.subtitles.id, id),
 			with: {
 				video: true,
 			},
 		});
-
-		return subtitle;
 	}
 
 	/**

@@ -288,6 +288,8 @@ export class ChannelService {
 	 * @param {number} id id of a channel
 	 * @returns {Channel | null}
 	 */
+	// ponytail: settings' edit-form read — channel scalars + avatar + subscriptions;
+	// playlists (and their videos) deliberately not loaded here, /playlist/by-channel owns that
 	async getChannelById(id: number): Promise<Channel | null> {
 		return this.drizzleService.db.query.channels.findFirst({
 			where: eq(schema.channels.id, id),
@@ -302,15 +304,6 @@ export class ChannelService {
 					},
 				},
 				avatar: true,
-				playlists: {
-					with: {
-						playlistsVideos: {
-							with: {
-								video: true,
-							},
-						},
-					},
-				},
 			},
 		});
 	}
